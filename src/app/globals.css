@@ -1,26 +1,66 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-rose: #c4787a;
+  --color-rose-hover: #a8616a;
+  --color-pink: #d4a0a0;
+  --color-blush: #e8c4c4;
+  --color-cream: #f0e6dd;
+  --color-warm: #f8f3ef;
+  --color-marble: #fdfbf9;
+  --color-gold: #b8965a;
+  --color-gold-light: #d4b47a;
+  --color-dark: #3d2b2b;
+  --color-body: #6b5555;
+  --color-light: #9b8585;
+
+  --font-display: var(--font-cormorant), "Cormorant Garamond", serif;
+  --font-body: var(--font-dm), "DM Sans", system-ui, sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-marble);
+  color: var(--color-body);
+  font-family: var(--font-body);
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: var(--color-blush);
+  color: var(--color-dark);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
+  color: var(--color-dark);
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
 }
