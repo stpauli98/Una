@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { WorkingHoursEditor } from "@/components/admin/WorkingHoursEditor";
 import { BlockedDatesManager } from "@/components/admin/BlockedDatesManager";
+import { TimeBlocksManager } from "@/components/admin/TimeBlocksManager";
 import { ChangePasswordForm } from "@/components/admin/ChangePasswordForm";
 
 export const metadata: Metadata = {
@@ -15,9 +16,10 @@ export const dynamic = "force-dynamic";
 export default async function AdminPostavkePage() {
   const sb = await createClient();
 
-  const [hoursRes, blockedRes] = await Promise.all([
+  const [hoursRes, blockedRes, timeBlocksRes] = await Promise.all([
     sb.from("working_hours").select("*"),
     sb.from("blocked_dates").select("*").order("date_from"),
+    sb.from("time_blocks").select("*").order("start_time"),
   ]);
 
   return (
@@ -46,6 +48,18 @@ export default async function AdminPostavkePage() {
             zakazati termine u blokiranim datumima.
           </p>
           <BlockedDatesManager dates={blockedRes.data ?? []} />
+        </section>
+
+        <section>
+          <h2 className="mb-3 font-display text-xl text-dark">
+            Blokirani intervali (sub-day)
+          </h2>
+          <p className="mb-4 text-[12px] text-light">
+            Blokirajte konkretno vrijeme (npr. 18:00–20:00 u srijedu za
+            zubara). Za cijele dane koristite sekciju iznad &quot;Blokirani
+            datumi&quot;.
+          </p>
+          <TimeBlocksManager blocks={timeBlocksRes.data ?? []} />
         </section>
 
         <section>

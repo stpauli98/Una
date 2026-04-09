@@ -103,3 +103,43 @@ export async function changePassword(
     return { ok: false, error: (e as Error).message };
   }
 }
+
+const timeBlockSchema = z.object({
+  start_time: z.string().datetime(),
+  end_time: z.string().datetime(),
+  reason: z.string().max(200).optional().nullable(),
+});
+
+export async function createTimeBlock(
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const sb = await requireAuth();
+    const parsed = timeBlockSchema.parse({
+      start_time: String(formData.get("start_time")),
+      end_time: String(formData.get("end_time")),
+      reason: String(formData.get("reason") ?? "") || null,
+    });
+    if (new Date(parsed.end_time) <= new Date(parsed.start_time)) {
+      return { ok: false, error: "Kraj mora biti poslije početka" };
+    }
+    const { error } = await sb.from("time_blocks").insert(parsed);
+    if (error) return { ok: false, error: error.message };
+    revalidatePath("/admin/postavke");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+export async function deleteTimeBlock(id: number): Promise<ActionResult> {
+  try {
+    const sb = await requireAuth();
+    const { error } = await sb.from("time_blocks").delete().eq("id", id);
+    if (error) return { ok: false, error: error.message };
+    revalidatePath("/admin/postavke");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
