@@ -1,0 +1,89 @@
+import { NextResponse, type NextRequest } from "next/server";
+import { parseISO, startOfDay, endOfDay } from "date-fns";
+import { createClient } from "@/lib/supabase/server";
+import { computeAvailableSlots } from "@/lib/booking/availability";
+
+/**
+ * GET /api/availability?date=YYYY-MM-DD&service_id=N
+ * Vraća listu raspoloživih slotova za dati dan i uslugu.
+ */
+export async function GET(req: NextRequest) {
+  const dateStr = req.nextUrl.searchParams.get("date");
+  const serviceIdStr = req.nextUrl.searchParams.get("service_id");
+
+  if (!dateStr || !serviceIdStr) {
+    return NextResponse.json(
+      { error: "Nedostaju parametri: date i service_id" },
+      { status: 400 },
+    );
+  }
+
+  const serviceId = Number(serviceIdStr);
+  if (!Number.isFinite(serviceId) || serviceId <= 0) {
+    return NextResponse.json({ error: "Neispravan service_id" }, { status: 400 });
+  }
+
+  let date: Date;
+  try {
+    date = startOfDay(parseISO(dateStr));
+    if (Number.isNaN(date.getTime())) throw new Error("nan");
+  } catch {
+    return NextResponse.json({ error: "Neispravan datum" }, { status: 400 });
+  }
+
+  const sb = await createClient();
+
+  const { data: service, error: serviceError } = await sb
+    .from("services")
+    .select("id,duration_min,bookable,active")
+    .eq("id", serviceId)
+    .maybeSingle();
+
+  if (serviceError) {
+    return NextResponse.json({ error: serviceError.message }, { status: 500 });
+  }
+  if (!service || !service.bookable || !service.active || !service.duration_min) {
+    return NextResponse.json({ slots: [] });
+  }
+
+  const dayStart = startOfDay(date).toISOString();
+  const dayEnd = endOfDay(date).toISOString();
+
+  const [apptRes, blockedRes] = await Promise.all([
+    sb
+      .from("appointments")
+      .select("start_time,end_time")
+      .gte("start_time", dayStart)
+      .lt("start_time", dayEnd)
+      .in("status", ["ceka", "potvrdjen"]),
+    sb.from("blocked_dates").select("date_from,date_to"),
+  ]);
+
+  if (apptRes.error) {
+    return NextResponse.json({ error: apptRes.error.message }, { status: 500 });
+  }
+  if (blockedRes.error) {
+    return NextResponse.json({ error: blockedRes.error.message }, { status: 500 });
+  }
+
+  const slots = computeAvailableSlots({
+    date,
+    durationMin: service.duration_min,
+    now: new Date(),
+    existing: (apptRes.data ?? []).map((a) => ({
+      start: new Date(a.start_time),
+      end: new Date(a.end_time),
+    })),
+    blocked: (blockedRes.data ?? []).map((b) => ({
+      from: parseISO(b.date_from),
+      to: parseISO(b.date_to),
+    })),
+  });
+
+  return NextResponse.json({
+    slots: slots.map((s) => ({
+      start: s.start.toISOString(),
+      end: s.end.toISOString(),
+    })),
+  });
+}
