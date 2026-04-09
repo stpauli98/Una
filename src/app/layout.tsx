@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { BUSINESS } from "@/lib/constants/business";
+import { CookieBanner } from "@/components/public/CookieBanner";
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin", "latin-ext"],
@@ -50,6 +51,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-marble text-body">
         {children}
+        <CookieBanner />
       </body>
     </html>
   );
