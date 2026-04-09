@@ -2,10 +2,16 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  fullyParallel: true,
+  // Globalni setup briše sve test podatke (Test Klijent*, E2E*) prije run-a
+  // kako bi testovi krenuli sa čistim slate-om.
+  globalSetup: "./tests/e2e/global-setup.ts",
+  // Svi testovi manipulišu istom bazom (appointments, time_blocks,
+  // working_hours) i neki od njih seed-uju podatke na "sljedeći weekday"
+  // koji se dijeli između testova. Serial mode sprečava interferenciju.
+  fullyParallel: false,
+  workers: 1,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
   reporter: [["list"]],
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000",

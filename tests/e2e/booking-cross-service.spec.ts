@@ -26,7 +26,9 @@ const SUPABASE_URL = process.env.E2E_SUPABASE_URL ?? "http://127.0.0.1:54321";
 const SERVICE_ROLE_KEY = process.env.E2E_SUPABASE_SERVICE_ROLE_KEY;
 
 function nextBookableWeekday(): Date {
-  let date = addDays(new Date(), 3);
+  // +10 dana da izbjegnemo kolizije sa drugim e2e testovima
+  // koji koriste +3 do +7 days (booking-conflict, booking, time-blocks, itd.)
+  let date = addDays(new Date(), 10);
   while (getDay(date) === 0 || getDay(date) === 6) {
     date = addDays(date, 1);
   }

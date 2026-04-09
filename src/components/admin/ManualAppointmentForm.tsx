@@ -91,10 +91,10 @@ export function ManualAppointmentForm({ services, onClose }: Props) {
             </select>
           </div>
 
-          <div>
-            <label className="mb-1 block text-[11px] uppercase tracking-wider text-dark">
+          <label className="block">
+            <span className="mb-1 block text-[11px] uppercase tracking-wider text-dark">
               Ime klijenta
-            </label>
+            </span>
             <input
               name="client_name"
               required
@@ -105,12 +105,12 @@ export function ManualAppointmentForm({ services, onClose }: Props) {
                 {fieldErrors.client_name[0]}
               </p>
             )}
-          </div>
+          </label>
 
-          <div>
-            <label className="mb-1 block text-[11px] uppercase tracking-wider text-dark">
+          <label className="block">
+            <span className="mb-1 block text-[11px] uppercase tracking-wider text-dark">
               Telefon
-            </label>
+            </span>
             <input
               name="client_phone"
               required
@@ -122,23 +122,23 @@ export function ManualAppointmentForm({ services, onClose }: Props) {
                 {fieldErrors.client_phone[0]}
               </p>
             )}
-          </div>
+          </label>
 
-          <div>
-            <label className="mb-1 block text-[11px] uppercase tracking-wider text-dark">
+          <label className="block">
+            <span className="mb-1 block text-[11px] uppercase tracking-wider text-dark">
               Email (opciono)
-            </label>
+            </span>
             <input
               name="client_email"
               type="email"
               className="w-full border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus:outline-none"
             />
-          </div>
+          </label>
 
-          <div>
-            <label className="mb-1 block text-[11px] uppercase tracking-wider text-dark">
+          <label className="block">
+            <span className="mb-1 block text-[11px] uppercase tracking-wider text-dark">
               Datum i vrijeme
-            </label>
+            </span>
             <input
               name="start_time_local"
               type="datetime-local"
@@ -146,18 +146,18 @@ export function ManualAppointmentForm({ services, onClose }: Props) {
               defaultValue={defaultStart}
               className="w-full border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus:outline-none"
             />
-          </div>
+          </label>
 
-          <div>
-            <label className="mb-1 block text-[11px] uppercase tracking-wider text-dark">
+          <label className="block">
+            <span className="mb-1 block text-[11px] uppercase tracking-wider text-dark">
               Napomena (opciono)
-            </label>
+            </span>
             <textarea
               name="notes"
               rows={2}
               className="w-full resize-none border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus:outline-none"
             />
-          </div>
+          </label>
 
           {conflictWarning && (
             <div className="border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
