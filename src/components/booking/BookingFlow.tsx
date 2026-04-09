@@ -11,11 +11,18 @@ type Service = Database["public"]["Tables"]["services"]["Row"];
 
 type Props = {
   services: Service[];
+  /** Ako je postavljen, BookingFlow startuje odmah na Step 2 sa ovom uslugom. */
+  initialServiceId?: number | null;
 };
 
-export function BookingFlow({ services }: Props) {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [service, setService] = useState<Service | null>(null);
+export function BookingFlow({ services, initialServiceId }: Props) {
+  const preSelected =
+    initialServiceId != null
+      ? (services.find((s) => s.id === initialServiceId) ?? null)
+      : null;
+
+  const [step, setStep] = useState<1 | 2 | 3>(preSelected ? 2 : 1);
+  const [service, setService] = useState<Service | null>(preSelected);
   const [startTime, setStartTime] = useState<string | null>(null);
 
   return (

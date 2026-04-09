@@ -59,7 +59,10 @@ export function ServiceCard({ service, featured }: Props) {
 
   if (featured && service.bookable) {
     return (
-      <Link href="/zakazi" aria-label={`Zakaži ${service.name}`}>
+      <Link
+        href={`/zakazi?service=${service.id}`}
+        aria-label={`Zakaži ${service.name}`}
+      >
         {card}
       </Link>
     );
