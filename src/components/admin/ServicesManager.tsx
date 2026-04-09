@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Edit2, Eye, EyeOff, Plus, ArrowUp, ArrowDown } from "lucide-react";
 import { ServiceForm } from "./ServiceForm";
 import {
@@ -24,10 +25,21 @@ export function ServicesManager({
 }: {
   initialServices: Service[];
 }) {
-  const [services] = useState(initialServices);
-  const [editing, setEditing] = useState<Service | null>(null);
+  // BITNO: NE koristimo useState za listu, jer to zaledi snapshot. Server
+  // action revalidatePath osvježi server prop, ali useState init samo jednom.
+  // Direktno korišćenje props znači da se nakon router.refresh() lista
+  // automatski ažurira sa svježim podacima iz baze.
+  const services = initialServices;
+  const router = useRouter();
+  // Edit state drži samo ID, a stvarne podatke uzimamo iz svježe `services`
+  // liste. Ovako se izbjegava da modal pokaže stari snapshot servisa.
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
   const [pending, startTransition] = useTransition();
+  const editing =
+    editingId !== null
+      ? (services.find((s) => s.id === editingId) ?? null)
+      : null;
 
   return (
     <div>
@@ -74,6 +86,7 @@ export function ServicesManager({
                     onClick={() =>
                       startTransition(async () => {
                         await reorderService(service.id, "up");
+                        router.refresh();
                       })
                     }
                     aria-label="Pomjeri gore"
@@ -87,6 +100,7 @@ export function ServicesManager({
                     onClick={() =>
                       startTransition(async () => {
                         await reorderService(service.id, "down");
+                        router.refresh();
                       })
                     }
                     aria-label="Pomjeri dole"
@@ -115,7 +129,7 @@ export function ServicesManager({
               <div className="flex gap-1.5">
                 <button
                   type="button"
-                  onClick={() => setEditing(service)}
+                  onClick={() => setEditingId(service.id)}
                   className="inline-flex flex-1 items-center justify-center gap-1 border border-cream bg-white px-3 py-2 text-[10px] uppercase tracking-wider text-dark hover:border-rose hover:text-rose cursor-pointer"
                 >
                   <Edit2 size={11} />
@@ -127,6 +141,7 @@ export function ServicesManager({
                   onClick={() =>
                     startTransition(async () => {
                       await toggleServiceActive(service.id, !service.active);
+                      router.refresh();
                     })
                   }
                   className="inline-flex items-center justify-center gap-1 border border-cream bg-white px-3 py-2 text-[10px] uppercase tracking-wider text-dark hover:border-rose hover:text-rose cursor-pointer"
@@ -143,11 +158,14 @@ export function ServicesManager({
         <ServiceForm
           service={editing}
           onClose={() => {
-            setEditing(null);
+            setEditingId(null);
             setCreating(false);
           }}
           onSaved={() => {
-            // revalidatePath na server actionu će refreshovati
+            // Forsiraj RSC re-fetch tako da se nova lista propagira u props.
+            // revalidatePath sam za sebe ne sync-uje klijentske komponente
+            // koje već postoje u DOM-u — treba router.refresh().
+            router.refresh();
           }}
         />
       )}
