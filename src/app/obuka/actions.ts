@@ -2,7 +2,7 @@
 
 import { trainingInquirySchema } from "@/lib/booking/schemas";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { normalizeBaPhone } from "@/lib/utils/phone";
+import { normalizePhone } from "@/lib/utils/phone";
 
 export type TrainingInquiryResult =
   | { ok: true }
@@ -30,7 +30,7 @@ export async function submitTrainingInquiry(
   const sb = createAdminClient();
   const { error } = await sb.from("training_inquiries").insert({
     name: parsed.data.name,
-    phone: normalizeBaPhone(parsed.data.phone),
+    phone: normalizePhone(parsed.data.phone),
     email: parsed.data.email || null,
     message: parsed.data.message || null,
   });

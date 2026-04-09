@@ -4,7 +4,7 @@ import { addMinutes } from "date-fns";
 import { redirect } from "next/navigation";
 import { bookingFormSchema } from "@/lib/booking/schemas";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { normalizeBaPhone } from "@/lib/utils/phone";
+import { normalizePhone } from "@/lib/utils/phone";
 
 export type CreateAppointmentResult =
   | { ok: true }
@@ -80,7 +80,7 @@ export async function createAppointment(
     .insert({
       service_id: parsed.data.service_id,
       client_name: parsed.data.client_name,
-      client_phone: normalizeBaPhone(parsed.data.client_phone),
+      client_phone: normalizePhone(parsed.data.client_phone),
       client_email: parsed.data.client_email || null,
       start_time: start.toISOString(),
       end_time: end.toISOString(),

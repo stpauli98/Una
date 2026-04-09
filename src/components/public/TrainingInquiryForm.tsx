@@ -83,7 +83,7 @@ export function TrainingInquiryForm() {
           autoComplete="tel"
           disabled={pending}
           className="w-full border border-cream bg-marble px-3.5 py-2.5 text-sm text-dark placeholder:text-light focus:border-rose focus:outline-none disabled:opacity-60"
-          placeholder="065 123 456"
+          placeholder="065 123 456 ili +49 151 23456789"
         />
         {fieldErrors.phone && (
           <p className="mt-1 text-xs text-red-600">{fieldErrors.phone[0]}</p>

@@ -1,43 +1,54 @@
+import {
+  parsePhoneNumberFromString,
+  isValidPhoneNumber,
+  type CountryCode,
+} from "libphonenumber-js";
+
 /**
- * BA/RS telefon — normalizacija i validacija.
+ * Phone validacija i normalizacija.
  *
- * Prihvaćeni prefiksi za mobilne mreže u BiH:
- *   061, 062, 063 (BH Telecom / HT Eronet — FBiH)
- *   065, 066, 067 (Telekom Srpske / m:tel — RS)
+ * Podrazumijevana zemlja je BA (Bosna i Hercegovina) — dakle lokalni format
+ * `065 810 323` se tretira kao BA mobilni. Međutim, broj koji počinje sa
+ * `+` (E.164) ili `00` se parsira kao internacionalni, pa se dijaspora
+ * i turisti mogu prijaviti sa bilo kojeg broja u svijetu.
  */
 
-const MOBILE_PREFIXES = [
-  "61",
-  "62",
-  "63",
-  "64",
-  "65",
-  "66",
-  "67",
-] as const;
+const DEFAULT_COUNTRY: CountryCode = "BA";
 
 /**
- * Vraća broj u kanonskoj formi `+387XXXXXXXX`.
- * Ne validira — samo normalizuje format.
+ * Vraća broj u E.164 formatu (`+XXXXXXXXXXX`). Ako ne uspije parse,
+ * vraća original kao fallback.
  */
-export function normalizeBaPhone(input: string): string {
-  let d = input.replace(/[^\d]/g, "");
-  if (d.startsWith("00")) d = d.slice(2);
-  if (d.startsWith("0")) d = "387" + d.slice(1);
-  return "+" + d;
+export function normalizePhone(
+  input: string,
+  defaultCountry: CountryCode = DEFAULT_COUNTRY,
+): string {
+  const parsed = parsePhoneNumberFromString(input, defaultCountry);
+  return parsed ? parsed.number : input;
 }
 
 /**
- * Provjerava da li je ulaz validan BA mobilni broj.
- * Mora biti oblik `387<prefix>XXXXXXX` gdje je prefix iz `MOBILE_PREFIXES`
- * i ukupan broj cifara iza "387" je 8 ili 9.
+ * Provjerava da li je ulaz validan međunarodni ili lokalni broj.
+ * Lokalni brojevi bez country code-a se interpretiraju kao BA.
  */
-export function isValidBaPhone(input: string): boolean {
-  if (!input) return false;
-  const n = normalizeBaPhone(input).replace("+", "");
-  if (!n.startsWith("387")) return false;
-  const rest = n.slice(3);
-  if (rest.length < 8 || rest.length > 9) return false;
-  const prefix = rest.slice(0, 2);
-  return (MOBILE_PREFIXES as readonly string[]).includes(prefix);
+export function isValidPhone(
+  input: string,
+  defaultCountry: CountryCode = DEFAULT_COUNTRY,
+): boolean {
+  if (!input || !input.trim()) return false;
+  try {
+    return isValidPhoneNumber(input, defaultCountry);
+  } catch {
+    return false;
+  }
 }
+
+// ─── Backwards-compatible aliases ───────────────────────────────────────
+// Stariji kod i dalje importuje `normalizeBaPhone` / `isValidBaPhone`.
+// Održavamo ove nazive da se ne polomi postojeći import graf.
+
+/** @deprecated Use `normalizePhone` instead — sada podržava i međunarodne brojeve. */
+export const normalizeBaPhone = normalizePhone;
+
+/** @deprecated Use `isValidPhone` instead — sada podržava i međunarodne brojeve. */
+export const isValidBaPhone = isValidPhone;

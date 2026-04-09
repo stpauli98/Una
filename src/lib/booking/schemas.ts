@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isValidBaPhone } from "@/lib/utils/phone";
+import { isValidPhone } from "@/lib/utils/phone";
 
 /**
  * Zod shema za booking formu (Step 3).
@@ -17,7 +17,10 @@ export const bookingFormSchema = z.object({
     .max(100, "Maksimalno 100 karaktera"),
   client_phone: z
     .string()
-    .refine(isValidBaPhone, "Neispravan broj telefona (npr. 065 123 456)"),
+    .refine(
+      isValidPhone,
+      "Neispravan broj telefona. Primjer: 065 123 456 ili +49 151 23456789",
+    ),
   client_email: z
     .string()
     .email("Neispravna email adresa")
@@ -38,7 +41,10 @@ export const trainingInquirySchema = z.object({
   name: z.string().min(2, "Unesite ime i prezime").max(100),
   phone: z
     .string()
-    .refine(isValidBaPhone, "Neispravan broj telefona"),
+    .refine(
+      isValidPhone,
+      "Neispravan broj telefona. Primjer: 065 123 456 ili +49 151 23456789",
+    ),
   email: z
     .string()
     .email("Neispravna email adresa")
