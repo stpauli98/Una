@@ -11,6 +11,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { AppointmentRow } from "@/components/admin/AppointmentRow";
+import { TerminiToolbar } from "@/components/admin/TerminiToolbar";
 import { cn } from "@/lib/utils/cn";
 
 export const metadata: Metadata = {
@@ -77,11 +78,21 @@ export default async function AdminTerminiPage({
 
   const { data: appointments } = await query;
 
+  // Usluge za ManualAppointmentForm dropdown
+  const { data: servicesData } = await sb
+    .from("services")
+    .select("*")
+    .eq("bookable", true)
+    .eq("active", true)
+    .order("order_index");
+  const services = servicesData ?? [];
+
   return (
     <div>
       <PageHeader
         title="Termini"
         subtitle={`${appointments?.length ?? 0} zabilježenih`}
+        action={<TerminiToolbar services={services} />}
       />
 
       <div className="p-5 md:p-8">

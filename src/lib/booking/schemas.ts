@@ -54,3 +54,33 @@ export const trainingInquirySchema = z.object({
 });
 
 export type TrainingInquiryInput = z.infer<typeof trainingInquirySchema>;
+
+/**
+ * Zod shema za manualni booking iz admin panela.
+ * Razlika od public booking scheme: nema consent polja, dozvoljava force
+ * parametar za zaobilaženje konflikt provjere, min_hours_before se ne
+ * primjenjuje (admin unosi na svoj rizik).
+ */
+export const manualAppointmentSchema = z.object({
+  service_id: z.number().int().positive(),
+  start_time: z.string().datetime({ message: "Neispravan format vremena" }),
+  client_name: z
+    .string()
+    .min(2, "Unesite ime i prezime")
+    .max(100, "Maksimalno 100 karaktera"),
+  client_phone: z
+    .string()
+    .refine(
+      isValidPhone,
+      "Neispravan broj telefona. Primjer: 065 123 456 ili +49 151 23456789",
+    ),
+  client_email: z
+    .string()
+    .email("Neispravna email adresa")
+    .optional()
+    .or(z.literal("")),
+  notes: z.string().max(500, "Maksimalno 500 karaktera").optional(),
+  force: z.boolean().optional(),
+});
+
+export type ManualAppointmentInput = z.infer<typeof manualAppointmentSchema>;
