@@ -11,6 +11,9 @@ import type {
  * radi u lokalnoj TZ koju browser/server interpretira. Za CI stabilnost
  * to je dovoljno jer svi test datumi koriste isti sistem.
  *
+ * Slot grid je fiksnih 30 minuta (SLOT_INTERVAL_MIN). Trajanje usluge se
+ * koristi samo za overlap check — posljednji slot mora završiti ≤ close.
+ *
  * Datumi:
  *   2026-04-06 — PONEDJELJAK
  *   2026-04-07 — utorak (weekday: 17:00–21:00)
@@ -37,7 +40,7 @@ const at = (y: number, m: number, d: number, h: number, min = 0) =>
 const NOW_FAR = at(2026, 4, 6, 10, 0);
 
 describe("computeAvailableSlots — weekday (utorak)", () => {
-  it("60-min usluga, bez postojećih → slotovi 17:00, 18:00, 19:00, 20:00", () => {
+  it("60-min usluga, bez postojećih → slotovi na 30-min gridu 17:00..20:00", () => {
     const slots = computeAvailableSlots({
       date: day(2026, 4, 7),
       durationMin: 60,
@@ -45,10 +48,18 @@ describe("computeAvailableSlots — weekday (utorak)", () => {
       existing: [],
       blocked: [],
     });
-    expect(hhmm(slots)).toEqual(["17:00", "18:00", "19:00", "20:00"]);
+    expect(hhmm(slots)).toEqual([
+      "17:00",
+      "17:30",
+      "18:00",
+      "18:30",
+      "19:00",
+      "19:30",
+      "20:00",
+    ]);
   });
 
-  it("120-min usluga, bez postojećih → 17:00, 19:00 (20:00 bi završio u 22:00)", () => {
+  it("120-min usluga, bez postojećih → slotovi na 30-min gridu dok end ≤ close", () => {
     const slots = computeAvailableSlots({
       date: day(2026, 4, 7),
       durationMin: 120,
@@ -56,10 +67,18 @@ describe("computeAvailableSlots — weekday (utorak)", () => {
       existing: [],
       blocked: [],
     });
-    expect(hhmm(slots)).toEqual(["17:00", "19:00"]);
+    // 19:00 start → 21:00 end (tačno close, ok)
+    // 19:30 start → 21:30 end (prelazi close, isključeno)
+    expect(hhmm(slots)).toEqual([
+      "17:00",
+      "17:30",
+      "18:00",
+      "18:30",
+      "19:00",
+    ]);
   });
 
-  it("180-min usluga, bez postojećih → samo 17:00 (17→20 ok, 20→23 nema vremena)", () => {
+  it("180-min usluga, bez postojećih → slotovi na 30-min gridu dok end ≤ close", () => {
     const slots = computeAvailableSlots({
       date: day(2026, 4, 7),
       durationMin: 180,
@@ -67,10 +86,12 @@ describe("computeAvailableSlots — weekday (utorak)", () => {
       existing: [],
       blocked: [],
     });
-    expect(hhmm(slots)).toEqual(["17:00"]);
+    // 18:00 start → 21:00 end (tačno close, ok)
+    // 18:30 start → 21:30 end (prelazi close, isključeno)
+    expect(hhmm(slots)).toEqual(["17:00", "17:30", "18:00"]);
   });
 
-  it("postojeći termin 18:00–19:00 uklanja 18:00 slot ali ostavlja 17:00 i 19:00", () => {
+  it("postojeći termin 18:00–19:00 blokira preklapajuće slotove, ostavlja ostale", () => {
     const existing: ExistingAppointment[] = [
       { start: at(2026, 4, 7, 18), end: at(2026, 4, 7, 19) },
     ];
@@ -81,10 +102,17 @@ describe("computeAvailableSlots — weekday (utorak)", () => {
       existing,
       blocked: [],
     });
-    expect(hhmm(slots)).toEqual(["17:00", "19:00", "20:00"]);
+    // 17:00 [17-18] granica — NE overlaipuje (end == start) — slobodno
+    // 17:30 [17:30-18:30] — overlaipuje — blokirano
+    // 18:00 [18-19] — overlaipuje — blokirano
+    // 18:30 [18:30-19:30] — overlaipuje — blokirano
+    // 19:00 [19-20] — granica — slobodno
+    // 19:30 [19:30-20:30] — slobodno
+    // 20:00 [20-21] — slobodno
+    expect(hhmm(slots)).toEqual(["17:00", "19:00", "19:30", "20:00"]);
   });
 
-  it("postojeći termin 17:30–18:30 briše 17:00 i 18:00 slot (overlap)", () => {
+  it("postojeći termin 17:30–18:30 blokira sve preklapajuće 60-min slotove", () => {
     const existing: ExistingAppointment[] = [
       { start: at(2026, 4, 7, 17, 30), end: at(2026, 4, 7, 18, 30) },
     ];
@@ -95,12 +123,44 @@ describe("computeAvailableSlots — weekday (utorak)", () => {
       existing,
       blocked: [],
     });
-    expect(hhmm(slots)).toEqual(["19:00", "20:00"]);
+    // 17:00 [17-18] overlaipuje sa [17:30-18:30] — blokirano
+    // 17:30 [17:30-18:30] potpuno preklapa — blokirano
+    // 18:00 [18-19] overlaipuje — blokirano
+    // 18:30 [18:30-19:30] granica — slobodno
+    // 19:00, 19:30, 20:00 — slobodni
+    expect(hhmm(slots)).toEqual(["18:30", "19:00", "19:30", "20:00"]);
+  });
+
+  it("30-min termin u 17:00 → sljedeći 60-min slot je u 17:30 (korisnikov scenario)", () => {
+    // Scenario koji je korisnik opisao u brainstorming-u:
+    // Trepavice 30min u 17:00 → sljedeći klijent bira Šminkanje 60min → 17:30
+    const existing: ExistingAppointment[] = [
+      { start: at(2026, 4, 7, 17, 0), end: at(2026, 4, 7, 17, 30) },
+    ];
+    const slots = computeAvailableSlots({
+      date: day(2026, 4, 7),
+      durationMin: 60,
+      now: NOW_FAR,
+      existing,
+      blocked: [],
+    });
+    // 17:00 [17-18] overlaipuje sa [17:00-17:30] — blokirano
+    // 17:30 [17:30-18:30] granica — SLOBODNO (prvi slobodan odmah poslije)
+    // 18:00, 18:30, 19:00, 19:30, 20:00 — slobodni
+    expect(hhmm(slots)).toEqual([
+      "17:30",
+      "18:00",
+      "18:30",
+      "19:00",
+      "19:30",
+      "20:00",
+    ]);
+    expect(hhmm(slots)[0]).toBe("17:30");
   });
 });
 
 describe("computeAvailableSlots — weekend (subota)", () => {
-  it("60-min usluga, bez postojećih → 16 slotova 05:00..20:00", () => {
+  it("60-min usluga subota, bez postojećih → 31 slot na 30-min gridu", () => {
     const slots = computeAvailableSlots({
       date: day(2026, 4, 11),
       durationMin: 60,
@@ -108,12 +168,15 @@ describe("computeAvailableSlots — weekend (subota)", () => {
       existing: [],
       blocked: [],
     });
-    expect(slots).toHaveLength(16);
+    // 05:00 start → 06:00 end (ok)
+    // Posljednji: 20:00 start → 21:00 end
+    // Broj: od 05:00 do 20:00 u koracima 30 min = 31 slot
+    expect(slots).toHaveLength(31);
     expect(hhmm(slots)[0]).toBe("05:00");
     expect(hhmm(slots).at(-1)).toBe("20:00");
   });
 
-  it("120-min nedjelja, bez postojećih → 05:00, 07:00, ..., 19:00 (8 slotova)", () => {
+  it("120-min nedjelja, bez postojećih → slotovi na 30-min gridu do 19:00 starta", () => {
     const slots = computeAvailableSlots({
       date: day(2026, 4, 12),
       durationMin: 120,
@@ -121,16 +184,11 @@ describe("computeAvailableSlots — weekend (subota)", () => {
       existing: [],
       blocked: [],
     });
-    expect(hhmm(slots)).toEqual([
-      "05:00",
-      "07:00",
-      "09:00",
-      "11:00",
-      "13:00",
-      "15:00",
-      "17:00",
-      "19:00",
-    ]);
+    // 05:00 do 19:00 start (19:00 + 120min = 21:00 = close), svakih 30 min
+    // 05:00, 05:30, ..., 19:00 = 29 slotova
+    expect(slots).toHaveLength(29);
+    expect(hhmm(slots)[0]).toBe("05:00");
+    expect(hhmm(slots).at(-1)).toBe("19:00");
   });
 });
 
@@ -174,14 +232,23 @@ describe("computeAvailableSlots — blokirani datumi", () => {
       existing: [],
       blocked,
     });
-    expect(hhmm(slots)).toEqual(["17:00", "18:00", "19:00", "20:00"]);
+    expect(hhmm(slots)).toEqual([
+      "17:00",
+      "17:30",
+      "18:00",
+      "18:30",
+      "19:00",
+      "19:30",
+      "20:00",
+    ]);
   });
 });
 
 describe("computeAvailableSlots — vremenske granice", () => {
-  it("min_hours_before (24h): 17:00 slot za sljedeci dan kad je sad 18:00 → isključen (< 24h)", () => {
-    // sad: utorak 16:00 → slot u srijedu 17:00 je za 25h (ok, uključen)
-    // sad: utorak 18:00 → slot u srijedu 17:00 je za 23h (isključen)
+  it("min_hours_before (24h): slotovi < 24h od sada su isključeni", () => {
+    // sad: utorak 18:00 → slot u srijedu 17:00 je za 23h → isključen
+    // slot u srijedu 17:30 je za 23.5h → isključen
+    // slot u srijedu 19:00 je za 25h → uključen
     const now = at(2026, 4, 7, 18, 0);
     const slots = computeAvailableSlots({
       date: day(2026, 4, 8),
@@ -191,6 +258,7 @@ describe("computeAvailableSlots — vremenske granice", () => {
       blocked: [],
     });
     expect(hhmm(slots)).not.toContain("17:00");
+    expect(hhmm(slots)).not.toContain("17:30");
     expect(hhmm(slots)).toContain("19:00");
   });
 

@@ -12,6 +12,15 @@ import type {
 } from "@/types/booking";
 import { BOOKING_RULES, getHoursForDay } from "./rules";
 
+/**
+ * Fixed grid korak za generisanje slotova. Nezavisan od trajanja usluge
+ * (Cal.com pattern) — slotovi se uvijek generišu na 30-min granici bez
+ * obzira je li usluga 60, 90, 120 ili 180 minuta. Ovo sprečava gubitak
+ * kratkih prozora između postojećih termina (npr. 30-min termin završen
+ * u 17:30 → sljedeći slot u 17:30 je dostupan).
+ */
+export const SLOT_INTERVAL_MIN = 30;
+
 export type AvailabilityInput = {
   /** Ponoć ciljanog dana (lokalno vrijeme). */
   date: Date;
@@ -33,8 +42,9 @@ export type AvailabilityInput = {
  *   2. Ako je dan > `advance_booking_days` u budućnosti → prazno.
  *   3. Ako je dan blokiran (bilo kojim `BlockedRange`) → prazno.
  *   4. Ako je dan zatvoren (isOpen=false) → prazno.
- *   5. Slotovi idu od `open` vremena u koracima od `durationMin`.
- *      Posljednji slot mora završiti ≤ `close` vremenu.
+ *   5. Slotovi idu od `open` vremena u koracima od `SLOT_INTERVAL_MIN` (30 min).
+ *      Trajanje usluge se koristi samo za overlap check — posljednji slot mora
+ *      završiti ≤ `close` vremenu nakon dodavanja `durationMin`.
  *   6. Svaki slot se odbacuje ako se preklapa sa bilo kojim postojećim terminom.
  *   7. Svaki slot se odbacuje ako je start < `now + min_hours_before`.
  */
@@ -80,7 +90,7 @@ export function computeAvailableSlots(input: AvailabilityInput): Slot[] {
     // 7. min_hours_before
     const hoursFromNow = differenceInHours(cursor, now);
     if (hoursFromNow < BOOKING_RULES.min_hours_before) {
-      cursor = addMinutes(cursor, durationMin);
+      cursor = addMinutes(cursor, SLOT_INTERVAL_MIN);
       continue;
     }
 
@@ -92,7 +102,7 @@ export function computeAvailableSlots(input: AvailabilityInput): Slot[] {
       slots.push({ start: new Date(cursor), end });
     }
 
-    cursor = addMinutes(cursor, durationMin);
+    cursor = addMinutes(cursor, SLOT_INTERVAL_MIN);
   }
 
   return slots;
