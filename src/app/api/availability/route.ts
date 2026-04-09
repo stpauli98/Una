@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { parseISO, startOfDay, endOfDay } from "date-fns";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { computeAvailableSlots } from "@/lib/booking/availability";
+import { hoursMapFromRows } from "@/lib/booking/rules";
 
 // Ova ruta mora uvijek čitati svježe podatke — baza se mijenja u realnom
 // vremenu kada klijenti rezervišu termine. Keš bi prikazao zastarjele slotove.
@@ -58,7 +59,7 @@ export async function GET(req: NextRequest) {
   const dayStart = startOfDay(date).toISOString();
   const dayEnd = endOfDay(date).toISOString();
 
-  const [apptRes, blockedRes] = await Promise.all([
+  const [apptRes, blockedRes, hoursRes] = await Promise.all([
     sb
       .from("appointments")
       .select("start_time,end_time")
@@ -66,6 +67,7 @@ export async function GET(req: NextRequest) {
       .lt("start_time", dayEnd)
       .in("status", ["ceka", "potvrdjen"]),
     sb.from("blocked_dates").select("date_from,date_to"),
+    sb.from("working_hours").select("day_of_week,open_time,close_time,is_open"),
   ]);
 
   if (apptRes.error) {
@@ -73,6 +75,9 @@ export async function GET(req: NextRequest) {
   }
   if (blockedRes.error) {
     return NextResponse.json({ error: blockedRes.error.message }, { status: 500 });
+  }
+  if (hoursRes.error) {
+    return NextResponse.json({ error: hoursRes.error.message }, { status: 500 });
   }
 
   const slots = computeAvailableSlots({
@@ -87,6 +92,7 @@ export async function GET(req: NextRequest) {
       from: parseISO(b.date_from),
       to: parseISO(b.date_to),
     })),
+    hoursByWeekday: hoursMapFromRows(hoursRes.data ?? []),
   });
 
   return NextResponse.json({
