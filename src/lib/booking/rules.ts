@@ -28,3 +28,33 @@ export function getHoursForDay(
   }
   return { open: "00:00", close: "00:00", isOpen: false };
 }
+
+/**
+ * Map weekday (0=nedjelja..6=subota) → radno vrijeme za taj dan.
+ * Prazne ćelije znače "dan ne postoji u mapi" → fallback na BOOKING_RULES.
+ */
+export type DailyHoursMap = Record<number, DailyHours>;
+
+/**
+ * Pretvara `working_hours` DB redove u `DailyHoursMap`.
+ * Tolera redove gdje `open_time`/`close_time` imaju sekunde ("17:00:00")
+ * skraćivanjem na "HH:mm".
+ */
+export function hoursMapFromRows(
+  rows: Array<{
+    day_of_week: number;
+    open_time: string;
+    close_time: string;
+    is_open: boolean;
+  }>,
+): DailyHoursMap {
+  const map: DailyHoursMap = {};
+  for (const row of rows) {
+    map[row.day_of_week] = {
+      open: row.open_time.slice(0, 5),
+      close: row.close_time.slice(0, 5),
+      isOpen: row.is_open,
+    };
+  }
+  return map;
+}

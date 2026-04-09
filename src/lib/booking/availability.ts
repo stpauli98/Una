@@ -10,7 +10,7 @@ import type {
   ExistingAppointment,
   Slot,
 } from "@/types/booking";
-import { BOOKING_RULES, getHoursForDay } from "./rules";
+import { BOOKING_RULES, getHoursForDay, type DailyHoursMap } from "./rules";
 
 /**
  * Fixed grid korak za generisanje slotova. Nezavisan od trajanja usluge
@@ -32,6 +32,12 @@ export type AvailabilityInput = {
   existing: ExistingAppointment[];
   /** Blokirani datumi iz `blocked_dates`. */
   blocked: BlockedRange[];
+  /**
+   * Radno vrijeme po danu u sedmici (0=ned..6=sub). Ako nije prosljeđeno,
+   * fallback na BOOKING_RULES. Ako je prosljeđeno ali ključ za konkretan
+   * dan nedostaje, takođe fallback.
+   */
+  hoursByWeekday?: DailyHoursMap;
 };
 
 /**
@@ -68,8 +74,9 @@ export function computeAvailableSlots(input: AvailabilityInput): Slot[] {
     if (target >= from && target <= to) return [];
   }
 
-  // 4. Radno vrijeme
-  const hours = getHoursForDay(target.getDay());
+  // 4. Radno vrijeme — iz DB mape ako postoji, inače iz BOOKING_RULES
+  const weekday = target.getDay();
+  const hours = input.hoursByWeekday?.[weekday] ?? getHoursForDay(weekday);
   if (!hours.isOpen) return [];
 
   const [openH, openM] = hours.open.split(":").map(Number);

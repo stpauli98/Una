@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { computeAvailableSlots } from "@/lib/booking/availability";
+import type { DailyHoursMap } from "@/lib/booking/rules";
 import type {
   BlockedRange,
   ExistingAppointment,
@@ -231,6 +232,105 @@ describe("computeAvailableSlots — blokirani datumi", () => {
       now: NOW_FAR,
       existing: [],
       blocked,
+    });
+    expect(hhmm(slots)).toEqual([
+      "17:00",
+      "17:30",
+      "18:00",
+      "18:30",
+      "19:00",
+      "19:30",
+      "20:00",
+    ]);
+  });
+});
+
+describe("computeAvailableSlots — hoursByWeekday override", () => {
+  it("isključen dan → prazan array", () => {
+    const closedTuesday: DailyHoursMap = {
+      2: { open: "00:00", close: "00:00", isOpen: false },
+    };
+    const slots = computeAvailableSlots({
+      date: day(2026, 4, 7), // utorak
+      durationMin: 60,
+      now: NOW_FAR,
+      existing: [],
+      blocked: [],
+      hoursByWeekday: closedTuesday,
+    });
+    expect(slots).toEqual([]);
+  });
+
+  it("kraće radno vrijeme smanjuje broj slotova", () => {
+    const shortTuesday: DailyHoursMap = {
+      2: { open: "19:00", close: "21:00", isOpen: true },
+    };
+    const slots = computeAvailableSlots({
+      date: day(2026, 4, 7),
+      durationMin: 60,
+      now: NOW_FAR,
+      existing: [],
+      blocked: [],
+      hoursByWeekday: shortTuesday,
+    });
+    // 19:00 [19-20] OK, 19:30 [19:30-20:30] OK, 20:00 [20-21] OK
+    expect(hhmm(slots)).toEqual(["19:00", "19:30", "20:00"]);
+  });
+
+  it("proširenje radnog vremena povećava broj slotova (uzima min_hours_before u obzir)", () => {
+    const longTuesday: DailyHoursMap = {
+      2: { open: "08:00", close: "12:00", isOpen: true },
+    };
+    // NOW_FAR = 2026-04-06 10:00. Utorak 08:00 je 22h poslije → isključeno.
+    // Utorak 09:00 je 23h poslije → isključeno.
+    // Utorak 09:30 je 23.5h → isključeno.
+    // Utorak 10:00 je 24h → uključeno (border).
+    // Utorak 10:30 → uključeno.
+    // Utorak 11:00 → uključeno (11:00 start + 60min = 12:00 close).
+    const slots = computeAvailableSlots({
+      date: day(2026, 4, 7),
+      durationMin: 60,
+      now: NOW_FAR,
+      existing: [],
+      blocked: [],
+      hoursByWeekday: longTuesday,
+    });
+    expect(hhmm(slots)).toEqual(["10:00", "10:30", "11:00"]);
+  });
+
+  it("parcijalna mapa: nedostaje ključ za dan → BOOKING_RULES default", () => {
+    const partialMap: DailyHoursMap = {
+      1: { open: "10:00", close: "12:00", isOpen: true }, // samo ponedjeljak
+    };
+    // Utorak (day_of_week=2) nije u mapi, treba pasti na BOOKING_RULES (17-21)
+    const slots = computeAvailableSlots({
+      date: day(2026, 4, 7),
+      durationMin: 60,
+      now: NOW_FAR,
+      existing: [],
+      blocked: [],
+      hoursByWeekday: partialMap,
+    });
+    expect(hhmm(slots)).toEqual([
+      "17:00",
+      "17:30",
+      "18:00",
+      "18:30",
+      "19:00",
+      "19:30",
+      "20:00",
+    ]);
+  });
+
+  it("prazna mapa → svi dani fallback-uju na BOOKING_RULES", () => {
+    const emptyMap: DailyHoursMap = {};
+    const slots = computeAvailableSlots({
+      date: day(2026, 4, 7),
+      durationMin: 60,
+      now: NOW_FAR,
+      existing: [],
+      blocked: [],
+      hoursByWeekday: emptyMap,
     });
     expect(hhmm(slots)).toEqual([
       "17:00",
