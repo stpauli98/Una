@@ -1,11 +1,20 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { parseISO, startOfDay, endOfDay } from "date-fns";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { computeAvailableSlots } from "@/lib/booking/availability";
+
+// Ova ruta mora uvijek čitati svježe podatke — baza se mijenja u realnom
+// vremenu kada klijenti rezervišu termine. Keš bi prikazao zastarjele slotove.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 /**
  * GET /api/availability?date=YYYY-MM-DD&service_id=N
  * Vraća listu raspoloživih slotova za dati dan i uslugu.
+ *
+ * Koristi service role klijent (zaobilazi RLS) jer anon nema SELECT
+ * privilegije na `appointments` tabeli. Browser i dalje dobija samo
+ * izračunatu listu slobodnih slotova — nikad sirove podatke o terminima.
  */
 export async function GET(req: NextRequest) {
   const dateStr = req.nextUrl.searchParams.get("date");
@@ -31,7 +40,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Neispravan datum" }, { status: 400 });
   }
 
-  const sb = await createClient();
+  const sb = createAdminClient();
 
   const { data: service, error: serviceError } = await sb
     .from("services")
