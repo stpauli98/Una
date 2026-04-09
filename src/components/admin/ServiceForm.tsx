@@ -85,15 +85,22 @@ export function ServiceForm({ service, onClose, onSaved }: Props) {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Trajanje (min)">
-              <input
+            <Field label="Trajanje">
+              <select
                 name="duration_min"
-                type="number"
-                min={0}
-                step={15}
                 defaultValue={service?.duration_min ?? ""}
                 className="w-full border border-cream bg-marble px-3 py-2 text-sm text-dark focus:border-rose focus:outline-none"
-              />
+              >
+                <option value="">— (bez vremenskog trajanja)</option>
+                <option value="30">30 min</option>
+                <option value="60">1h</option>
+                <option value="90">1h 30min</option>
+                <option value="120">2h</option>
+                <option value="150">2h 30min</option>
+                <option value="180">3h</option>
+                <option value="210">3h 30min</option>
+                <option value="240">4h</option>
+              </select>
             </Field>
             <Field label="Napomena trajanja">
               <input

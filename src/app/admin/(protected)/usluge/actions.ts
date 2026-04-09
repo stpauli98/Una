@@ -1,8 +1,8 @@
 "use server";
 
-import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { serviceSchema, type ServiceInput } from "@/lib/services/schema";
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -14,21 +14,6 @@ async function requireAuth() {
   if (!user) throw new Error("Nije autorizovan");
   return sb;
 }
-
-const serviceSchema = z.object({
-  name: z.string().min(2).max(100),
-  description: z.string().max(500).optional().nullable(),
-  price: z.number().nonnegative(),
-  price_note: z.string().max(100).optional().nullable(),
-  duration_min: z.number().int().positive().nullable(),
-  duration_note: z.string().max(100).optional().nullable(),
-  category: z.enum(["sminkanje", "pedikir", "trepavice", "obuka"]),
-  bookable: z.boolean(),
-  variable_price: z.boolean(),
-  active: z.boolean(),
-});
-
-type ServiceInput = z.infer<typeof serviceSchema>;
 
 function parseFormData(fd: FormData): ServiceInput {
   const durationStr = String(fd.get("duration_min") ?? "");
