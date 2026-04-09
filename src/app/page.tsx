@@ -6,6 +6,7 @@ import { Hero } from "@/components/public/Hero";
 import { SectionHeader } from "@/components/public/SectionHeader";
 import { ServiceCard } from "@/components/public/ServiceCard";
 import { TestimonialsCarousel } from "@/components/public/TestimonialsCarousel";
+import { LocalBusinessJsonLd } from "@/components/public/LocalBusinessJsonLd";
 import { createClient } from "@/lib/supabase/server";
 import { BUSINESS } from "@/lib/constants/business";
 
@@ -24,6 +25,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <LocalBusinessJsonLd />
       <Nav overHero />
       <main>
         <Hero />
