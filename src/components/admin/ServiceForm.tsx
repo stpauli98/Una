@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Info } from "lucide-react";
 import { createService, updateService } from "@/app/admin/(protected)/usluge/actions";
 import type { Database } from "@/types/database";
 
@@ -16,6 +17,19 @@ export function ServiceForm({ service, onClose, onSaved }: Props) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
+  // Controlled state — kontroliše vidljivost note polja.
+  // price_note → vidljiv samo kad variable_price je true
+  // duration_note → vidljiv samo kad duration_min je "" (bez vremenskog trajanja)
+  const [variablePrice, setVariablePrice] = useState<boolean>(
+    service?.variable_price ?? false,
+  );
+  const [durationMin, setDurationMin] = useState<string>(
+    service?.duration_min != null ? String(service.duration_min) : "",
+  );
+
+  const showPriceNote = variablePrice;
+  const showDurationNote = durationMin === "";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-dark/40 p-4">
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto border border-cream bg-white">
@@ -30,6 +44,15 @@ export function ServiceForm({ service, onClose, onSaved }: Props) {
             e.preventDefault();
             setError(null);
             const fd = new FormData(e.currentTarget);
+            // Smart cleanup: ako note polje nije relevantno (sakrivene
+            // konfiguracije), forsiraj prazan string da DB ne ostane sa
+            // stale tekstom iz prethodnog editovanja.
+            if (!showPriceNote) {
+              fd.set("price_note", "");
+            }
+            if (!showDurationNote) {
+              fd.set("duration_note", "");
+            }
             startTransition(async () => {
               const result = service
                 ? await updateService(service.id, fd)
@@ -62,55 +85,46 @@ export function ServiceForm({ service, onClose, onSaved }: Props) {
             />
           </Field>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Cijena (KM)">
-              <input
-                name="price"
-                type="number"
-                min={0}
-                step="0.01"
-                required
-                defaultValue={service?.price ?? ""}
-                className="w-full border border-cream bg-marble px-3 py-2 text-sm text-dark focus:border-rose focus:outline-none"
-              />
-            </Field>
-            <Field label="Napomena cijene">
-              <input
-                name="price_note"
-                placeholder="npr. od 150 KM"
-                defaultValue={service?.price_note ?? ""}
-                className="w-full border border-cream bg-marble px-3 py-2 text-sm text-dark focus:border-rose focus:outline-none"
-              />
-            </Field>
-          </div>
+          <Field label="Cijena (KM)">
+            <input
+              name="price"
+              type="number"
+              min={0}
+              step="0.01"
+              required
+              defaultValue={service?.price ?? ""}
+              className="w-full border border-cream bg-marble px-3 py-2 text-sm text-dark focus:border-rose focus:outline-none"
+            />
+          </Field>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Trajanje">
-              <select
-                name="duration_min"
-                defaultValue={service?.duration_min ?? ""}
-                className="w-full border border-cream bg-marble px-3 py-2 text-sm text-dark focus:border-rose focus:outline-none"
-              >
-                <option value="">— (bez vremenskog trajanja)</option>
-                <option value="30">30 min</option>
-                <option value="60">1h</option>
-                <option value="90">1h 30min</option>
-                <option value="120">2h</option>
-                <option value="150">2h 30min</option>
-                <option value="180">3h</option>
-                <option value="210">3h 30min</option>
-                <option value="240">4h</option>
-              </select>
-            </Field>
-            <Field label="Napomena trajanja">
-              <input
-                name="duration_note"
-                placeholder="npr. 5 dana"
-                defaultValue={service?.duration_note ?? ""}
-                className="w-full border border-cream bg-marble px-3 py-2 text-sm text-dark focus:border-rose focus:outline-none"
-              />
-            </Field>
-          </div>
+          <Field label="Trajanje">
+            <select
+              name="duration_min"
+              value={durationMin}
+              onChange={(e) => setDurationMin(e.target.value)}
+              className="w-full border border-cream bg-marble px-3 py-2 text-sm text-dark focus:border-rose focus:outline-none"
+            >
+              <option value="">— (bez vremenskog trajanja)</option>
+              <option value="30">30 min</option>
+              <option value="60">1h</option>
+              <option value="90">1h 30min</option>
+              <option value="120">2h</option>
+              <option value="150">2h 30min</option>
+              <option value="180">3h</option>
+              <option value="210">3h 30min</option>
+              <option value="240">4h</option>
+            </select>
+          </Field>
+
+          {showDurationNote && (
+            <ConditionalField
+              label="Napomena trajanja"
+              hint='Pošto je trajanje "—" (bez minuta), ovdje napišite čime ga zamjenjujete. Primjer: "5 dana", "po dogovoru", "1 sedmica". Ovaj tekst zamjenjuje brojku trajanja na javnom sajtu.'
+              name="duration_note"
+              placeholder="npr. 5 dana"
+              defaultValue={service?.duration_note ?? ""}
+            />
+          )}
 
           <Field label="Kategorija">
             <select
@@ -134,8 +148,9 @@ export function ServiceForm({ service, onClose, onSaved }: Props) {
             />
             <Checkbox
               name="variable_price"
-              label="Varijabilna cijena (npr. terensko)"
-              defaultChecked={service?.variable_price ?? false}
+              label="Varijabilna cijena (npr. terensko, po dogovoru)"
+              checked={variablePrice}
+              onChange={(checked) => setVariablePrice(checked)}
             />
             <Checkbox
               name="active"
@@ -143,6 +158,16 @@ export function ServiceForm({ service, onClose, onSaved }: Props) {
               defaultChecked={service?.active ?? true}
             />
           </div>
+
+          {showPriceNote && (
+            <ConditionalField
+              label="Napomena cijene"
+              hint='Pošto je cijena varijabilna, ovdje napišite kako se prikazuje klijentu. Primjer: "od 150 KM", "po dogovoru", "od 50 KM/sat". Ovaj tekst zamjenjuje broj iz polja "Cijena (KM)" na javnom sajtu.'
+              name="price_note"
+              placeholder="npr. od 150 KM"
+              defaultValue={service?.price_note ?? ""}
+            />
+          )}
 
           {error && (
             <div className="border border-red-200 bg-red-50 p-3 text-xs text-red-700">
@@ -190,23 +215,75 @@ function Field({
   );
 }
 
-function Checkbox({
-  name,
+/**
+ * Polje koje se prikazuje samo pod određenim uslovom (npr. varijabilna
+ * cijena ili nemerljivo trajanje). Ima mali "info" baner koji objašnjava
+ * šta polje radi i daje konkretne primjere.
+ */
+function ConditionalField({
   label,
-  defaultChecked,
+  hint,
+  name,
+  placeholder,
+  defaultValue,
 }: {
-  name: string;
   label: string;
-  defaultChecked: boolean;
+  hint: string;
+  name: string;
+  placeholder: string;
+  defaultValue: string;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2 text-[12px] text-body">
+    <div className="rounded border border-rose/30 bg-rose/[0.04] p-3">
+      <label className="mb-1.5 block text-[11px] uppercase tracking-wider text-dark">
+        {label}
+      </label>
+      <div className="mb-2 flex gap-2 text-[11px] leading-relaxed text-body">
+        <Info size={12} className="mt-0.5 shrink-0 text-rose" strokeWidth={2} />
+        <span>{hint}</span>
+      </div>
       <input
-        type="checkbox"
         name={name}
-        defaultChecked={defaultChecked}
-        className="accent-rose"
+        placeholder={placeholder}
+        defaultValue={defaultValue}
+        className="w-full border border-cream bg-white px-3 py-2 text-sm text-dark focus:border-rose focus:outline-none"
       />
+    </div>
+  );
+}
+
+type CheckboxProps = {
+  name: string;
+  label: string;
+} & (
+  | { defaultChecked: boolean; checked?: never; onChange?: never }
+  | {
+      defaultChecked?: never;
+      checked: boolean;
+      onChange: (checked: boolean) => void;
+    }
+);
+
+function Checkbox(props: CheckboxProps) {
+  const { name, label } = props;
+  return (
+    <label className="flex cursor-pointer items-center gap-2 text-[12px] text-body">
+      {"checked" in props && props.checked !== undefined ? (
+        <input
+          type="checkbox"
+          name={name}
+          checked={props.checked}
+          onChange={(e) => props.onChange(e.target.checked)}
+          className="accent-rose"
+        />
+      ) : (
+        <input
+          type="checkbox"
+          name={name}
+          defaultChecked={props.defaultChecked}
+          className="accent-rose"
+        />
+      )}
       {label}
     </label>
   );
