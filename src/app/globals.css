@@ -18,26 +18,28 @@
   --font-body: var(--font-dm), "DM Sans", system-ui, sans-serif;
 }
 
-body {
-  background: var(--color-marble);
-  color: var(--color-body);
-  font-family: var(--font-body);
-  -webkit-tap-highlight-color: transparent;
-}
+@layer base {
+  body {
+    background: var(--color-marble);
+    color: var(--color-body);
+    font-family: var(--font-body);
+    -webkit-tap-highlight-color: transparent;
+  }
 
-::selection {
-  background: var(--color-blush);
-  color: var(--color-dark);
-}
+  ::selection {
+    background: var(--color-blush);
+    color: var(--color-dark);
+  }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: var(--font-display);
-  color: var(--color-dark);
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    color: var(--color-dark);
+  }
 }
 
 @keyframes fadeUp {

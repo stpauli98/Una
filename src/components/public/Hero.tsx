@@ -28,13 +28,13 @@ export function Hero() {
           <div className="h-px w-8 bg-gold-light" />
         </div>
 
-        <h1 className="mb-5 font-display text-[44px] font-light leading-[1.08] tracking-wide text-white md:text-[64px] lg:text-[80px]">
+        <h1 className="mb-5 font-display text-[44px] font-normal leading-[1.08] tracking-wide text-white drop-shadow-sm md:text-[64px] lg:text-[80px]">
           Osmijeh je
           <br />
-          <em className="italic">najljepša</em> šminka
+          <em className="italic font-light">najljepša</em> šminka
         </h1>
 
-        <p className="mx-auto mb-8 max-w-[320px] text-[13px] leading-relaxed tracking-wide text-white/55 md:max-w-[440px] md:text-[15px]">
+        <p className="mx-auto mb-8 max-w-[320px] text-[13px] leading-relaxed tracking-wide text-white/80 md:max-w-[440px] md:text-[15px]">
           Profesionalno šminkanje, pedikir i njega trepavica. Vaša prirodna
           ljepota, naglašena sa stilom.
         </p>
