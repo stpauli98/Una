@@ -10,9 +10,11 @@ export function ChangePasswordForm() {
 
   return (
     <form
-      action={(fd) => {
+      onSubmit={(e) => {
+        e.preventDefault();
         setError(null);
         setSuccess(false);
+        const fd = new FormData(e.currentTarget);
         const newPass = String(fd.get("new_password") ?? "");
         const confirmPass = String(fd.get("confirm_password") ?? "");
         if (newPass !== confirmPass) {

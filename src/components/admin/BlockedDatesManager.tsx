@@ -18,11 +18,17 @@ export function BlockedDatesManager({ dates }: { dates: BlockedDate[] }) {
   return (
     <div>
       <form
-        action={(fd) => {
+        onSubmit={(e) => {
+          e.preventDefault();
           setError(null);
+          const fd = new FormData(e.currentTarget);
           startTransition(async () => {
             const r = await addBlockedDate(fd);
-            if (!r.ok) setError(r.error);
+            if (r.ok) {
+              (e.target as HTMLFormElement).reset();
+            } else {
+              setError(r.error);
+            }
           });
         }}
         className="mb-4 grid gap-2 border border-cream bg-white p-4 md:grid-cols-[auto_auto_1fr_auto]"

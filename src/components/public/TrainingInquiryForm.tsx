@@ -29,9 +29,11 @@ export function TrainingInquiryForm() {
 
   return (
     <form
-      action={(formData) => {
+      onSubmit={(e) => {
+        e.preventDefault();
         setError(null);
         setFieldErrors({});
+        const formData = new FormData(e.currentTarget);
         startTransition(async () => {
           const result = await submitTrainingInquiry(formData);
           if (result.ok) {

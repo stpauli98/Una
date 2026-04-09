@@ -26,8 +26,10 @@ export function ServiceForm({ service, onClose, onSaved }: Props) {
         </div>
 
         <form
-          action={(fd) => {
+          onSubmit={(e) => {
+            e.preventDefault();
             setError(null);
+            const fd = new FormData(e.currentTarget);
             startTransition(async () => {
               const result = service
                 ? await updateService(service.id, fd)

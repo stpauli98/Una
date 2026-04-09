@@ -38,8 +38,10 @@ function WorkingHourRow({ hour }: { hour: WorkingHour }) {
 
   return (
     <form
-      action={(fd) => {
+      onSubmit={(e) => {
+        e.preventDefault();
         setSaved(false);
+        const fd = new FormData(e.currentTarget);
         fd.set("day_of_week", String(hour.day_of_week));
         startTransition(async () => {
           const r = await updateWorkingHour(fd);

@@ -51,9 +51,11 @@ export function StepDetails({ service, startTimeIso, onBack }: Props) {
       </div>
 
       <form
-        action={(formData) => {
+        onSubmit={(e) => {
+          e.preventDefault();
           setError(null);
           setFieldErrors({});
+          const formData = new FormData(e.currentTarget);
           formData.set("service_id", String(service.id));
           formData.set("start_time", startTimeIso);
           startTransition(async () => {

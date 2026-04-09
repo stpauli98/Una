@@ -54,9 +54,11 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
         </div>
 
         <form
-          action={(fd) => {
+          onSubmit={(e) => {
+            e.preventDefault();
             setError(null);
             setMessage(null);
+            const fd = new FormData(e.currentTarget);
             fd.set("category", activeCategory);
             startTransition(async () => {
               const result = await uploadGalleryImages(fd);
