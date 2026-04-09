@@ -10,8 +10,11 @@ import {
 import { StatusBadge } from "./StatusBadge";
 import { formatDate, formatTime } from "@/lib/utils/format";
 import { waLink } from "@/lib/utils/wa";
-
-type AppointmentStatus = "ceka" | "potvrdjen" | "otkazan" | "zavrsen";
+import {
+  buildAppointmentWaMessage,
+  waButtonLabel,
+  type AppointmentStatus,
+} from "@/lib/utils/wa-messages";
 
 type Appointment = {
   id: number;
@@ -31,7 +34,13 @@ export function AppointmentRow({ appointment }: { appointment: Appointment }) {
   const startDate = new Date(appointment.start_time);
   const serviceName = appointment.services?.name ?? "—";
 
-  const waMessage = `Zdravo ${appointment.client_name.split(" ")[0]}, Una iz UP Beauty Studio ovdje. Potvrđujem vaš termin za ${serviceName} u ${formatDate(startDate)} u ${formatTime(startDate)}. Vidimo se! 💕`;
+  const waMessage = buildAppointmentWaMessage({
+    clientName: appointment.client_name,
+    serviceName,
+    startTime: startDate,
+    status: appointment.status,
+  });
+  const waLabel = waButtonLabel(appointment.status);
 
   const handle = (fn: () => Promise<{ ok: boolean; error?: string }>) => {
     setError(null);
@@ -83,7 +92,7 @@ export function AppointmentRow({ appointment }: { appointment: Appointment }) {
             className="inline-flex items-center gap-1 bg-green-600 px-3 py-2 text-[10px] uppercase tracking-wider text-white hover:bg-green-700"
           >
             <MessageCircle size={12} />
-            WhatsApp
+            {waLabel}
           </a>
           {appointment.status === "ceka" && (
             <button
