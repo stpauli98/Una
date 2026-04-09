@@ -344,6 +344,92 @@ describe("computeAvailableSlots — hoursByWeekday override", () => {
   });
 });
 
+describe("computeAvailableSlots — time blocks", () => {
+  it("time block 18:00-19:00 blokira preklapajuće slotove", () => {
+    const blockedTimes: ExistingAppointment[] = [
+      { start: at(2026, 4, 7, 18), end: at(2026, 4, 7, 19) },
+    ];
+    const slots = computeAvailableSlots({
+      date: day(2026, 4, 7),
+      durationMin: 60,
+      now: NOW_FAR,
+      existing: [],
+      blocked: [],
+      blockedTimes,
+    });
+    // 17:00 [17-18] granica — slobodno
+    // 17:30 [17:30-18:30] — overlaipuje — blokirano
+    // 18:00 [18-19] — overlaipuje — blokirano
+    // 18:30 [18:30-19:30] — overlaipuje — blokirano
+    // 19:00 [19-20] — granica — slobodno
+    // 19:30, 20:00 — slobodni
+    expect(hhmm(slots)).toEqual(["17:00", "19:00", "19:30", "20:00"]);
+  });
+
+  it("time block 17:30-18:30 (off-grid) blokira sve preklapajuće", () => {
+    const blockedTimes: ExistingAppointment[] = [
+      { start: at(2026, 4, 7, 17, 30), end: at(2026, 4, 7, 18, 30) },
+    ];
+    const slots = computeAvailableSlots({
+      date: day(2026, 4, 7),
+      durationMin: 60,
+      now: NOW_FAR,
+      existing: [],
+      blocked: [],
+      blockedTimes,
+    });
+    expect(hhmm(slots)).not.toContain("17:00");
+    expect(hhmm(slots)).not.toContain("17:30");
+    expect(hhmm(slots)).not.toContain("18:00");
+    expect(hhmm(slots)).toContain("18:30");
+    expect(hhmm(slots)).toContain("19:00");
+  });
+
+  it("time block + existing termin — oba se kompozira", () => {
+    const slots = computeAvailableSlots({
+      date: day(2026, 4, 7),
+      durationMin: 60,
+      now: NOW_FAR,
+      existing: [{ start: at(2026, 4, 7, 17), end: at(2026, 4, 7, 18) }],
+      blocked: [],
+      blockedTimes: [{ start: at(2026, 4, 7, 19), end: at(2026, 4, 7, 20) }],
+    });
+    // existing 17-18 blokira 17:00 [17-18], 17:30 [17:30-18:30]
+    // blockedTime 19-20 blokira 18:30 [18:30-19:30], 19:00 [19-20], 19:30 [19:30-20:30]
+    // 18:00 [18-19] — OK (granica sa oboje)
+    // 20:00 [20-21] — OK (granica sa blockedTime)
+    expect(hhmm(slots)).toEqual(["18:00", "20:00"]);
+  });
+
+  it("prazan blockedTimes → identično sa ne-prosljeđivanjem", () => {
+    const withEmpty = computeAvailableSlots({
+      date: day(2026, 4, 7),
+      durationMin: 60,
+      now: NOW_FAR,
+      existing: [],
+      blocked: [],
+      blockedTimes: [],
+    });
+    const without = computeAvailableSlots({
+      date: day(2026, 4, 7),
+      durationMin: 60,
+      now: NOW_FAR,
+      existing: [],
+      blocked: [],
+    });
+    expect(hhmm(withEmpty)).toEqual(hhmm(without));
+    expect(hhmm(withEmpty)).toEqual([
+      "17:00",
+      "17:30",
+      "18:00",
+      "18:30",
+      "19:00",
+      "19:30",
+      "20:00",
+    ]);
+  });
+});
+
 describe("computeAvailableSlots — vremenske granice", () => {
   it("min_hours_before (24h): slotovi < 24h od sada su isključeni", () => {
     // sad: utorak 18:00 → slot u srijedu 17:00 je za 23h → isključen

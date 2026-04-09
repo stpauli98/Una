@@ -59,7 +59,10 @@ export async function GET(req: NextRequest) {
   const dayStart = startOfDay(date).toISOString();
   const dayEnd = endOfDay(date).toISOString();
 
-  const [apptRes, blockedRes, hoursRes] = await Promise.all([
+  // Time blocks mogu početi prije targetiranog dana a završiti unutar njega,
+  // ili početi unutar i završiti kasnije. Tražimo sve blokove koji se
+  // overlaipuju sa danom: `start_time < dayEnd AND end_time > dayStart`.
+  const [apptRes, blockedRes, hoursRes, timeBlocksRes] = await Promise.all([
     sb
       .from("appointments")
       .select("start_time,end_time")
@@ -68,6 +71,11 @@ export async function GET(req: NextRequest) {
       .in("status", ["ceka", "potvrdjen"]),
     sb.from("blocked_dates").select("date_from,date_to"),
     sb.from("working_hours").select("day_of_week,open_time,close_time,is_open"),
+    sb
+      .from("time_blocks")
+      .select("start_time,end_time")
+      .lt("start_time", dayEnd)
+      .gt("end_time", dayStart),
   ]);
 
   if (apptRes.error) {
@@ -78,6 +86,12 @@ export async function GET(req: NextRequest) {
   }
   if (hoursRes.error) {
     return NextResponse.json({ error: hoursRes.error.message }, { status: 500 });
+  }
+  if (timeBlocksRes.error) {
+    return NextResponse.json(
+      { error: timeBlocksRes.error.message },
+      { status: 500 },
+    );
   }
 
   const slots = computeAvailableSlots({
@@ -93,6 +107,10 @@ export async function GET(req: NextRequest) {
       to: parseISO(b.date_to),
     })),
     hoursByWeekday: hoursMapFromRows(hoursRes.data ?? []),
+    blockedTimes: (timeBlocksRes.data ?? []).map((t) => ({
+      start: new Date(t.start_time),
+      end: new Date(t.end_time),
+    })),
   });
 
   return NextResponse.json({

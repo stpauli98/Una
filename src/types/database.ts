@@ -186,6 +186,30 @@ export type Database = {
         }
         Relationships: []
       }
+      time_blocks: {
+        Row: {
+          created_at: string
+          end_time: string
+          id: number
+          reason: string | null
+          start_time: string
+        }
+        Insert: {
+          created_at?: string
+          end_time: string
+          id?: never
+          reason?: string | null
+          start_time: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          id?: never
+          reason?: string | null
+          start_time?: string
+        }
+        Relationships: []
+      }
       training_inquiries: {
         Row: {
           created_at: string

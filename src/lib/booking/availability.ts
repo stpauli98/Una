@@ -33,6 +33,11 @@ export type AvailabilityInput = {
   /** Blokirani datumi iz `blocked_dates`. */
   blocked: BlockedRange[];
   /**
+   * Sub-day vremenski blokovi iz `time_blocks` tabele. Tretiraju se
+   * identično kao postojeći termini u overlap check-u.
+   */
+  blockedTimes?: ExistingAppointment[];
+  /**
    * Radno vrijeme po danu u sedmici (0=ned..6=sub). Ako nije prosljeđeno,
    * fallback na BOOKING_RULES. Ako je prosljeđeno ali ključ za konkretan
    * dan nedostaje, takođe fallback.
@@ -101,9 +106,10 @@ export function computeAvailableSlots(input: AvailabilityInput): Slot[] {
       continue;
     }
 
-    // 6. Preklapanje sa postojećim
-    const overlaps = existing.some(
-      (appt) => cursor < appt.end && end > appt.start,
+    // 6. Preklapanje sa postojećim terminima ili sub-day time blokovima
+    const allBlocking = [...existing, ...(input.blockedTimes ?? [])];
+    const overlaps = allBlocking.some(
+      (item) => cursor < item.end && end > item.start,
     );
     if (!overlaps) {
       slots.push({ start: new Date(cursor), end });
