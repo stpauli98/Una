@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Nav } from "@/components/public/Nav";
-import { Footer } from "@/components/public/Footer";
 import { BookingFlow } from "@/components/booking/BookingFlow";
 import { createClient } from "@/lib/supabase/server";
 
@@ -47,7 +46,6 @@ export default async function ZakaziPage({ searchParams }: PageProps) {
           />
         </section>
       </main>
-      <Footer />
     </>
   );
 }

@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Check, MessageCircle, Phone, Camera } from "lucide-react";
 import { Nav } from "@/components/public/Nav";
-import { Footer } from "@/components/public/Footer";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDate, formatTime } from "@/lib/utils/format";
 import { BUSINESS } from "@/lib/constants/business";
@@ -115,7 +114,6 @@ export default async function UspjesnoPage({ searchParams }: PageProps) {
           </div>
         </section>
       </main>
-      <Footer />
     </>
   );
 }
