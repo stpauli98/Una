@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { computeAvailableSlots } from "@/lib/booking/availability";
 import type { DailyHoursMap } from "@/lib/booking/rules";
+import type { BookingSettings } from "@/lib/settings/read";
 import type {
   BlockedRange,
   ExistingAppointment,
@@ -526,5 +527,87 @@ describe("computeAvailableSlots — vremenske granice", () => {
       blocked: [],
     });
     expect(slots).toEqual([]);
+  });
+});
+
+const FULL_SETTINGS: BookingSettings = {
+  minHoursBefore: 24,
+  advanceBookingDays: 90,
+  cancellationHours: 24,
+  breakBetweenMin: 0,
+};
+
+describe("computeAvailableSlots — configurable settings", () => {
+  it("settings.advanceBookingDays override (30 dana umjesto 90)", () => {
+    const now = day(2026, 4, 6);
+    const target = new Date(now);
+    target.setDate(target.getDate() + 35);
+    const slots = computeAvailableSlots({
+      date: target,
+      durationMin: 60,
+      now,
+      existing: [],
+      blocked: [],
+      settings: { ...FULL_SETTINGS, advanceBookingDays: 30 },
+    });
+    expect(slots).toEqual([]);
+  });
+
+  it("settings.minHoursBefore override (3h umjesto 24h)", () => {
+    const now = at(2026, 4, 7, 18, 0);
+    const slots = computeAvailableSlots({
+      date: day(2026, 4, 8),
+      durationMin: 60,
+      now,
+      existing: [],
+      blocked: [],
+      settings: { ...FULL_SETTINGS, minHoursBefore: 3 },
+    });
+    expect(hhmm(slots)).toContain("17:00");
+    expect(hhmm(slots)).toContain("17:30");
+  });
+
+  it("break_between_min=10 → slot nakon termina pomjeren za 10 min", () => {
+    const existing: ExistingAppointment[] = [
+      { start: at(2026, 4, 7, 17), end: at(2026, 4, 7, 18) },
+    ];
+    const slots = computeAvailableSlots({
+      date: day(2026, 4, 7),
+      durationMin: 60,
+      now: NOW_FAR,
+      existing,
+      blocked: [],
+      settings: { ...FULL_SETTINGS, breakBetweenMin: 10 },
+    });
+    // Termin 17:00-18:00 + 10min break = efektivno do 18:10
+    // 18:00 [18-19] overlaipuje sa [17:00-18:10] → blokirano
+    // 18:30 [18:30-19:30] → ne overlaipuje (18:30 > 18:10) → slobodno
+    expect(hhmm(slots)).not.toContain("17:00");
+    expect(hhmm(slots)).not.toContain("17:30");
+    expect(hhmm(slots)).not.toContain("18:00");
+    expect(hhmm(slots)).toContain("18:30");
+    expect(hhmm(slots)).toContain("19:00");
+  });
+
+  it("break_between_min=0 → identično bez settings parametra", () => {
+    const existing: ExistingAppointment[] = [
+      { start: at(2026, 4, 7, 17), end: at(2026, 4, 7, 18) },
+    ];
+    const withBreak = computeAvailableSlots({
+      date: day(2026, 4, 7),
+      durationMin: 60,
+      now: NOW_FAR,
+      existing,
+      blocked: [],
+      settings: { ...FULL_SETTINGS, breakBetweenMin: 0 },
+    });
+    const without = computeAvailableSlots({
+      date: day(2026, 4, 7),
+      durationMin: 60,
+      now: NOW_FAR,
+      existing,
+      blocked: [],
+    });
+    expect(hhmm(withBreak)).toEqual(hhmm(without));
   });
 });

@@ -11,6 +11,7 @@ import type {
   Slot,
 } from "@/types/booking";
 import { BOOKING_RULES, getHoursForDay, type DailyHoursMap } from "./rules";
+import type { BookingSettings } from "@/lib/settings/read";
 
 /**
  * Fixed grid korak za generisanje slotova. Nezavisan od trajanja usluge
@@ -48,6 +49,11 @@ export type AvailabilityInput = {
    * booking — Una treba moći da zakaže termin i za danas, bez 24h limita.
    */
   skipMinHoursBefore?: boolean;
+  /**
+   * Booking pravila iz `settings` tabele. Ako nije prosljeđeno,
+   * koristi BOOKING_RULES konstante kao fallback.
+   */
+  settings?: BookingSettings;
 };
 
 /**
@@ -74,8 +80,9 @@ export function computeAvailableSlots(input: AvailabilityInput): Slot[] {
   if (isBefore(target, today)) return [];
 
   // 2. Advance booking limit
+  const advanceDays = input.settings?.advanceBookingDays ?? BOOKING_RULES.advance_booking_days;
   const daysAhead = differenceInCalendarDays(target, today);
-  if (daysAhead > BOOKING_RULES.advance_booking_days) return [];
+  if (daysAhead > advanceDays) return [];
 
   // 3. Blokirani datumi
   for (const range of blocked) {
@@ -106,18 +113,23 @@ export function computeAvailableSlots(input: AvailabilityInput): Slot[] {
 
     // 7. min_hours_before (preskačemo za admin booking)
     if (!input.skipMinHoursBefore) {
+      const minHours = input.settings?.minHoursBefore ?? BOOKING_RULES.min_hours_before;
       const hoursFromNow = differenceInHours(cursor, now);
-      if (hoursFromNow < BOOKING_RULES.min_hours_before) {
+      if (hoursFromNow < minHours) {
         cursor = addMinutes(cursor, SLOT_INTERVAL_MIN);
         continue;
       }
     }
 
     // 6. Preklapanje sa postojećim terminima ili sub-day time blokovima
+    // break_between_min proširuje efektivni kraj svakog termina
+    const breakMin = input.settings?.breakBetweenMin ?? 0;
     const allBlocking = [...existing, ...(input.blockedTimes ?? [])];
-    const overlaps = allBlocking.some(
-      (item) => cursor < item.end && end > item.start,
-    );
+    const overlaps = allBlocking.some((item) => {
+      const effectiveEnd =
+        breakMin > 0 ? addMinutes(item.end, breakMin) : item.end;
+      return cursor < effectiveEnd && end > item.start;
+    });
     if (!overlaps) {
       slots.push({ start: new Date(cursor), end });
     }
