@@ -3,6 +3,7 @@ import { parseISO, startOfDay, endOfDay } from "date-fns";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { computeAvailableSlots } from "@/lib/booking/availability";
 import { hoursMapFromRows } from "@/lib/booking/rules";
+import { parseBookingSettings } from "@/lib/settings/read";
 
 // Ova ruta mora uvijek čitati svježe podatke — baza se mijenja u realnom
 // vremenu kada klijenti rezervišu termine. Keš bi prikazao zastarjele slotove.
@@ -63,21 +64,23 @@ export async function GET(req: NextRequest) {
   // Time blocks mogu početi prije targetiranog dana a završiti unutar njega,
   // ili početi unutar i završiti kasnije. Tražimo sve blokove koji se
   // overlaipuju sa danom: `start_time < dayEnd AND end_time > dayStart`.
-  const [apptRes, blockedRes, hoursRes, timeBlocksRes] = await Promise.all([
-    sb
-      .from("appointments")
-      .select("start_time,end_time")
-      .gte("start_time", dayStart)
-      .lt("start_time", dayEnd)
-      .in("status", ["ceka", "potvrdjen"]),
-    sb.from("blocked_dates").select("date_from,date_to"),
-    sb.from("working_hours").select("day_of_week,open_time,close_time,is_open"),
-    sb
-      .from("time_blocks")
-      .select("start_time,end_time")
-      .lt("start_time", dayEnd)
-      .gt("end_time", dayStart),
-  ]);
+  const [apptRes, blockedRes, hoursRes, timeBlocksRes, settingsRes] =
+    await Promise.all([
+      sb
+        .from("appointments")
+        .select("start_time,end_time")
+        .gte("start_time", dayStart)
+        .lt("start_time", dayEnd)
+        .in("status", ["ceka", "potvrdjen"]),
+      sb.from("blocked_dates").select("date_from,date_to"),
+      sb.from("working_hours").select("day_of_week,open_time,close_time,is_open"),
+      sb
+        .from("time_blocks")
+        .select("start_time,end_time")
+        .lt("start_time", dayEnd)
+        .gt("end_time", dayStart),
+      sb.from("settings").select("key,value"),
+    ]);
 
   if (apptRes.error) {
     return NextResponse.json({ error: apptRes.error.message }, { status: 500 });
@@ -94,6 +97,14 @@ export async function GET(req: NextRequest) {
       { status: 500 },
     );
   }
+  if (settingsRes.error) {
+    return NextResponse.json(
+      { error: settingsRes.error.message },
+      { status: 500 },
+    );
+  }
+
+  const bookingSettings = parseBookingSettings(settingsRes.data ?? []);
 
   const slots = computeAvailableSlots({
     date,
@@ -113,6 +124,7 @@ export async function GET(req: NextRequest) {
       end: new Date(t.end_time),
     })),
     skipMinHoursBefore: isAdmin,
+    settings: bookingSettings,
   });
 
   return NextResponse.json({
