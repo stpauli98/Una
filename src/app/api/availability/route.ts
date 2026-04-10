@@ -20,6 +20,7 @@ export const revalidate = 0;
 export async function GET(req: NextRequest) {
   const dateStr = req.nextUrl.searchParams.get("date");
   const serviceIdStr = req.nextUrl.searchParams.get("service_id");
+  const isAdmin = req.nextUrl.searchParams.get("admin") === "true";
 
   if (!dateStr || !serviceIdStr) {
     return NextResponse.json(
@@ -111,6 +112,7 @@ export async function GET(req: NextRequest) {
       start: new Date(t.start_time),
       end: new Date(t.end_time),
     })),
+    skipMinHoursBefore: isAdmin,
   });
 
   return NextResponse.json({

@@ -1,10 +1,14 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
+import { format, addDays } from "date-fns";
 import { createManualAppointment } from "@/app/admin/(protected)/termini/actions";
+import { formatTime } from "@/lib/utils/format";
+import { cn } from "@/lib/utils/cn";
 import type { Database } from "@/types/database";
 
 type Service = Database["public"]["Tables"]["services"]["Row"];
+type Slot = { start: string; end: string };
 
 type Props = {
   services: Service[];
@@ -18,18 +22,50 @@ export function ManualAppointmentForm({ services, onClose }: Props) {
   const [conflictWarning, setConflictWarning] = useState<string | null>(null);
   const [forceFlag, setForceFlag] = useState(false);
 
-  // Default vrijeme: sutra 17:00 (lokalno)
-  const defaultStart = (() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    d.setHours(17, 0, 0, 0);
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mi = String(d.getMinutes()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
-  })();
+  // Controlled state za slot fetching
+  const [serviceId, setServiceId] = useState<string>(
+    services[0]?.id != null ? String(services[0].id) : "",
+  );
+  const [selectedDate, setSelectedDate] = useState<string>(
+    format(addDays(new Date(), 1), "yyyy-MM-dd"),
+  );
+  const [slots, setSlots] = useState<Slot[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<string>("");
+  const [customMode, setCustomMode] = useState(false);
+
+  // Fetch slots kad se serviceId ili datum promijeni
+  useEffect(() => {
+    if (!serviceId || !selectedDate) {
+      setSlots([]);
+      return;
+    }
+    let cancelled = false;
+    setSlotsLoading(true);
+    setSelectedSlot("");
+    setCustomMode(false);
+
+    fetch(
+      `/api/availability?date=${selectedDate}&service_id=${serviceId}&admin=true`,
+    )
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled) {
+          setSlots(data.slots ?? []);
+          setSlotsLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSlots([]);
+          setSlotsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [serviceId, selectedDate]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-dark/40 p-4">
@@ -50,11 +86,16 @@ export function ManualAppointmentForm({ services, onClose }: Props) {
             setConflictWarning(null);
 
             const fd = new FormData(e.currentTarget);
-            const localStr = String(fd.get("start_time_local") ?? "");
-            if (localStr) {
-              const localDate = new Date(localStr);
-              fd.set("start_time", localDate.toISOString());
+
+            if (customMode) {
+              const customStr = String(fd.get("start_time_custom") ?? "");
+              if (customStr) {
+                fd.set("start_time", new Date(customStr).toISOString());
+              }
+            } else if (selectedSlot) {
+              fd.set("start_time", selectedSlot);
             }
+
             if (forceFlag) fd.set("force", "true");
 
             startTransition(async () => {
@@ -73,6 +114,7 @@ export function ManualAppointmentForm({ services, onClose }: Props) {
           }}
           className="space-y-4 px-5 py-5"
         >
+          {/* Usluga (controlled) */}
           <div>
             <label className="mb-1 block text-[11px] uppercase tracking-wider text-dark">
               Usluga
@@ -80,7 +122,8 @@ export function ManualAppointmentForm({ services, onClose }: Props) {
             <select
               name="service_id"
               required
-              defaultValue={services[0]?.id ?? ""}
+              value={serviceId}
+              onChange={(e) => setServiceId(e.target.value)}
               className="w-full border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus:outline-none"
             >
               {services.map((s) => (
@@ -91,6 +134,7 @@ export function ManualAppointmentForm({ services, onClose }: Props) {
             </select>
           </div>
 
+          {/* Klijent */}
           <label className="block">
             <span className="mb-1 block text-[11px] uppercase tracking-wider text-dark">
               Ime klijenta
@@ -135,18 +179,115 @@ export function ManualAppointmentForm({ services, onClose }: Props) {
             />
           </label>
 
-          <label className="block">
-            <span className="mb-1 block text-[11px] uppercase tracking-wider text-dark">
-              Datum i vrijeme
-            </span>
+          {/* Datum */}
+          <div>
+            <label className="mb-1 block text-[11px] uppercase tracking-wider text-dark">
+              Datum
+            </label>
             <input
-              name="start_time_local"
-              type="datetime-local"
-              required
-              defaultValue={defaultStart}
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
               className="w-full border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus:outline-none"
             />
-          </label>
+          </div>
+
+          {/* Slot grid ili custom input */}
+          {!customMode && (
+            <div>
+              <div className="mb-1.5 flex items-center justify-between">
+                <span className="text-[11px] uppercase tracking-wider text-dark">
+                  Slobodni termini
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCustomMode(true)}
+                  className="text-[10px] text-rose underline-offset-2 hover:underline cursor-pointer"
+                >
+                  Prilagođeno vrijeme
+                </button>
+              </div>
+
+              {slotsLoading ? (
+                <p className="py-4 text-center text-xs text-light">
+                  Učitavanje...
+                </p>
+              ) : slots.length > 0 ? (
+                <div className="grid grid-cols-4 gap-1.5">
+                  {slots.map((slot) => {
+                    const active = selectedSlot === slot.start;
+                    return (
+                      <button
+                        key={slot.start}
+                        type="button"
+                        onClick={() => setSelectedSlot(slot.start)}
+                        className={cn(
+                          "border px-2 py-2 text-xs transition-colors cursor-pointer",
+                          active
+                            ? "border-rose bg-rose text-white"
+                            : "border-cream bg-white text-dark hover:border-rose",
+                        )}
+                      >
+                        {formatTime(new Date(slot.start))}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="border border-cream bg-warm p-4 text-center">
+                  <p className="text-xs text-light">
+                    Nema slobodnih termina za ovaj dan.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setCustomMode(true)}
+                    className="mt-2 text-[10px] text-rose underline-offset-2 hover:underline cursor-pointer"
+                  >
+                    Unesi prilagođeno vrijeme
+                  </button>
+                </div>
+              )}
+
+              {selectedSlot && (
+                <p className="mt-2 text-xs text-body">
+                  Izabrano:{" "}
+                  <span className="font-medium text-dark">
+                    {formatTime(new Date(selectedSlot))}
+                  </span>
+                </p>
+              )}
+            </div>
+          )}
+
+          {customMode && (
+            <div>
+              <div className="mb-1.5 flex items-center justify-between">
+                <span className="text-[11px] uppercase tracking-wider text-dark">
+                  Prilagođeno vrijeme
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomMode(false);
+                    setSelectedSlot("");
+                  }}
+                  className="text-[10px] text-rose underline-offset-2 hover:underline cursor-pointer"
+                >
+                  Nazad na slobodne termine
+                </button>
+              </div>
+              <input
+                name="start_time_custom"
+                type="datetime-local"
+                required
+                className="w-full border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus:outline-none"
+              />
+              <p className="mt-1 text-[10px] text-light">
+                Napomena: prilagođeno vrijeme ne prolazi kroz provjeru
+                raspoloživosti. Konflikt će biti prikazan pri čuvanju.
+              </p>
+            </div>
+          )}
 
           <label className="block">
             <span className="mb-1 block text-[11px] uppercase tracking-wider text-dark">
@@ -191,8 +332,8 @@ export function ManualAppointmentForm({ services, onClose }: Props) {
             </button>
             <button
               type="submit"
-              disabled={pending}
-              className="flex-1 bg-rose py-2.5 text-[11px] uppercase tracking-wider text-white hover:bg-rose-hover disabled:opacity-60 cursor-pointer"
+              disabled={pending || (!customMode && !selectedSlot)}
+              className="flex-1 bg-rose py-2.5 text-[11px] uppercase tracking-wider text-white hover:bg-rose-hover disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
             >
               {pending ? "Spremam..." : "Sačuvaj"}
             </button>

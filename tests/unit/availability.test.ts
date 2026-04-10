@@ -430,6 +430,47 @@ describe("computeAvailableSlots — time blocks", () => {
   });
 });
 
+describe("computeAvailableSlots — skipMinHoursBefore (admin)", () => {
+  it("skipMinHoursBefore=true dozvoljava slotove unutar 24h", () => {
+    // sad: utorak 18:00 → slot u srijedu 17:00 je za 23h
+    // Bez skipMinHoursBefore: 17:00 i 17:30 isključeni
+    // Sa skipMinHoursBefore: svi slotovi dostupni
+    const now = at(2026, 4, 7, 18, 0);
+    const slots = computeAvailableSlots({
+      date: day(2026, 4, 8),
+      durationMin: 60,
+      now,
+      existing: [],
+      blocked: [],
+      skipMinHoursBefore: true,
+    });
+    expect(hhmm(slots)).toContain("17:00");
+    expect(hhmm(slots)).toContain("17:30");
+    expect(hhmm(slots)).toContain("18:00");
+  });
+
+  it("skipMinHoursBefore=false ponašanje identično sa ne-prosljeđivanjem", () => {
+    const now = at(2026, 4, 7, 18, 0);
+    const withFalse = computeAvailableSlots({
+      date: day(2026, 4, 8),
+      durationMin: 60,
+      now,
+      existing: [],
+      blocked: [],
+      skipMinHoursBefore: false,
+    });
+    const without = computeAvailableSlots({
+      date: day(2026, 4, 8),
+      durationMin: 60,
+      now,
+      existing: [],
+      blocked: [],
+    });
+    expect(hhmm(withFalse)).toEqual(hhmm(without));
+    expect(hhmm(withFalse)).not.toContain("17:00");
+  });
+});
+
 describe("computeAvailableSlots — vremenske granice", () => {
   it("min_hours_before (24h): slotovi < 24h od sada su isključeni", () => {
     // sad: utorak 18:00 → slot u srijedu 17:00 je za 23h → isključen

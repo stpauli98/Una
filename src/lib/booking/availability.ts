@@ -43,6 +43,11 @@ export type AvailabilityInput = {
    * dan nedostaje, takođe fallback.
    */
   hoursByWeekday?: DailyHoursMap;
+  /**
+   * Ako true, preskače `min_hours_before` provjeru. Koristi se za admin
+   * booking — Una treba moći da zakaže termin i za danas, bez 24h limita.
+   */
+  skipMinHoursBefore?: boolean;
 };
 
 /**
@@ -99,11 +104,13 @@ export function computeAvailableSlots(input: AvailabilityInput): Slot[] {
     const end = addMinutes(cursor, durationMin);
     if (end > dayClose) break;
 
-    // 7. min_hours_before
-    const hoursFromNow = differenceInHours(cursor, now);
-    if (hoursFromNow < BOOKING_RULES.min_hours_before) {
-      cursor = addMinutes(cursor, SLOT_INTERVAL_MIN);
-      continue;
+    // 7. min_hours_before (preskačemo za admin booking)
+    if (!input.skipMinHoursBefore) {
+      const hoursFromNow = differenceInHours(cursor, now);
+      if (hoursFromNow < BOOKING_RULES.min_hours_before) {
+        cursor = addMinutes(cursor, SLOT_INTERVAL_MIN);
+        continue;
+      }
     }
 
     // 6. Preklapanje sa postojećim terminima ili sub-day time blokovima
