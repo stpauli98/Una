@@ -11,6 +11,13 @@ import type { Database } from "@/types/database";
 
 type TimeBlock = Database["public"]["Tables"]["time_blocks"]["Row"];
 
+/** 00:00, 00:30, 01:00, ..., 23:30 — usklađeno sa 30-min grid-om. */
+const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
+  const h = String(Math.floor(i / 2)).padStart(2, "0");
+  const m = i % 2 === 0 ? "00" : "30";
+  return `${h}:${m}`;
+});
+
 export function TimeBlocksManager({ blocks }: { blocks: TimeBlock[] }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -24,10 +31,17 @@ export function TimeBlocksManager({ blocks }: { blocks: TimeBlock[] }) {
           const form = e.currentTarget;
           const fd = new FormData(form);
 
-          const startLocal = String(fd.get("start_time_local") ?? "");
-          const endLocal = String(fd.get("end_time_local") ?? "");
-          if (startLocal) fd.set("start_time", new Date(startLocal).toISOString());
-          if (endLocal) fd.set("end_time", new Date(endLocal).toISOString());
+          // Spoji date + time u ISO timestamp
+          const date = String(fd.get("block_date") ?? "");
+          const startTime = String(fd.get("start_time_select") ?? "");
+          const endTime = String(fd.get("end_time_select") ?? "");
+
+          if (date && startTime) {
+            fd.set("start_time", new Date(`${date}T${startTime}:00`).toISOString());
+          }
+          if (date && endTime) {
+            fd.set("end_time", new Date(`${date}T${endTime}:00`).toISOString());
+          }
 
           startTransition(async () => {
             const r = await createTimeBlock(fd);
@@ -38,29 +52,52 @@ export function TimeBlocksManager({ blocks }: { blocks: TimeBlock[] }) {
             }
           });
         }}
-        className="mb-4 grid gap-2 border border-cream bg-white p-4 md:grid-cols-[1fr_1fr_1.5fr_auto]"
+        className="mb-4 grid gap-2 border border-cream bg-white p-4 md:grid-cols-[1fr_auto_auto_1.5fr_auto]"
       >
         <div>
           <label className="mb-1 block text-[10px] uppercase tracking-wider text-light">
-            Od
+            Datum
           </label>
           <input
-            name="start_time_local"
-            type="datetime-local"
+            name="block_date"
+            type="date"
             required
             className="w-full border border-cream bg-marble px-2 py-1.5 text-xs"
           />
         </div>
         <div>
           <label className="mb-1 block text-[10px] uppercase tracking-wider text-light">
+            Od
+          </label>
+          <select
+            name="start_time_select"
+            required
+            defaultValue="09:00"
+            className="border border-cream bg-marble px-2 py-1.5 text-xs"
+          >
+            {TIME_OPTIONS.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-[10px] uppercase tracking-wider text-light">
             Do
           </label>
-          <input
-            name="end_time_local"
-            type="datetime-local"
+          <select
+            name="end_time_select"
             required
-            className="w-full border border-cream bg-marble px-2 py-1.5 text-xs"
-          />
+            defaultValue="10:00"
+            className="border border-cream bg-marble px-2 py-1.5 text-xs"
+          >
+            {TIME_OPTIONS.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="mb-1 block text-[10px] uppercase tracking-wider text-light">

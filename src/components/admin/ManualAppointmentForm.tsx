@@ -88,9 +88,13 @@ export function ManualAppointmentForm({ services, onClose }: Props) {
             const fd = new FormData(e.currentTarget);
 
             if (customMode) {
-              const customStr = String(fd.get("start_time_custom") ?? "");
-              if (customStr) {
-                fd.set("start_time", new Date(customStr).toISOString());
+              const customDate = String(fd.get("custom_date") ?? "");
+              const customTime = String(fd.get("custom_time") ?? "");
+              if (customDate && customTime) {
+                fd.set(
+                  "start_time",
+                  new Date(`${customDate}T${customTime}:00`).toISOString(),
+                );
               }
             } else if (selectedSlot) {
               fd.set("start_time", selectedSlot);
@@ -276,12 +280,30 @@ export function ManualAppointmentForm({ services, onClose }: Props) {
                   Nazad na slobodne termine
                 </button>
               </div>
-              <input
-                name="start_time_custom"
-                type="datetime-local"
-                required
-                className="w-full border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus:outline-none"
-              />
+              <div className="flex gap-2">
+                <input
+                  name="custom_date"
+                  type="date"
+                  required
+                  className="flex-1 border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus:outline-none"
+                />
+                <select
+                  name="custom_time"
+                  required
+                  defaultValue="17:00"
+                  className="border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus:outline-none"
+                >
+                  {Array.from({ length: 48 }, (_, i) => {
+                    const h = String(Math.floor(i / 2)).padStart(2, "0");
+                    const m = i % 2 === 0 ? "00" : "30";
+                    return `${h}:${m}`;
+                  }).map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <p className="mt-1 text-[10px] text-light">
                 Napomena: prilagođeno vrijeme ne prolazi kroz provjeru
                 raspoloživosti. Konflikt će biti prikazan pri čuvanju.
