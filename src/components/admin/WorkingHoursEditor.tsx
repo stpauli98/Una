@@ -16,8 +16,14 @@ const DAY_NAMES = [
   "Subota",
 ] as const;
 
+/** Generiše opcije 00:00, 00:30, 01:00, ..., 23:30 */
+const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
+  const h = String(Math.floor(i / 2)).padStart(2, "0");
+  const m = i % 2 === 0 ? "00" : "30";
+  return `${h}:${m}`;
+});
+
 export function WorkingHoursEditor({ hours }: { hours: WorkingHour[] }) {
-  // Sort pon-ned za prikaz
   const sorted = [...hours].sort((a, b) => {
     const ord = [1, 2, 3, 4, 5, 6, 0];
     return ord.indexOf(a.day_of_week) - ord.indexOf(b.day_of_week);
@@ -65,18 +71,28 @@ function WorkingHourRow({ hour }: { hour: WorkingHour }) {
         />
         Otvoreno
       </label>
-      <input
-        type="time"
+      <select
         name="open_time"
         defaultValue={hour.open_time.slice(0, 5)}
         className="border border-cream bg-marble px-2 py-1 text-[12px]"
-      />
-      <input
-        type="time"
+      >
+        {TIME_OPTIONS.map((t) => (
+          <option key={t} value={t}>
+            {t}
+          </option>
+        ))}
+      </select>
+      <select
         name="close_time"
         defaultValue={hour.close_time.slice(0, 5)}
         className="border border-cream bg-marble px-2 py-1 text-[12px]"
-      />
+      >
+        {TIME_OPTIONS.map((t) => (
+          <option key={t} value={t}>
+            {t}
+          </option>
+        ))}
+      </select>
       <div className="flex justify-end gap-2">
         {saved && (
           <span className="text-[10px] uppercase tracking-wider text-green-600">

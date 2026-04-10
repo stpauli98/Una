@@ -17,8 +17,12 @@ async function requireAuth() {
 
 const workingHourSchema = z.object({
   day_of_week: z.number().int().min(0).max(6),
-  open_time: z.string().regex(/^\d{2}:\d{2}$/),
-  close_time: z.string().regex(/^\d{2}:\d{2}$/),
+  open_time: z
+    .string()
+    .regex(/^\d{2}:(00|30)$/, "Vrijeme mora biti na pun sat ili pola (:00 ili :30)"),
+  close_time: z
+    .string()
+    .regex(/^\d{2}:(00|30)$/, "Vrijeme mora biti na pun sat ili pola (:00 ili :30)"),
   is_open: z.boolean(),
 });
 
