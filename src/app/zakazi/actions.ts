@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { bookingFormSchema } from "@/lib/booking/schemas";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhone } from "@/lib/utils/phone";
+import { isGridAligned } from "@/lib/utils/grid";
 
 export type CreateAppointmentResult =
   | { ok: true }
@@ -52,6 +53,12 @@ export async function createAppointment(
   }
 
   const start = new Date(parsed.data.start_time);
+  if (!isGridAligned(start)) {
+    return {
+      ok: false,
+      error: "Vrijeme termina mora biti na pun sat ili pola (:00 ili :30)",
+    };
+  }
   const end = addMinutes(start, service.duration_min);
 
   // Race guard: provjeri da se slot nije upravo zauzeo

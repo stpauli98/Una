@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { isGridAligned } from "@/lib/utils/grid";
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -126,6 +127,14 @@ export async function createTimeBlock(
     });
     if (new Date(parsed.end_time) <= new Date(parsed.start_time)) {
       return { ok: false, error: "Kraj mora biti poslije početka" };
+    }
+    const startDate = new Date(parsed.start_time);
+    const endDate = new Date(parsed.end_time);
+    if (!isGridAligned(startDate) || !isGridAligned(endDate)) {
+      return {
+        ok: false,
+        error: "Vrijeme mora biti na pun sat ili pola (:00 ili :30)",
+      };
     }
     const { error } = await sb.from("time_blocks").insert(parsed);
     if (error) return { ok: false, error: error.message };

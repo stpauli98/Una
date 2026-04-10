@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { manualAppointmentSchema } from "@/lib/booking/schemas";
 import { normalizePhone } from "@/lib/utils/phone";
+import { isGridAligned } from "@/lib/utils/grid";
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -121,6 +122,12 @@ export async function createManualAppointment(
     }
 
     const start = new Date(parsed.data.start_time);
+    if (!isGridAligned(start)) {
+      return {
+        ok: false,
+        error: "Vrijeme termina mora biti na pun sat ili pola (:00 ili :30)",
+      };
+    }
     const end = addMinutes(start, service.duration_min);
 
     if (!parsed.data.force) {
