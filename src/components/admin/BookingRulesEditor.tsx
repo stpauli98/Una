@@ -55,7 +55,6 @@ const RULES = [
       "Minuta pauze nakon svakog termina za čišćenje i pripremu.",
     options: [
       { value: "0", label: "Bez pauze" },
-      { value: "15", label: "15 minuta" },
       { value: "30", label: "30 minuta" },
     ],
   },

@@ -164,11 +164,11 @@ export async function updateSetting(
     if (!Number.isFinite(num) || num < 0) {
       return { ok: false, error: "Vrijednost mora biti nenegativan broj" };
     }
-    // break_between_min mora biti 0, 15 ili 30 (usklađeno sa 30-min grid-om)
-    if (key === "break_between_min" && ![0, 15, 30].includes(num)) {
+    // break_between_min mora biti 0 ili 30 (= SLOT_INTERVAL_MIN, tačno jedan grid slot)
+    if (key === "break_between_min" && ![0, 30].includes(num)) {
       return {
         ok: false,
-        error: "Pauza mora biti 0, 15 ili 30 minuta (usklađeno sa grid-om)",
+        error: "Pauza mora biti 0 ili 30 minuta",
       };
     }
     const { error } = await sb
