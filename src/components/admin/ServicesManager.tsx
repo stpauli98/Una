@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Edit2, Eye, EyeOff, Plus, ArrowUp, ArrowDown } from "lucide-react";
 import { ServiceForm } from "./ServiceForm";
@@ -9,6 +9,7 @@ import {
   reorderService,
 } from "@/app/admin/(protected)/usluge/actions";
 import { formatPrice, formatDuration } from "@/lib/utils/format";
+import { cn } from "@/lib/utils/cn";
 import type { Database } from "@/types/database";
 
 type Service = Database["public"]["Tables"]["services"]["Row"];
@@ -25,24 +26,47 @@ export function ServicesManager({
 }: {
   initialServices: Service[];
 }) {
-  // BITNO: NE koristimo useState za listu, jer to zaledi snapshot. Server
-  // action revalidatePath osvježi server prop, ali useState init samo jednom.
-  // Direktno korišćenje props znači da se nakon router.refresh() lista
-  // automatski ažurira sa svježim podacima iz baze.
   const services = initialServices;
   const router = useRouter();
-  // Edit state drži samo ID, a stvarne podatke uzimamo iz svježe `services`
-  // liste. Ovako se izbjegava da modal pokaže stari snapshot servisa.
   const [editingId, setEditingId] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
   const [pending, startTransition] = useTransition();
+  const [lastMovedId, setLastMovedId] = useState<number | null>(null);
   const editing =
     editingId !== null
       ? (services.find((s) => s.id === editingId) ?? null)
       : null;
 
+  // Automatski clear highlight nakon animacije
+  useEffect(() => {
+    if (lastMovedId === null) return;
+    const timer = setTimeout(() => setLastMovedId(null), 800);
+    return () => clearTimeout(timer);
+  }, [lastMovedId]);
+
+  const handleReorder = (id: number, direction: "up" | "down") => {
+    startTransition(async () => {
+      await reorderService(id, direction);
+      router.refresh();
+      setLastMovedId(id);
+    });
+  };
+
   return (
     <div>
+      <style>{`
+        @keyframes cardMoved {
+          0% { transform: scale(1); box-shadow: none; }
+          30% { transform: scale(1.02); box-shadow: 0 0 0 2px #C4787A40; }
+          100% { transform: scale(1); box-shadow: none; }
+        }
+        .card-just-moved {
+          animation: cardMoved 0.6s ease-out;
+          border-color: #C4787A !important;
+          background: linear-gradient(135deg, #fff 0%, #FDF0F0 100%);
+        }
+      `}</style>
+
       <div className="mb-5 flex justify-end">
         <button
           type="button"
@@ -55,20 +79,25 @@ export function ServicesManager({
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {services.map((service) => {
+        {services.map((service, index) => {
           const priceDisplay =
             service.price_note ?? formatPrice(Number(service.price));
           const durationDisplay =
             service.duration_note ?? formatDuration(service.duration_min);
+          const justMoved = lastMovedId === service.id;
+          const isFirst = index === 0;
+          const isLast = index === services.length - 1;
 
           return (
             <div
               key={service.id}
-              className={`border bg-white p-5 transition-opacity ${
+              className={cn(
+                "border bg-white p-5 transition-all duration-300",
                 service.active
                   ? "border-cream"
-                  : "border-stone-200 opacity-50"
-              }`}
+                  : "border-stone-200 opacity-50",
+                justMoved && "card-just-moved",
+              )}
             >
               <div className="mb-3 flex items-start justify-between gap-2">
                 <div className="flex-1">
@@ -82,29 +111,31 @@ export function ServicesManager({
                 <div className="flex gap-1">
                   <button
                     type="button"
-                    disabled={pending}
-                    onClick={() =>
-                      startTransition(async () => {
-                        await reorderService(service.id, "up");
-                        router.refresh();
-                      })
-                    }
+                    disabled={pending || isFirst}
+                    onClick={() => handleReorder(service.id, "up")}
                     aria-label="Pomjeri gore"
-                    className="flex size-7 items-center justify-center text-light hover:text-rose cursor-pointer"
+                    title="Pomjeri gore u redoslijedu"
+                    className={cn(
+                      "flex size-7 items-center justify-center transition-colors cursor-pointer",
+                      isFirst
+                        ? "text-cream cursor-not-allowed"
+                        : "text-light hover:text-rose hover:bg-warm rounded",
+                    )}
                   >
                     <ArrowUp size={14} />
                   </button>
                   <button
                     type="button"
-                    disabled={pending}
-                    onClick={() =>
-                      startTransition(async () => {
-                        await reorderService(service.id, "down");
-                        router.refresh();
-                      })
-                    }
+                    disabled={pending || isLast}
+                    onClick={() => handleReorder(service.id, "down")}
                     aria-label="Pomjeri dole"
-                    className="flex size-7 items-center justify-center text-light hover:text-rose cursor-pointer"
+                    title="Pomjeri dole u redoslijedu"
+                    className={cn(
+                      "flex size-7 items-center justify-center transition-colors cursor-pointer",
+                      isLast
+                        ? "text-cream cursor-not-allowed"
+                        : "text-light hover:text-rose hover:bg-warm rounded",
+                    )}
                   >
                     <ArrowDown size={14} />
                   </button>
@@ -162,9 +193,6 @@ export function ServicesManager({
             setCreating(false);
           }}
           onSaved={() => {
-            // Forsiraj RSC re-fetch tako da se nova lista propagira u props.
-            // revalidatePath sam za sebe ne sync-uje klijentske komponente
-            // koje već postoje u DOM-u — treba router.refresh().
             router.refresh();
           }}
         />
