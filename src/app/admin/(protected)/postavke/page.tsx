@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/admin/PageHeader";
 import { WorkingHoursEditor } from "@/components/admin/WorkingHoursEditor";
 import { BlockedDatesManager } from "@/components/admin/BlockedDatesManager";
 import { TimeBlocksManager } from "@/components/admin/TimeBlocksManager";
+import { BookingRulesEditor } from "@/components/admin/BookingRulesEditor";
 import { ChangePasswordForm } from "@/components/admin/ChangePasswordForm";
 
 export const metadata: Metadata = {
@@ -16,11 +17,17 @@ export const dynamic = "force-dynamic";
 export default async function AdminPostavkePage() {
   const sb = await createClient();
 
-  const [hoursRes, blockedRes, timeBlocksRes] = await Promise.all([
+  const [hoursRes, blockedRes, timeBlocksRes, settingsRes] = await Promise.all([
     sb.from("working_hours").select("*"),
     sb.from("blocked_dates").select("*").order("date_from"),
     sb.from("time_blocks").select("*").order("start_time"),
+    sb.from("settings").select("key,value"),
   ]);
+
+  const settingsMap: Record<string, string> = {};
+  for (const row of settingsRes.data ?? []) {
+    settingsMap[row.key] = row.value;
+  }
 
   return (
     <div>
@@ -30,6 +37,17 @@ export default async function AdminPostavkePage() {
       />
 
       <div className="space-y-8 p-5 md:p-8">
+        <section>
+          <h2 className="mb-3 font-display text-xl text-dark">
+            Pravila rezervisanja
+          </h2>
+          <p className="mb-4 text-[12px] text-light">
+            Podesite koliko unaprijed i koliko kasno klijenti mogu zakazivati
+            termine, te pauzu između termina za pripremu.
+          </p>
+          <BookingRulesEditor currentSettings={settingsMap} />
+        </section>
+
         <section>
           <h2 className="mb-3 font-display text-xl text-dark">Radno vrijeme</h2>
           <p className="mb-4 text-[12px] text-light">

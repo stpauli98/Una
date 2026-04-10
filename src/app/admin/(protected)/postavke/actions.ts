@@ -143,3 +143,35 @@ export async function deleteTimeBlock(id: number): Promise<ActionResult> {
     return { ok: false, error: (e as Error).message };
   }
 }
+
+const ALLOWED_SETTING_KEYS = [
+  "min_hours_before",
+  "advance_booking_days",
+  "cancellation_hours",
+  "break_between_min",
+] as const;
+
+export async function updateSetting(
+  key: string,
+  value: string,
+): Promise<ActionResult> {
+  try {
+    const sb = await requireAuth();
+    if (!(ALLOWED_SETTING_KEYS as readonly string[]).includes(key)) {
+      return { ok: false, error: "Nepoznat ključ podešavanja" };
+    }
+    const num = Number(value);
+    if (!Number.isFinite(num) || num < 0) {
+      return { ok: false, error: "Vrijednost mora biti nenegativan broj" };
+    }
+    const { error } = await sb
+      .from("settings")
+      .update({ value, updated_at: new Date().toISOString() })
+      .eq("key", key);
+    if (error) return { ok: false, error: error.message };
+    revalidatePath("/admin/postavke");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
