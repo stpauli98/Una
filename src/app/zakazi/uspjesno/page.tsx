@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDate, formatTime } from "@/lib/utils/format";
 import { BUSINESS } from "@/lib/constants/business";
 import { waLink } from "@/lib/utils/wa";
+import { parseBookingSettings } from "@/lib/settings/read";
 
 export const metadata: Metadata = {
   title: "Termin primljen",
@@ -32,6 +33,9 @@ export default async function UspjesnoPage({ searchParams }: PageProps) {
     .maybeSingle();
 
   if (!appointment) notFound();
+
+  const { data: settingsRows } = await sb.from("settings").select("key,value");
+  const settings = parseBookingSettings(settingsRows ?? []);
 
   const startDate = new Date(appointment.start_time);
   const serviceName = appointment.services?.name ?? "vaša usluga";
@@ -100,6 +104,9 @@ export default async function UspjesnoPage({ searchParams }: PageProps) {
               <p>{BUSINESS.address}</p>
               <p className="mt-1">
                 Rezervacija postaje obavezujuća nakon Unine potvrde.
+                {settings.cancellationHours > 0 && (
+                  <> Besplatno otkazivanje do {settings.cancellationHours}h prije termina.</>
+                )}
               </p>
             </div>
 
