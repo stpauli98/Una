@@ -56,6 +56,9 @@ const RULES = [
     options: [
       { value: "0", label: "Bez pauze" },
       { value: "30", label: "30 minuta" },
+      { value: "60", label: "1 sat" },
+      { value: "90", label: "1 sat 30 min" },
+      { value: "120", label: "2 sata" },
     ],
   },
 ] as const;
