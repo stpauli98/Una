@@ -37,6 +37,23 @@ export function Nav({ overHero = false }: NavProps) {
     setMenuOpen(false);
   }, [pathname]);
 
+  // Focus trap: set inert on main/footer when mobile menu is open
+  useEffect(() => {
+    const main = document.querySelector("main");
+    const footer = document.querySelector("footer");
+    if (menuOpen) {
+      main?.setAttribute("inert", "");
+      footer?.setAttribute("inert", "");
+    } else {
+      main?.removeAttribute("inert");
+      footer?.removeAttribute("inert");
+    }
+    return () => {
+      main?.removeAttribute("inert");
+      footer?.removeAttribute("inert");
+    };
+  }, [menuOpen]);
+
   // Kada je mobile meni otvoren, overlay ima svijetlu marble pozadinu pa
   // nav elementi (hamburger, logo) moraju biti tamni da bi bili vidljivi.
   const solid = scrolled || !overHero || menuOpen;

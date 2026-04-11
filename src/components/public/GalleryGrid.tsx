@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { X, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
@@ -28,6 +28,8 @@ export function GalleryGrid({ images }: Props) {
   const [activeFilter, setActiveFilter] = useState<string>("sve");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [lightboxLoaded, setLightboxLoaded] = useState(false);
+  const triggerRef = useRef<HTMLElement | null>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
 
   const filtered =
     activeFilter === "sve"
@@ -53,9 +55,12 @@ export function GalleryGrid({ images }: Props) {
 
   const closeLightbox = useCallback(() => {
     setLightboxIndex(null);
+    // Restore focus to the triggering element
+    triggerRef.current?.focus();
+    triggerRef.current = null;
   }, []);
 
-  // Keyboard navigation
+  // Keyboard navigation + focus trap
   useEffect(() => {
     if (!lightboxOpen) return;
     const handleKey = (e: KeyboardEvent) => {
@@ -66,9 +71,15 @@ export function GalleryGrid({ images }: Props) {
     document.addEventListener("keydown", handleKey);
     // Prevent body scroll
     document.body.style.overflow = "hidden";
+    // Set inert on main content to trap focus
+    const main = document.querySelector("main");
+    main?.setAttribute("inert", "");
+    // Auto-focus close button
+    closeRef.current?.focus();
     return () => {
       document.removeEventListener("keydown", handleKey);
       document.body.style.overflow = "";
+      main?.removeAttribute("inert");
     };
   }, [lightboxOpen, goNext, goPrev, closeLightbox]);
 
@@ -116,7 +127,8 @@ export function GalleryGrid({ images }: Props) {
           {filtered.map((img, index) => (
             <div
               key={img.id}
-              onClick={() => {
+              onClick={(e) => {
+                triggerRef.current = e.currentTarget as HTMLElement;
                 setLightboxLoaded(false);
                 setLightboxIndex(index);
               }}
@@ -165,6 +177,7 @@ export function GalleryGrid({ images }: Props) {
         >
           {/* Close */}
           <button
+            ref={closeRef}
             type="button"
             onClick={closeLightbox}
             className="absolute right-4 top-4 z-10 flex size-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 cursor-pointer"
