@@ -121,3 +121,39 @@ export async function deleteGalleryImage(id: number): Promise<ActionResult> {
     return { ok: false, error: (e as Error).message };
   }
 }
+
+export async function deleteGalleryImages(
+  ids: number[],
+): Promise<ActionResult<{ deleted: number }>> {
+  try {
+    await requireAuth();
+    if (ids.length === 0) return { ok: false, error: "Nema slika za brisanje" };
+
+    const admin = createAdminClient();
+
+    const { data: rows } = await admin
+      .from("gallery_images")
+      .select("id,storage_path")
+      .in("id", ids);
+
+    if (!rows || rows.length === 0) {
+      return { ok: false, error: "Slike nisu pronađene" };
+    }
+
+    const paths = rows.map((r) => r.storage_path);
+    await admin.storage.from("gallery").remove(paths);
+
+    const { error } = await admin
+      .from("gallery_images")
+      .delete()
+      .in("id", ids);
+    if (error) return { ok: false, error: error.message };
+
+    revalidatePath("/admin/galerija");
+    revalidatePath("/galerija");
+    revalidatePath("/");
+    return { ok: true, data: { deleted: rows.length } };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}

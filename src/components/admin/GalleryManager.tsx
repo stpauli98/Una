@@ -2,10 +2,11 @@
 
 import { useState, useTransition, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
-import { Trash2, Upload, X, ImagePlus, Loader2 } from "lucide-react";
+import { Trash2, Upload, X, ImagePlus, Loader2, CheckSquare, Square, Check } from "lucide-react";
 import {
   uploadGalleryImages,
   deleteGalleryImage,
+  deleteGalleryImages,
 } from "@/app/admin/(protected)/galerija/actions";
 import { cn } from "@/lib/utils/cn";
 import imageCompression from "browser-image-compression";
@@ -64,9 +65,57 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
   const [previews, setPreviews] = useState<PreviewFile[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [compressing, setCompressing] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filtered = items.filter((i) => i.category === activeCategory);
+
+  // Reset selekcije pri promjeni kategorije
+  const handleCategoryChange = (key: string) => {
+    setActiveCategory(key);
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    setSelectedIds(new Set(filtered.map((i) => i.id)));
+  };
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedIds.size === 0) return;
+    if (
+      !confirm(
+        `Obrisati ${selectedIds.size} ${selectedIds.size === 1 ? "sliku" : "slika"}? Ne može se vratiti.`,
+      )
+    )
+      return;
+    setError(null);
+    setMessage(null);
+    startTransition(async () => {
+      const r = await deleteGalleryImages(Array.from(selectedIds));
+      if (r.ok) {
+        setMessage(`Obrisano ${r.data?.deleted ?? 0} slika`);
+        exitSelectMode();
+      } else {
+        setError(r.error);
+      }
+    });
+  };
 
   useEffect(() => {
     return () => {
@@ -157,7 +206,7 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
           <button
             key={cat.key}
             type="button"
-            onClick={() => setActiveCategory(cat.key)}
+            onClick={() => handleCategoryChange(cat.key)}
             className={cn(
               "whitespace-nowrap border px-3 py-1.5 text-[11px] uppercase tracking-wider transition-colors cursor-pointer",
               activeCategory === cat.key
@@ -335,6 +384,61 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
         </div>
       )}
 
+      {/* Selection toolbar */}
+      {filtered.length > 0 && (
+        <div className="mb-3 flex items-center justify-between">
+          {selectMode ? (
+            <>
+              <div className="flex items-center gap-3 text-[11px]">
+                <span className="font-medium text-dark">
+                  {selectedIds.size}{" "}
+                  {selectedIds.size === 1 ? "izabrana" : "izabrano"}
+                </span>
+                <button
+                  type="button"
+                  onClick={selectAll}
+                  disabled={pending}
+                  className="text-rose underline-offset-2 hover:underline cursor-pointer"
+                >
+                  Izaberi sve ({filtered.length})
+                </button>
+              </div>
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  disabled={pending || selectedIds.size === 0}
+                  onClick={handleBulkDelete}
+                  className="inline-flex items-center gap-1 bg-red-600 px-3 py-1.5 text-[10px] uppercase tracking-wider text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+                >
+                  <Trash2 size={11} />
+                  Obriši ({selectedIds.size})
+                </button>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={exitSelectMode}
+                  className="border border-cream bg-white px-3 py-1.5 text-[10px] uppercase tracking-wider text-body hover:border-rose cursor-pointer"
+                >
+                  Otkaži
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="ml-auto">
+              <button
+                type="button"
+                onClick={() => setSelectMode(true)}
+                className="inline-flex items-center gap-1 border border-cream bg-white px-3 py-1.5 text-[10px] uppercase tracking-wider text-body hover:border-rose hover:text-rose cursor-pointer"
+              >
+                <CheckSquare size={11} />
+                Izaberi
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Gallery grid */}
       {filtered.length === 0 ? (
         <div className="border border-cream bg-white p-10 text-center">
           <p className="text-sm text-light">
@@ -347,37 +451,67 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-          {filtered.map((item) => (
-            <div
-              key={item.id}
-              className="group relative aspect-square overflow-hidden border border-cream bg-white"
-            >
-              <Image
-                src={item.url}
-                alt={item.alt}
-                fill
-                sizes="(min-width:1024px) 240px, (min-width:768px) 33vw, 50vw"
-                className="object-cover"
-              />
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() => {
-                  if (!confirm("Obrisati ovu sliku? Ne može se vratiti.")) {
-                    return;
-                  }
-                  startTransition(async () => {
-                    const r = await deleteGalleryImage(item.id);
-                    if (!r.ok) setError(r.error);
-                  });
-                }}
-                className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-full bg-red-600 text-white opacity-0 transition-opacity hover:bg-red-700 group-hover:opacity-100 disabled:opacity-60 cursor-pointer"
-                aria-label="Obriši sliku"
+          {filtered.map((item) => {
+            const isSelected = selectedIds.has(item.id);
+            return (
+              <div
+                key={item.id}
+                onClick={selectMode ? () => toggleSelect(item.id) : undefined}
+                className={cn(
+                  "group relative aspect-square overflow-hidden border bg-white transition-all",
+                  selectMode && "cursor-pointer",
+                  isSelected
+                    ? "border-rose ring-2 ring-rose/30"
+                    : "border-cream",
+                )}
               >
-                <Trash2 size={14} />
-              </button>
-            </div>
-          ))}
+                <Image
+                  src={item.url}
+                  alt={item.alt}
+                  fill
+                  sizes="(min-width:1024px) 240px, (min-width:768px) 33vw, 50vw"
+                  className={cn(
+                    "object-cover",
+                    isSelected && "opacity-75",
+                  )}
+                />
+
+                {/* Selection checkbox */}
+                {selectMode && (
+                  <div className="absolute left-2 top-2 flex size-6 items-center justify-center rounded">
+                    {isSelected ? (
+                      <div className="flex size-5 items-center justify-center rounded bg-rose text-white">
+                        <Check size={12} strokeWidth={3} />
+                      </div>
+                    ) : (
+                      <div className="flex size-5 items-center justify-center rounded border-2 border-white/80 bg-dark/30" />
+                    )}
+                  </div>
+                )}
+
+                {/* Individual delete (only in normal mode) */}
+                {!selectMode && (
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => {
+                      if (!confirm("Obrisati ovu sliku? Ne može se vratiti.")) {
+                        return;
+                      }
+                      startTransition(async () => {
+                        const r = await deleteGalleryImage(item.id);
+                        if (!r.ok) setError(r.error);
+                      });
+                    }}
+                    className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-full bg-red-600 text-white opacity-0 transition-opacity hover:bg-red-700 group-hover:opacity-100 disabled:opacity-60 cursor-pointer"
+                    aria-label="Obriši sliku"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
