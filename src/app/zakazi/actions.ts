@@ -1,11 +1,12 @@
 "use server";
 
-import { addMinutes } from "date-fns";
+import { addMinutes, differenceInHours } from "date-fns";
 import { redirect } from "next/navigation";
 import { bookingFormSchema } from "@/lib/booking/schemas";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhone } from "@/lib/utils/phone";
 import { isGridAligned } from "@/lib/utils/grid";
+import { parseBookingSettings } from "@/lib/settings/read";
 
 export type CreateAppointmentResult =
   | { ok: true }
@@ -60,6 +61,17 @@ export async function createAppointment(
     };
   }
   const end = addMinutes(start, service.duration_min);
+
+  // Server-side min_hours_before enforcement
+  const { data: settingsRows } = await sb.from("settings").select("key,value");
+  const bookingSettings = parseBookingSettings(settingsRows ?? []);
+  const hoursUntilStart = differenceInHours(start, new Date());
+  if (hoursUntilStart < bookingSettings.minHoursBefore) {
+    return {
+      ok: false,
+      error: `Rezervacija mora biti najmanje ${bookingSettings.minHoursBefore}h unaprijed`,
+    };
+  }
 
   // Race guard: provjeri da se slot nije upravo zauzeo
   const { data: clashing, error: clashErr } = await sb

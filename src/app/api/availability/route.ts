@@ -21,7 +21,16 @@ export const revalidate = 0;
 export async function GET(req: NextRequest) {
   const dateStr = req.nextUrl.searchParams.get("date");
   const serviceIdStr = req.nextUrl.searchParams.get("service_id");
-  const isAdmin = req.nextUrl.searchParams.get("admin") === "true";
+  // Verify admin session before trusting the admin flag
+  let isAdmin = false;
+  if (req.nextUrl.searchParams.get("admin") === "true") {
+    const { createClient } = await import("@/lib/supabase/server");
+    const sb = await createClient();
+    const {
+      data: { user },
+    } = await sb.auth.getUser();
+    isAdmin = !!user;
+  }
 
   if (!dateStr || !serviceIdStr) {
     return NextResponse.json(
