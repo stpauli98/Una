@@ -94,6 +94,8 @@ export async function createAppointment(
     };
   }
 
+  const confirmationToken = crypto.randomUUID();
+
   const { data: inserted, error: insErr } = await sb
     .from("appointments")
     .insert({
@@ -105,6 +107,7 @@ export async function createAppointment(
       end_time: end.toISOString(),
       notes: parsed.data.notes || null,
       status: "ceka",
+      confirmation_token: confirmationToken,
     })
     .select("id")
     .single();
@@ -119,5 +122,5 @@ export async function createAppointment(
 
   // TODO(Phase 8): sendNewAppointmentEmail(inserted, service, parsed.data)
 
-  redirect(`/zakazi/uspjesno?id=${inserted.id}`);
+  redirect(`/zakazi/uspjesno?token=${confirmationToken}`);
 }

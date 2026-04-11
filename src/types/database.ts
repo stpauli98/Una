@@ -40,6 +40,7 @@ export type Database = {
           client_name: string
           client_phone: string
           confirmation_sent_at: string | null
+          confirmation_token: string | null
           created_at: string
           end_time: string
           id: number
@@ -54,6 +55,7 @@ export type Database = {
           client_name: string
           client_phone: string
           confirmation_sent_at?: string | null
+          confirmation_token?: string | null
           created_at?: string
           end_time: string
           id?: never
@@ -68,6 +70,7 @@ export type Database = {
           client_name?: string
           client_phone?: string
           confirmation_sent_at?: string | null
+          confirmation_token?: string | null
           created_at?: string
           end_time?: string
           id?: never

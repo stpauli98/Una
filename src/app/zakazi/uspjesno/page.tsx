@@ -16,12 +16,12 @@ export const metadata: Metadata = {
 };
 
 type PageProps = {
-  searchParams: Promise<{ id?: string }>;
+  searchParams: Promise<{ token?: string }>;
 };
 
 export default async function UspjesnoPage({ searchParams }: PageProps) {
-  const { id } = await searchParams;
-  if (!id) notFound();
+  const { token } = await searchParams;
+  if (!token) notFound();
 
   const sb = createAdminClient();
   const { data: appointment } = await sb
@@ -29,7 +29,7 @@ export default async function UspjesnoPage({ searchParams }: PageProps) {
     .select(
       "id,start_time,client_name,service_id,services(name,price,price_note)",
     )
-    .eq("id", Number(id))
+    .eq("confirmation_token", token)
     .maybeSingle();
 
   if (!appointment) notFound();
