@@ -8,6 +8,7 @@ import {
   deleteGalleryImage,
 } from "@/app/admin/(protected)/galerija/actions";
 import { cn } from "@/lib/utils/cn";
+import imageCompression from "browser-image-compression";
 
 type GalleryItem = {
   id: number;
@@ -32,6 +33,13 @@ const CATEGORIES = [
 
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
+const COMPRESSION_OPTIONS = {
+  maxSizeMB: 0.3,
+  maxWidthOrHeight: 1600,
+  useWebWorker: true,
+  fileType: "image/webp" as const,
+};
+
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
@@ -55,6 +63,7 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
   const [message, setMessage] = useState<string | null>(null);
   const [previews, setPreviews] = useState<PreviewFile[]>([]);
   const [dragOver, setDragOver] = useState(false);
+  const [compressing, setCompressing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filtered = items.filter((i) => i.category === activeCategory);
@@ -65,18 +74,35 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
     };
   }, [previews]);
 
-  const addFiles = useCallback((fileList: FileList | File[]) => {
+  const addFiles = useCallback(async (fileList: FileList | File[]) => {
     const files = Array.from(fileList).filter((f) =>
       ACCEPTED_TYPES.includes(f.type),
     );
     if (files.length === 0) return;
-    const newPreviews = files.map((file) => ({
-      file,
-      previewUrl: URL.createObjectURL(file),
-      name: file.name,
-      sizeLabel: formatFileSize(file.size),
-    }));
-    setPreviews((prev) => [...prev, ...newPreviews]);
+    setCompressing(true);
+    try {
+      const compressed = await Promise.all(
+        files.map(async (file) => {
+          try {
+            return await imageCompression(file, COMPRESSION_OPTIONS);
+          } catch {
+            console.warn(`Kompresija neuspješna za ${file.name}, preskačem`);
+            return null;
+          }
+        }),
+      );
+      const valid = compressed.filter((f): f is File => f !== null);
+      if (valid.length === 0) return;
+      const newPreviews = valid.map((file) => ({
+        file,
+        previewUrl: URL.createObjectURL(file),
+        name: file.name,
+        sizeLabel: formatFileSize(file.size),
+      }));
+      setPreviews((prev) => [...prev, ...newPreviews]);
+    } finally {
+      setCompressing(false);
+    }
   }, []);
 
   const removePreview = useCallback((index: number) => {
@@ -158,7 +184,17 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
           }}
         />
 
-        {!hasPreview ? (
+        {compressing && !hasPreview ? (
+          <div className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-rose/50 bg-rose/[0.03] px-6 py-10">
+            <Loader2 size={24} className="animate-spin text-rose" />
+            <p className="text-[13px] font-medium text-dark">
+              Kompresija slika...
+            </p>
+            <p className="text-[11px] text-light">
+              Slike se automatski smanjuju za brži upload
+            </p>
+          </div>
+        ) : !hasPreview ? (
           <div
             onClick={() => fileInputRef.current?.click()}
             onDragOver={(e) => {
@@ -191,7 +227,7 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
                 </span>
               </p>
               <p className="mt-1 text-[11px] text-light">
-                JPG, PNG ili WebP · Automatska kompresija na 1600px
+                JPG, PNG ili WebP · Automatska kompresija na 1600px WebP
               </p>
             </div>
           </div>
@@ -206,8 +242,8 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={pending}
-                className="text-[10px] text-rose underline-offset-2 hover:underline cursor-pointer"
+                disabled={pending || compressing}
+                className="text-[10px] text-rose underline-offset-2 hover:underline cursor-pointer disabled:opacity-40"
               >
                 + Dodaj još
               </button>
@@ -258,7 +294,7 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
             <div className="mt-4 flex gap-2">
               <button
                 type="button"
-                disabled={pending}
+                disabled={pending || compressing}
                 onClick={handleUpload}
                 className="inline-flex flex-1 items-center justify-center gap-1.5 bg-rose py-2.5 text-[11px] uppercase tracking-wider text-white hover:bg-rose-hover disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
               >

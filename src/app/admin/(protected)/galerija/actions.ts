@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { compressToWebp } from "@/lib/images/compress";
 
 type ActionResult<T = void> =
   | { ok: true; data?: T }
@@ -53,14 +52,13 @@ export async function uploadGalleryImages(
     let uploaded = 0;
     for (const file of realFiles) {
       const buffer = Buffer.from(await file.arrayBuffer());
-      const compressed = await compressToWebp(buffer);
       const timestamp = Date.now();
       const random = Math.random().toString(36).slice(2, 8);
       const filename = `${category}/${timestamp}-${random}.webp`;
 
       const { error: uploadErr } = await admin.storage
         .from("gallery")
-        .upload(filename, compressed, {
+        .upload(filename, buffer, {
           contentType: "image/webp",
           upsert: false,
         });
