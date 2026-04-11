@@ -7,21 +7,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 const MAX_DIMENSION = 4096;
-
-function isValidWebp(buffer: Buffer): boolean {
-  if (buffer.length < 12) return false;
-  // RIFF header (bytes 0-3) + WEBP marker (bytes 8-11)
-  return (
-    buffer[0] === 0x52 &&
-    buffer[1] === 0x49 &&
-    buffer[2] === 0x46 &&
-    buffer[3] === 0x46 &&
-    buffer[8] === 0x57 &&
-    buffer[9] === 0x45 &&
-    buffer[10] === 0x42 &&
-    buffer[11] === 0x50
-  );
-}
+const ALLOWED_FORMATS: sharp.AvailableFormatInfo["id"][] = [
+  "jpeg",
+  "png",
+  "webp",
+];
 
 type ActionResult<T = void> =
   | { ok: true; data?: T }
@@ -62,19 +52,26 @@ export async function uploadSingleGalleryImage(
       return { ok: false, error: "Slika prelazi 5 MB" };
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
+    const rawBuffer = Buffer.from(await file.arrayBuffer());
 
-    if (!isValidWebp(buffer)) {
-      return { ok: false, error: "Neispravan format slike (očekujem WebP)" };
-    }
-
+    // Validate format and dimensions via sharp, then convert to WebP
+    let webpBuffer: Buffer;
     try {
-      const meta = await sharp(buffer).metadata();
+      const meta = await sharp(rawBuffer).metadata();
+      if (!meta.format || !ALLOWED_FORMATS.includes(meta.format as never)) {
+        return { ok: false, error: "Neispravan format slike (dozvoljeni: JPG, PNG, WebP)" };
+      }
       if (!meta.width || !meta.height || meta.width > MAX_DIMENSION || meta.height > MAX_DIMENSION) {
         return { ok: false, error: "Dimenzije slike prelaze dozvoljeni limit" };
       }
+      // Convert to WebP server-side (handles cases where client-side
+      // compression didn't produce real WebP, e.g. Safari)
+      webpBuffer = await sharp(rawBuffer)
+        .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
+        .webp({ quality: 80 })
+        .toBuffer();
     } catch {
-      return { ok: false, error: "Ne mogu pročitati metapodatke slike" };
+      return { ok: false, error: "Ne mogu obraditi sliku" };
     }
 
     const admin = createAdminClient();
@@ -94,7 +91,7 @@ export async function uploadSingleGalleryImage(
 
     const { error: uploadErr } = await admin.storage
       .from("gallery")
-      .upload(filename, buffer, {
+      .upload(filename, webpBuffer, {
         contentType: "image/webp",
         upsert: false,
       });

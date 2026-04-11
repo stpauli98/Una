@@ -205,6 +205,7 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
 
     let uploaded = 0;
     let failed = 0;
+    let lastError = "";
 
     for (let i = 0; i < previews.length; i++) {
       setUploadProgress({ current: i + 1, total: previews.length });
@@ -213,10 +214,15 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
       fd.set("file", previews[i].file);
       try {
         const result = await uploadSingleGalleryImage(fd);
-        if (result.ok) uploaded++;
-        else failed++;
-      } catch {
+        if (result.ok) {
+          uploaded++;
+        } else {
+          failed++;
+          lastError = result.error;
+        }
+      } catch (e) {
         failed++;
+        lastError = (e as Error).message;
       }
     }
 
@@ -228,9 +234,9 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
     if (failed === 0) {
       setMessage(`Uspješno učitano ${uploaded} slika`);
     } else if (uploaded > 0) {
-      setError(`Učitano ${uploaded}, neuspjelo ${failed} slika`);
+      setError(`Učitano ${uploaded}, neuspjelo ${failed}: ${lastError}`);
     } else {
-      setError("Nije uspjelo slanje ni jedne slike");
+      setError(lastError || "Nije uspjelo slanje ni jedne slike");
     }
   };
 
