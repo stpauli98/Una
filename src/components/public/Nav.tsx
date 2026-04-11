@@ -120,7 +120,7 @@ export function Nav({ overHero = false }: NavProps) {
           {/* Mobile hamburger */}
           <button
             type="button"
-            className="flex flex-col gap-1 bg-transparent p-2 min-h-[44px] min-w-[44px] md:hidden cursor-pointer"
+            className="relative z-[70] flex flex-col items-center justify-center gap-1 bg-transparent p-2 min-h-[44px] min-w-[44px] md:hidden cursor-pointer"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label={menuOpen ? "Zatvori meni" : "Otvori meni"}
             aria-expanded={menuOpen}
