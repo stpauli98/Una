@@ -12,6 +12,7 @@ export const metadata: Metadata = {
   title: "Cjenovnik",
   description:
     "Cjenovnik usluga UP Beauty & Makeup Studio — šminkanje, pedikir, trepavice, obuka. Sve cijene u KM.",
+  alternates: { canonical: "/cjenovnik" },
 };
 
 export const revalidate = 300;

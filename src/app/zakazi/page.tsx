@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Zakaži termin",
   description:
     "Zakažite termin online u UP Beauty & Makeup Studio — šminkanje, pedikir, trepavice. Tri koraka, bez čekanja.",
+  alternates: { canonical: "/zakazi" },
 };
 
 // Booking stranica se ne smije keširati — uvijek svježi podaci o uslugama

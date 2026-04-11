@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   title: "Galerija",
   description:
     "Portfolio radova UP Beauty & Makeup Studio — šminkanje, svadbeno, pedikir, trepavice.",
+  alternates: { canonical: "/galerija" },
 };
 
 export const revalidate = 300;

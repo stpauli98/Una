@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { Nav } from "@/components/public/Nav";
@@ -9,6 +10,10 @@ import { TestimonialsCarousel } from "@/components/public/TestimonialsCarousel";
 import { LocalBusinessJsonLd } from "@/components/public/LocalBusinessJsonLd";
 import { createClient } from "@/lib/supabase/server";
 import { BUSINESS } from "@/lib/constants/business";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export const revalidate = 300; // 5 min ISR
 

@@ -6,6 +6,7 @@ import { BUSINESS } from "@/lib/constants/business";
 export const metadata: Metadata = {
   title: "Politika privatnosti",
   description: "Politika privatnosti UP Beauty & Makeup Studio.",
+  alternates: { canonical: "/politika-privatnosti" },
 };
 
 export default function PolitikaPrivatnostiPage() {

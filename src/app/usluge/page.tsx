@@ -13,6 +13,7 @@ export const metadata: Metadata = {
   title: "Usluge",
   description:
     "Profesionalno šminkanje, pedikir, trepavice i obuka u UP Beauty Studio u Gradišci. Pogledajte sve usluge i cijene.",
+  alternates: { canonical: "/usluge" },
 };
 
 export const revalidate = 300;
