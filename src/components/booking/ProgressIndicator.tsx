@@ -8,7 +8,7 @@ const STEPS = [
 
 export function ProgressIndicator({ currentStep }: { currentStep: 1 | 2 | 3 }) {
   return (
-    <div className="mx-auto flex max-w-[460px] items-center justify-center gap-3">
+    <div className="mx-auto flex max-w-[460px] items-center justify-center gap-2 sm:gap-3">
       {STEPS.map((step, i) => {
         const completed = currentStep > step.num;
         const active = currentStep === step.num;

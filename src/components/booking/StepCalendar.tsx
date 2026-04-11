@@ -133,7 +133,7 @@ export function StepCalendar({
         <p className="text-[13px] text-rose">{serviceName}</p>
       </div>
 
-      <div className="mx-auto max-w-[520px] border border-cream bg-white p-5 md:p-6">
+      <div className="mx-auto max-w-[520px] border border-cream bg-white p-3 md:p-5">
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
           <button
@@ -216,7 +216,7 @@ export function StepCalendar({
                     key={slot.start}
                     type="button"
                     onClick={() => onSelect(slot.start)}
-                    className="border border-cream bg-white px-3 py-3 text-sm text-dark transition-colors hover:border-rose hover:bg-rose hover:text-white cursor-pointer"
+                    className="border border-cream bg-white px-3 py-3.5 text-sm text-dark transition-colors hover:border-rose hover:bg-rose hover:text-white cursor-pointer"
                   >
                     {formatTime(start)}
                   </button>

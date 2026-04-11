@@ -167,7 +167,7 @@ export function GalleryGrid({ images }: Props) {
           <button
             type="button"
             onClick={closeLightbox}
-            className="absolute right-4 top-4 z-10 flex size-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 cursor-pointer"
+            className="absolute right-4 top-4 z-10 flex size-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 cursor-pointer"
             aria-label="Zatvori"
           >
             <X size={20} strokeWidth={1.5} />
@@ -186,7 +186,7 @@ export function GalleryGrid({ images }: Props) {
                 e.stopPropagation();
                 goPrev();
               }}
-              className="absolute left-3 z-10 flex size-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 md:left-6 cursor-pointer"
+              className="absolute left-2 z-10 flex size-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 md:left-6 cursor-pointer"
               aria-label="Prethodna"
             >
               <ChevronLeft size={22} strokeWidth={1.5} />
@@ -230,7 +230,7 @@ export function GalleryGrid({ images }: Props) {
                 e.stopPropagation();
                 goNext();
               }}
-              className="absolute right-3 z-10 flex size-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 md:right-6 cursor-pointer"
+              className="absolute right-3 z-10 flex size-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 md:right-6 cursor-pointer"
               aria-label="Sljedeća"
             >
               <ChevronRight size={22} strokeWidth={1.5} />

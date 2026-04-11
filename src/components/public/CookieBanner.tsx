@@ -51,7 +51,7 @@ export function CookieBanner() {
           type="button"
           onClick={accept}
           aria-label="Prihvati i zatvori"
-          className="flex size-8 shrink-0 items-center justify-center rounded-full text-light transition-colors hover:bg-warm hover:text-dark cursor-pointer"
+          className="flex size-10 shrink-0 items-center justify-center rounded-full text-light transition-colors hover:bg-warm hover:text-dark cursor-pointer"
         >
           <X size={16} strokeWidth={1.5} />
         </button>
@@ -59,7 +59,7 @@ export function CookieBanner() {
       <button
         type="button"
         onClick={accept}
-        className="mt-3 w-full bg-rose py-2 text-[10px] uppercase tracking-[0.25em] text-white hover:bg-rose-hover cursor-pointer"
+        className="mt-3 w-full bg-rose py-3 text-[10px] uppercase tracking-[0.25em] text-white hover:bg-rose-hover cursor-pointer"
       >
         Prihvatam
       </button>

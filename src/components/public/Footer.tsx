@@ -60,7 +60,7 @@ export function Footer() {
             href={BUSINESS.instagram}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex size-9 items-center justify-center rounded-full border border-white/15 text-white/50 hover:border-white/40 hover:text-white"
+            className="flex size-11 items-center justify-center rounded-full border border-white/15 text-white/50 hover:border-white/40 hover:text-white"
             aria-label="Instagram"
           >
             <Camera size={14} strokeWidth={1.5} />
@@ -69,14 +69,14 @@ export function Footer() {
             href={BUSINESS.tiktok}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex size-9 items-center justify-center rounded-full border border-white/15 text-white/50 hover:border-white/40 hover:text-white"
+            className="flex size-11 items-center justify-center rounded-full border border-white/15 text-white/50 hover:border-white/40 hover:text-white"
             aria-label="TikTok"
           >
             <Music2 size={14} strokeWidth={1.5} />
           </a>
           <a
             href={`mailto:${BUSINESS.email}`}
-            className="flex size-9 items-center justify-center rounded-full border border-white/15 text-white/50 hover:border-white/40 hover:text-white"
+            className="flex size-11 items-center justify-center rounded-full border border-white/15 text-white/50 hover:border-white/40 hover:text-white"
             aria-label="Email"
           >
             <Mail size={14} strokeWidth={1.5} />
