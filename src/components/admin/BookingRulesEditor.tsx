@@ -115,7 +115,7 @@ function RuleRow({
           setValue(e.target.value);
           setSaved(false);
         }}
-        className="border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus:outline-none"
+        className="border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose"
       >
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>

@@ -51,7 +51,7 @@ export function LoginForm({ redirectTo }: Props) {
           required
           autoComplete="email"
           disabled={pending}
-          className="w-full border border-cream bg-marble px-3.5 py-2.5 text-sm text-dark focus:border-rose focus:outline-none disabled:opacity-60"
+          className="w-full border border-cream bg-marble px-3.5 py-2.5 text-sm text-dark focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose disabled:opacity-60"
         />
       </div>
 
@@ -69,7 +69,7 @@ export function LoginForm({ redirectTo }: Props) {
           required
           autoComplete="current-password"
           disabled={pending}
-          className="w-full border border-cream bg-marble px-3.5 py-2.5 text-sm text-dark focus:border-rose focus:outline-none disabled:opacity-60"
+          className="w-full border border-cream bg-marble px-3.5 py-2.5 text-sm text-dark focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose disabled:opacity-60"
         />
       </div>
 

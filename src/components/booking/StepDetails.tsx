@@ -83,7 +83,7 @@ export function StepDetails({ service, startTimeIso, onBack }: Props) {
             required
             autoComplete="name"
             disabled={pending}
-            className="w-full border border-cream bg-marble px-3.5 py-2.5 text-sm text-dark placeholder:text-light focus:border-rose focus:outline-none disabled:opacity-60"
+            className="w-full border border-cream bg-marble px-3.5 py-2.5 text-sm text-dark placeholder:text-light focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose disabled:opacity-60"
             placeholder="Npr. Marija Petrović"
           />
           {fieldErrors.client_name && (
@@ -107,7 +107,7 @@ export function StepDetails({ service, startTimeIso, onBack }: Props) {
             required
             autoComplete="tel"
             disabled={pending}
-            className="w-full border border-cream bg-marble px-3.5 py-2.5 text-sm text-dark placeholder:text-light focus:border-rose focus:outline-none disabled:opacity-60"
+            className="w-full border border-cream bg-marble px-3.5 py-2.5 text-sm text-dark placeholder:text-light focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose disabled:opacity-60"
             placeholder="065 123 456 ili +49 151 23456789"
           />
           <p className="mt-1 text-[10px] text-light">
@@ -133,7 +133,7 @@ export function StepDetails({ service, startTimeIso, onBack }: Props) {
             type="email"
             autoComplete="email"
             disabled={pending}
-            className="w-full border border-cream bg-marble px-3.5 py-2.5 text-sm text-dark placeholder:text-light focus:border-rose focus:outline-none disabled:opacity-60"
+            className="w-full border border-cream bg-marble px-3.5 py-2.5 text-sm text-dark placeholder:text-light focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose disabled:opacity-60"
             placeholder="vas@email.com"
           />
           {fieldErrors.client_email && (
@@ -155,7 +155,7 @@ export function StepDetails({ service, startTimeIso, onBack }: Props) {
             name="notes"
             rows={3}
             disabled={pending}
-            className="w-full resize-none border border-cream bg-marble px-3.5 py-2.5 text-sm text-dark placeholder:text-light focus:border-rose focus:outline-none disabled:opacity-60"
+            className="w-full resize-none border border-cream bg-marble px-3.5 py-2.5 text-sm text-dark placeholder:text-light focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose disabled:opacity-60"
             placeholder="Alergije, posebne želje, inspiracija..."
           />
           {fieldErrors.notes && (

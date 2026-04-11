@@ -128,7 +128,7 @@ export function ManualAppointmentForm({ services, onClose }: Props) {
               required
               value={serviceId}
               onChange={(e) => setServiceId(e.target.value)}
-              className="w-full border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus:outline-none"
+              className="w-full border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose"
             >
               {services.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -146,7 +146,7 @@ export function ManualAppointmentForm({ services, onClose }: Props) {
             <input
               name="client_name"
               required
-              className="w-full border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus:outline-none"
+              className="w-full border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose"
             />
             {fieldErrors.client_name && (
               <p className="mt-1 text-xs text-red-600">
@@ -163,7 +163,7 @@ export function ManualAppointmentForm({ services, onClose }: Props) {
               name="client_phone"
               required
               placeholder="065 123 456 ili +49 151 23456789"
-              className="w-full border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus:outline-none"
+              className="w-full border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose"
             />
             {fieldErrors.client_phone && (
               <p className="mt-1 text-xs text-red-600">
@@ -179,7 +179,7 @@ export function ManualAppointmentForm({ services, onClose }: Props) {
             <input
               name="client_email"
               type="email"
-              className="w-full border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus:outline-none"
+              className="w-full border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose"
             />
           </label>
 
@@ -192,7 +192,7 @@ export function ManualAppointmentForm({ services, onClose }: Props) {
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-full border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus:outline-none"
+              className="w-full border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose"
             />
           </div>
 
@@ -285,13 +285,13 @@ export function ManualAppointmentForm({ services, onClose }: Props) {
                   name="custom_date"
                   type="date"
                   required
-                  className="flex-1 border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus:outline-none"
+                  className="flex-1 border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose"
                 />
                 <select
                   name="custom_time"
                   required
                   defaultValue="17:00"
-                  className="border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus:outline-none"
+                  className="border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose"
                 >
                   {Array.from({ length: 48 }, (_, i) => {
                     const h = String(Math.floor(i / 2)).padStart(2, "0");
@@ -318,7 +318,7 @@ export function ManualAppointmentForm({ services, onClose }: Props) {
             <textarea
               name="notes"
               rows={2}
-              className="w-full resize-none border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus:outline-none"
+              className="w-full resize-none border border-cream bg-marble px-3 py-2 text-sm focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose"
             />
           </label>
 

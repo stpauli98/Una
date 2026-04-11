@@ -60,7 +60,7 @@ export function TrainingInquiryForm() {
           required
           autoComplete="name"
           disabled={pending}
-          className="w-full border border-cream bg-marble px-3.5 py-2.5 text-sm text-dark placeholder:text-light focus:border-rose focus:outline-none disabled:opacity-60"
+          className="w-full border border-cream bg-marble px-3.5 py-2.5 text-sm text-dark placeholder:text-light focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose disabled:opacity-60"
           placeholder="Npr. Ana Jovanović"
         />
         {fieldErrors.name && (
@@ -82,7 +82,7 @@ export function TrainingInquiryForm() {
           required
           autoComplete="tel"
           disabled={pending}
-          className="w-full border border-cream bg-marble px-3.5 py-2.5 text-sm text-dark placeholder:text-light focus:border-rose focus:outline-none disabled:opacity-60"
+          className="w-full border border-cream bg-marble px-3.5 py-2.5 text-sm text-dark placeholder:text-light focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose disabled:opacity-60"
           placeholder="065 123 456 ili +49 151 23456789"
         />
         {fieldErrors.phone && (
@@ -103,7 +103,7 @@ export function TrainingInquiryForm() {
           type="email"
           autoComplete="email"
           disabled={pending}
-          className="w-full border border-cream bg-marble px-3.5 py-2.5 text-sm text-dark placeholder:text-light focus:border-rose focus:outline-none disabled:opacity-60"
+          className="w-full border border-cream bg-marble px-3.5 py-2.5 text-sm text-dark placeholder:text-light focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose disabled:opacity-60"
           placeholder="vas@email.com"
         />
         {fieldErrors.email && (
@@ -123,7 +123,7 @@ export function TrainingInquiryForm() {
           name="message"
           rows={4}
           disabled={pending}
-          className="w-full resize-none border border-cream bg-marble px-3.5 py-2.5 text-sm text-dark placeholder:text-light focus:border-rose focus:outline-none disabled:opacity-60"
+          className="w-full resize-none border border-cream bg-marble px-3.5 py-2.5 text-sm text-dark placeholder:text-light focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose disabled:opacity-60"
           placeholder="Vaše iskustvo, pitanja, željeni termin..."
         />
         {fieldErrors.message && (

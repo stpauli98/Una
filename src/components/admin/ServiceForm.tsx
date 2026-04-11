@@ -72,7 +72,7 @@ export function ServiceForm({ service, onClose, onSaved }: Props) {
               name="name"
               required
               defaultValue={service?.name ?? ""}
-              className="w-full border border-cream bg-marble px-3 py-2 text-sm text-dark focus:border-rose focus:outline-none"
+              className="w-full border border-cream bg-marble px-3 py-2 text-sm text-dark focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose"
             />
           </Field>
 
@@ -81,7 +81,7 @@ export function ServiceForm({ service, onClose, onSaved }: Props) {
               name="description"
               rows={2}
               defaultValue={service?.description ?? ""}
-              className="w-full resize-none border border-cream bg-marble px-3 py-2 text-sm text-dark focus:border-rose focus:outline-none"
+              className="w-full resize-none border border-cream bg-marble px-3 py-2 text-sm text-dark focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose"
             />
           </Field>
 
@@ -93,7 +93,7 @@ export function ServiceForm({ service, onClose, onSaved }: Props) {
               step="0.01"
               required
               defaultValue={service?.price ?? ""}
-              className="w-full border border-cream bg-marble px-3 py-2 text-sm text-dark focus:border-rose focus:outline-none"
+              className="w-full border border-cream bg-marble px-3 py-2 text-sm text-dark focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose"
             />
           </Field>
 
@@ -102,7 +102,7 @@ export function ServiceForm({ service, onClose, onSaved }: Props) {
               name="duration_min"
               value={durationMin}
               onChange={(e) => setDurationMin(e.target.value)}
-              className="w-full border border-cream bg-marble px-3 py-2 text-sm text-dark focus:border-rose focus:outline-none"
+              className="w-full border border-cream bg-marble px-3 py-2 text-sm text-dark focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose"
             >
               <option value="">— (bez vremenskog trajanja)</option>
               <option value="30">30 min</option>
@@ -131,7 +131,7 @@ export function ServiceForm({ service, onClose, onSaved }: Props) {
               name="category"
               required
               defaultValue={service?.category ?? "sminkanje"}
-              className="w-full border border-cream bg-marble px-3 py-2 text-sm text-dark focus:border-rose focus:outline-none"
+              className="w-full border border-cream bg-marble px-3 py-2 text-sm text-dark focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose"
             >
               <option value="sminkanje">Šminkanje</option>
               <option value="pedikir">Pedikir</option>
@@ -246,7 +246,7 @@ function ConditionalField({
         name={name}
         placeholder={placeholder}
         defaultValue={defaultValue}
-        className="w-full border border-cream bg-white px-3 py-2 text-sm text-dark focus:border-rose focus:outline-none"
+        className="w-full border border-cream bg-white px-3 py-2 text-sm text-dark focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose"
       />
     </div>
   );
