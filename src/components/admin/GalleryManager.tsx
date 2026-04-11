@@ -76,6 +76,19 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Auto-dismiss notifications after 5 seconds
+  useEffect(() => {
+    if (!message) return;
+    const t = setTimeout(() => setMessage(null), 5000);
+    return () => clearTimeout(t);
+  }, [message]);
+
+  useEffect(() => {
+    if (!error) return;
+    const t = setTimeout(() => setError(null), 5000);
+    return () => clearTimeout(t);
+  }, [error]);
+
   const filtered = items.filter((i) => i.category === activeCategory);
 
   // Reset selekcije pri promjeni kategorije
