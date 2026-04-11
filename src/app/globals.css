@@ -40,6 +40,13 @@
     font-family: var(--font-display);
     color: var(--color-dark);
   }
+
+  /* Prevent iOS Safari auto-zoom on input focus (triggers at <16px) */
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
 }
 
 @keyframes fadeUp {
