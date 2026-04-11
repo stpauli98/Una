@@ -11,7 +11,7 @@ export function LocalBusinessJsonLd() {
     "@type": "BeautySalon",
     "@id": `${baseUrl}/#business`,
     name: BUSINESS.name,
-    image: `${baseUrl}/og.jpg`,
+    image: `${baseUrl}/opengraph-image`,
     url: baseUrl,
     telephone: BUSINESS.phone,
     email: BUSINESS.email,

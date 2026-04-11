@@ -135,9 +135,15 @@ export function GalleryGrid({ images }: Props) {
                 src={img.url}
                 alt={img.alt}
                 fill
+                priority={index < 8}
                 sizes="(min-width:1024px) 25vw, (min-width:768px) 33vw, 50vw"
                 className="object-cover transition-all duration-500 group-hover:scale-105"
                 onLoad={(e) => {
+                  (e.target as HTMLElement)
+                    .closest(".animate-pulse")
+                    ?.classList.remove("animate-pulse");
+                }}
+                onError={(e) => {
                   (e.target as HTMLElement)
                     .closest(".animate-pulse")
                     ?.classList.remove("animate-pulse");
