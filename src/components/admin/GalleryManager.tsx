@@ -252,6 +252,42 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
   const hasPreview = previews.length > 0;
 
   return (
+    <>
+      {/* Fullscreen upload overlay */}
+      {uploadProgress && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-dark/40 backdrop-blur-md"
+          style={{ animation: "fadeUp 0.4s ease-out" }}
+        >
+          <div className="mx-4 w-full max-w-[360px] border border-cream/40 bg-marble px-8 py-10 text-center shadow-2xl">
+            <div className="mx-auto mb-5 flex size-12 items-center justify-center rounded-full bg-rose/10">
+              <Loader2 size={22} className="animate-spin text-rose" />
+            </div>
+
+            <p className="font-display text-5xl font-light text-dark">
+              {uploadProgress.current}
+              <span className="text-light/60">/{uploadProgress.total}</span>
+            </p>
+
+            <div className="mx-auto mt-5 h-1 max-w-[200px] overflow-hidden rounded-full bg-cream">
+              <div
+                className="h-full rounded-full bg-rose transition-all duration-500 ease-out"
+                style={{
+                  width: `${(uploadProgress.current / uploadProgress.total) * 100}%`,
+                }}
+              />
+            </div>
+
+            <p className="mt-4 text-[11px] uppercase tracking-[0.25em] text-light">
+              Učitavanje slika...
+            </p>
+            <p className="mt-2 text-[11px] text-light/70">
+              Molimo ne zatvarajte stranicu
+            </p>
+          </div>
+        </div>
+      )}
+
     <div>
       <div className="mb-5 flex gap-1.5 overflow-x-auto">
         {CATEGORIES.map((cat) => (
@@ -392,33 +428,8 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
               ))}
             </div>
 
-            {/* Progress bar during upload */}
-            {uploadProgress && (
-              <div className="mt-4 space-y-2">
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="font-medium text-dark">
-                    Šaljem {uploadProgress.current}/{uploadProgress.total}...
-                  </span>
-                  <span className="text-light">
-                    {Math.round(
-                      (uploadProgress.current / uploadProgress.total) * 100,
-                    )}
-                    %
-                  </span>
-                </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-cream">
-                  <div
-                    className="h-full rounded-full bg-rose transition-all duration-300"
-                    style={{
-                      width: `${(uploadProgress.current / uploadProgress.total) * 100}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-
             {/* Upload / Cancel buttons */}
-            {!uploadProgress && (
+            {!uploading && (
               <div className="mt-4 flex gap-2">
                 <button
                   type="button"
@@ -586,5 +597,6 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
         </div>
       )}
     </div>
+    </>
   );
 }
