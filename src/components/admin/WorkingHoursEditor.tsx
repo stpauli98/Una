@@ -57,48 +57,49 @@ function WorkingHourRow({ hour }: { hour: WorkingHour }) {
           }
         });
       }}
-      className="grid grid-cols-[100px_auto_auto_auto_1fr] items-center gap-3 border border-cream bg-white p-3"
+      className="border border-cream bg-white p-3"
     >
-      <span className="text-[13px] font-medium text-dark">
-        {DAY_NAMES[hour.day_of_week]}
-      </span>
-      <label className="flex items-center gap-2 text-[11px] text-body">
-        <input
-          type="checkbox"
-          name="is_open"
-          defaultChecked={hour.is_open}
-          className="accent-rose"
-        />
-        Otvoreno
-      </label>
-      <select
-        name="open_time"
-        defaultValue={hour.open_time.slice(0, 5)}
-        className="border border-cream bg-marble px-2 py-1 text-[12px]"
-      >
-        {TIME_OPTIONS.map((t) => (
-          <option key={t} value={t}>
-            {t}
-          </option>
-        ))}
-      </select>
-      <select
-        name="close_time"
-        defaultValue={hour.close_time.slice(0, 5)}
-        className="border border-cream bg-marble px-2 py-1 text-[12px]"
-      >
-        {TIME_OPTIONS.map((t) => (
-          <option key={t} value={t}>
-            {t}
-          </option>
-        ))}
-      </select>
-      <div className="flex justify-end gap-2">
-        {saved && (
-          <span className="text-[10px] uppercase tracking-wider text-green-600">
-            ✓ Sačuvano
-          </span>
-        )}
+      {/* Row 1: Dan + checkbox */}
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[13px] font-medium text-dark">
+          {DAY_NAMES[hour.day_of_week]}
+        </span>
+        <label className="flex items-center gap-2 text-[11px] text-body">
+          <input
+            type="checkbox"
+            name="is_open"
+            defaultChecked={hour.is_open}
+            className="accent-rose"
+          />
+          Otvoreno
+        </label>
+      </div>
+
+      {/* Row 2: Vrijeme + sacuvaj */}
+      <div className="mt-2 flex items-center gap-2">
+        <select
+          name="open_time"
+          defaultValue={hour.open_time.slice(0, 5)}
+          className="flex-1 border border-cream bg-marble px-2 py-1.5 text-[12px]"
+        >
+          {TIME_OPTIONS.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+        <span className="text-[11px] text-light">—</span>
+        <select
+          name="close_time"
+          defaultValue={hour.close_time.slice(0, 5)}
+          className="flex-1 border border-cream bg-marble px-2 py-1.5 text-[12px]"
+        >
+          {TIME_OPTIONS.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
         <button
           type="submit"
           disabled={pending}
@@ -107,6 +108,12 @@ function WorkingHourRow({ hour }: { hour: WorkingHour }) {
           {pending ? "..." : "Sačuvaj"}
         </button>
       </div>
+
+      {saved && (
+        <p className="mt-1.5 text-right text-[10px] uppercase tracking-wider text-green-600">
+          ✓ Sačuvano
+        </p>
+      )}
     </form>
   );
 }
