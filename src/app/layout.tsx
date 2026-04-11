@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { BUSINESS } from "@/lib/constants/business";
@@ -19,6 +19,12 @@ const dmSans = DM_Sans({
   display: "swap",
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#3d2b2b",
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
@@ -33,6 +39,10 @@ export const metadata: Metadata = {
     type: "website",
     locale: "sr_Latn",
     siteName: BUSINESS.name,
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "UP Beauty & Makeup Studio" }],
+  },
+  twitter: {
+    card: "summary_large_image",
   },
   icons: {
     icon: "/favicon.ico",
