@@ -20,14 +20,21 @@ const TESTIMONIALS = [
 
 export function TestimonialsCarousel() {
   const [activeIdx, setActiveIdx] = useState(0);
+  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
+    if (paused) return;
+    const prefersReduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    if (prefersReduced) return;
+
     const interval = setInterval(
       () => setActiveIdx((prev) => (prev + 1) % TESTIMONIALS.length),
       4500,
     );
     return () => clearInterval(interval);
-  }, []);
+  }, [paused]);
 
   return (
     <div className="relative mx-auto min-h-[220px] max-w-[600px] text-center">
@@ -59,7 +66,10 @@ export function TestimonialsCarousel() {
           <button
             key={t.name}
             type="button"
-            onClick={() => setActiveIdx(i)}
+            onClick={() => {
+              setActiveIdx(i);
+              setPaused(true);
+            }}
             aria-label={`Prikaži utisak ${i + 1}`}
             className={cn(
               "h-2 rounded-full transition-all duration-400",

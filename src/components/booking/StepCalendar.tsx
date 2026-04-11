@@ -49,7 +49,7 @@ export function StepCalendar({
   onSelect,
   onBack,
 }: Props) {
-  const today = startOfDay(new Date());
+  const today = useMemo(() => startOfDay(new Date()), []);
   const [viewMonth, setViewMonth] = useState(startOfMonth(today));
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [slots, setSlots] = useState<Slot[] | null>(null);
