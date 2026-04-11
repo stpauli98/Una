@@ -28,7 +28,7 @@ export function Hero() {
           <div className="h-px w-8 bg-gold-light" />
         </div>
 
-        <h1 className="mb-5 font-display text-[44px] font-normal leading-[1.08] tracking-wide text-white drop-shadow-sm md:text-[64px] lg:text-[80px]">
+        <h1 className="mb-5 font-display text-[36px] font-normal leading-[1.08] tracking-wide text-white drop-shadow-sm sm:text-[44px] md:text-[64px] lg:text-[80px]">
           Osmijeh je
           <br />
           <em className="italic font-light">najljepša</em> šminka

@@ -85,7 +85,7 @@ export default function ObukaPage() {
               <p className="mb-1 text-[11px] uppercase tracking-[0.3em] text-rose">
                 Cijena obuke
               </p>
-              <p className="font-display text-5xl font-light text-dark">
+              <p className="font-display text-4xl font-light text-dark md:text-5xl">
                 800 KM
               </p>
               <p className="mt-2 text-xs text-light">
