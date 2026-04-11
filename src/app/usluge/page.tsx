@@ -68,6 +68,7 @@ export default async function UslugePage() {
                         key={service.id}
                         service={service}
                         featured={service.bookable}
+                        headingLevel="h4"
                       />
                     ))}
                   </div>

@@ -8,6 +8,8 @@ type Props = {
   service: Service;
   /** Ako true, prikaži sa većim paddingom i linkom na /zakazi */
   featured?: boolean;
+  /** Nivo heading-a za ime usluge (default h3) */
+  headingLevel?: "h3" | "h4";
 };
 
 const ICONS: Record<string, string> = {
@@ -17,7 +19,8 @@ const ICONS: Record<string, string> = {
   obuka: "◇",
 };
 
-export function ServiceCard({ service, featured }: Props) {
+export function ServiceCard({ service, featured, headingLevel = "h3" }: Props) {
+  const Heading = headingLevel;
   const icon = ICONS[service.category] ?? "✧";
   const priceDisplay = service.price_note ?? formatPrice(Number(service.price));
 
@@ -27,9 +30,9 @@ export function ServiceCard({ service, featured }: Props) {
         <span className="text-[36px] font-light text-white/70">{icon}</span>
       </div>
       <div className="p-5 md:p-6">
-        <h3 className="mb-2 font-display text-xl font-normal text-dark">
+        <Heading className="mb-2 font-display text-xl font-normal text-dark">
           {service.name}
-        </h3>
+        </Heading>
         {service.description && (
           <p className="mb-4 text-xs leading-relaxed text-light">
             {service.description}
