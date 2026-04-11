@@ -1,8 +1,27 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import sharp from "sharp";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_DIMENSION = 4096;
+
+function isValidWebp(buffer: Buffer): boolean {
+  if (buffer.length < 12) return false;
+  // RIFF header (bytes 0-3) + WEBP marker (bytes 8-11)
+  return (
+    buffer[0] === 0x52 &&
+    buffer[1] === 0x49 &&
+    buffer[2] === 0x46 &&
+    buffer[3] === 0x46 &&
+    buffer[8] === 0x57 &&
+    buffer[9] === 0x45 &&
+    buffer[10] === 0x42 &&
+    buffer[11] === 0x50
+  );
+}
 
 type ActionResult<T = void> =
   | { ok: true; data?: T }
@@ -51,7 +70,17 @@ export async function uploadGalleryImages(
 
     let uploaded = 0;
     for (const file of realFiles) {
+      // Server-side validation: size, magic bytes, dimensions
+      if (file.size > MAX_FILE_SIZE) continue;
       const buffer = Buffer.from(await file.arrayBuffer());
+      if (!isValidWebp(buffer)) continue;
+      try {
+        const meta = await sharp(buffer).metadata();
+        if (!meta.width || !meta.height) continue;
+        if (meta.width > MAX_DIMENSION || meta.height > MAX_DIMENSION) continue;
+      } catch {
+        continue;
+      }
       const timestamp = Date.now();
       const random = Math.random().toString(36).slice(2, 8);
       const filename = `${category}/${timestamp}-${random}.webp`;
