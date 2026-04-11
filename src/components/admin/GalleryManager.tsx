@@ -4,7 +4,8 @@ import { useState, useTransition, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { Trash2, Upload, X, ImagePlus, Loader2, CheckSquare, Square, Check } from "lucide-react";
 import {
-  uploadGalleryImages,
+  uploadSingleGalleryImage,
+  revalidateGallery,
   deleteGalleryImage,
   deleteGalleryImages,
 } from "@/app/admin/(protected)/galerija/actions";
@@ -33,6 +34,7 @@ const CATEGORIES = [
 ] as const;
 
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_IMAGES = 20;
 
 const COMPRESSION_OPTIONS = {
   maxSizeMB: 0.3,
@@ -65,6 +67,11 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
   const [previews, setPreviews] = useState<PreviewFile[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [compressing, setCompressing] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -123,36 +130,55 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
     };
   }, [previews]);
 
-  const addFiles = useCallback(async (fileList: FileList | File[]) => {
-    const files = Array.from(fileList).filter((f) =>
-      ACCEPTED_TYPES.includes(f.type),
-    );
-    if (files.length === 0) return;
-    setCompressing(true);
-    try {
-      const compressed = await Promise.all(
-        files.map(async (file) => {
-          try {
-            return await imageCompression(file, COMPRESSION_OPTIONS);
-          } catch {
-            console.warn(`Kompresija neuspješna za ${file.name}, preskačem`);
-            return null;
-          }
-        }),
+  const addFiles = useCallback(
+    async (fileList: FileList | File[]) => {
+      const files = Array.from(fileList).filter((f) =>
+        ACCEPTED_TYPES.includes(f.type),
       );
-      const valid = compressed.filter((f): f is File => f !== null);
-      if (valid.length === 0) return;
-      const newPreviews = valid.map((file) => ({
-        file,
-        previewUrl: URL.createObjectURL(file),
-        name: file.name,
-        sizeLabel: formatFileSize(file.size),
-      }));
-      setPreviews((prev) => [...prev, ...newPreviews]);
-    } finally {
-      setCompressing(false);
-    }
-  }, []);
+      if (files.length === 0) return;
+
+      // Enforce max images limit
+      const remaining = MAX_IMAGES - previews.length;
+      if (remaining <= 0) {
+        setError(`Maksimalno ${MAX_IMAGES} slika po uploadu`);
+        return;
+      }
+      const toProcess = files.slice(0, remaining);
+      if (toProcess.length < files.length) {
+        setError(
+          `Dodano ${toProcess.length} od ${files.length} — limit je ${MAX_IMAGES} slika`,
+        );
+      }
+
+      setCompressing(true);
+      try {
+        const compressed = await Promise.all(
+          toProcess.map(async (file) => {
+            try {
+              return await imageCompression(file, COMPRESSION_OPTIONS);
+            } catch {
+              console.warn(
+                `Kompresija neuspješna za ${file.name}, preskačem`,
+              );
+              return null;
+            }
+          }),
+        );
+        const valid = compressed.filter((f): f is File => f !== null);
+        if (valid.length === 0) return;
+        const newPreviews = valid.map((file) => ({
+          file,
+          previewUrl: URL.createObjectURL(file),
+          name: file.name,
+          sizeLabel: formatFileSize(file.size),
+        }));
+        setPreviews((prev) => [...prev, ...newPreviews]);
+      } finally {
+        setCompressing(false);
+      }
+    },
+    [previews.length],
+  );
 
   const removePreview = useCallback((index: number) => {
     setPreviews((prev) => {
@@ -170,22 +196,42 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, []);
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (previews.length === 0) return;
     setError(null);
     setMessage(null);
-    const fd = new FormData();
-    fd.set("category", activeCategory);
-    previews.forEach((p) => fd.append("files", p.file));
-    startTransition(async () => {
-      const result = await uploadGalleryImages(fd);
-      if (result.ok) {
-        setMessage(`Uspješno učitano ${result.data?.uploaded ?? 0} slika`);
-        clearPreviews();
-      } else {
-        setError(result.error);
+    setUploading(true);
+    setUploadProgress({ current: 0, total: previews.length });
+
+    let uploaded = 0;
+    let failed = 0;
+
+    for (let i = 0; i < previews.length; i++) {
+      setUploadProgress({ current: i + 1, total: previews.length });
+      const fd = new FormData();
+      fd.set("category", activeCategory);
+      fd.set("file", previews[i].file);
+      try {
+        const result = await uploadSingleGalleryImage(fd);
+        if (result.ok) uploaded++;
+        else failed++;
+      } catch {
+        failed++;
       }
-    });
+    }
+
+    await revalidateGallery();
+    setUploadProgress(null);
+    setUploading(false);
+    clearPreviews();
+
+    if (failed === 0) {
+      setMessage(`Uspješno učitano ${uploaded} slika`);
+    } else if (uploaded > 0) {
+      setError(`Učitano ${uploaded}, neuspjelo ${failed} slika`);
+    } else {
+      setError("Nije uspjelo slanje ni jedne slike");
+    }
   };
 
   const handleDrop = useCallback(
@@ -276,7 +322,7 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
                 </span>
               </p>
               <p className="mt-1 text-[11px] text-light">
-                JPG, PNG ili WebP · Automatska kompresija na 1600px WebP
+                JPG, PNG ili WebP · Kompresija na 1600px WebP · Max {MAX_IMAGES} slika
               </p>
             </div>
           </div>
@@ -291,10 +337,10 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={pending || compressing}
+                disabled={uploading || compressing || previews.length >= MAX_IMAGES}
                 className="text-[10px] text-rose underline-offset-2 hover:underline cursor-pointer disabled:opacity-40"
               >
-                + Dodaj još
+                + Dodaj još {previews.length >= MAX_IMAGES && `(max ${MAX_IMAGES})`}
               </button>
             </div>
 
@@ -340,35 +386,54 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
               ))}
             </div>
 
-            <div className="mt-4 flex gap-2">
-              <button
-                type="button"
-                disabled={pending || compressing}
-                onClick={handleUpload}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 bg-rose py-2.5 text-[11px] uppercase tracking-wider text-white hover:bg-rose-hover disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
-              >
-                {pending ? (
-                  <>
-                    <Loader2 size={12} className="animate-spin" />
-                    Šaljem... ({previews.length} slika)
-                  </>
-                ) : (
-                  <>
-                    <Upload size={12} />
-                    Učitaj {previews.length}{" "}
-                    {previews.length === 1 ? "sliku" : "slika"}
-                  </>
-                )}
-              </button>
-              <button
-                type="button"
-                disabled={pending}
-                onClick={clearPreviews}
-                className="border border-cream bg-white px-4 py-2.5 text-[11px] uppercase tracking-wider text-body hover:border-rose hover:text-rose disabled:opacity-40 cursor-pointer"
-              >
-                Otkaži
-              </button>
-            </div>
+            {/* Progress bar during upload */}
+            {uploadProgress && (
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-medium text-dark">
+                    Šaljem {uploadProgress.current}/{uploadProgress.total}...
+                  </span>
+                  <span className="text-light">
+                    {Math.round(
+                      (uploadProgress.current / uploadProgress.total) * 100,
+                    )}
+                    %
+                  </span>
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-cream">
+                  <div
+                    className="h-full rounded-full bg-rose transition-all duration-300"
+                    style={{
+                      width: `${(uploadProgress.current / uploadProgress.total) * 100}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Upload / Cancel buttons */}
+            {!uploadProgress && (
+              <div className="mt-4 flex gap-2">
+                <button
+                  type="button"
+                  disabled={uploading || compressing}
+                  onClick={handleUpload}
+                  className="inline-flex flex-1 items-center justify-center gap-1.5 bg-rose py-2.5 text-[11px] uppercase tracking-wider text-white hover:bg-rose-hover disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+                >
+                  <Upload size={12} />
+                  Učitaj {previews.length}{" "}
+                  {previews.length === 1 ? "sliku" : "slika"}
+                </button>
+                <button
+                  type="button"
+                  disabled={uploading}
+                  onClick={clearPreviews}
+                  className="border border-cream bg-white px-4 py-2.5 text-[11px] uppercase tracking-wider text-body hover:border-rose hover:text-rose disabled:opacity-40 cursor-pointer"
+                >
+                  Otkaži
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

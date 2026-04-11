@@ -38,9 +38,13 @@ async function requireAuth() {
   if (!user) throw new Error("Nije autorizovan");
 }
 
-export async function uploadGalleryImages(
+/**
+ * Upload a single gallery image (chunked approach — client calls once per image).
+ * This avoids the 10MB body size limit that occurs when sending many files at once.
+ */
+export async function uploadSingleGalleryImage(
   formData: FormData,
-): Promise<ActionResult<{ uploaded: number }>> {
+): Promise<ActionResult<{ id: number }>> {
   try {
     await requireAuth();
     const category = String(formData.get("category") ?? "") as GalleryCategory;
@@ -48,82 +52,85 @@ export async function uploadGalleryImages(
       return { ok: false, error: "Neispravna kategorija" };
     }
 
-    const files = formData.getAll("files") as File[];
-    const realFiles = files.filter(
-      (f): f is File => f instanceof File && f.size > 0,
-    );
-    if (realFiles.length === 0) {
+    const file = formData.get("file") as File | null;
+    if (!file || !(file instanceof File) || file.size === 0) {
       return { ok: false, error: "Nije izabrana nijedna slika" };
     }
 
-    // Koristimo admin klijenta za upload i DB insert (service role)
+    // Server-side validation: size, magic bytes, dimensions
+    if (file.size > MAX_FILE_SIZE) {
+      return { ok: false, error: "Slika prelazi 5 MB" };
+    }
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+
+    if (!isValidWebp(buffer)) {
+      return { ok: false, error: "Neispravan format slike (očekujem WebP)" };
+    }
+
+    try {
+      const meta = await sharp(buffer).metadata();
+      if (!meta.width || !meta.height || meta.width > MAX_DIMENSION || meta.height > MAX_DIMENSION) {
+        return { ok: false, error: "Dimenzije slike prelaze dozvoljeni limit" };
+      }
+    } catch {
+      return { ok: false, error: "Ne mogu pročitati metapodatke slike" };
+    }
+
     const admin = createAdminClient();
 
-    // Nađi max order_index da novi idu na kraj
+    // Nađi max order_index
     const { data: maxRow } = await admin
       .from("gallery_images")
       .select("order_index")
       .order("order_index", { ascending: false })
       .limit(1)
       .maybeSingle();
-    let nextOrder = (maxRow?.order_index ?? 0) + 1;
+    const nextOrder = (maxRow?.order_index ?? 0) + 1;
 
-    let uploaded = 0;
-    for (const file of realFiles) {
-      // Server-side validation: size, magic bytes, dimensions
-      if (file.size > MAX_FILE_SIZE) continue;
-      const buffer = Buffer.from(await file.arrayBuffer());
-      if (!isValidWebp(buffer)) continue;
-      try {
-        const meta = await sharp(buffer).metadata();
-        if (!meta.width || !meta.height) continue;
-        if (meta.width > MAX_DIMENSION || meta.height > MAX_DIMENSION) continue;
-      } catch {
-        continue;
-      }
-      const timestamp = Date.now();
-      const random = Math.random().toString(36).slice(2, 8);
-      const filename = `${category}/${timestamp}-${random}.webp`;
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).slice(2, 8);
+    const filename = `${category}/${timestamp}-${random}.webp`;
 
-      const { error: uploadErr } = await admin.storage
-        .from("gallery")
-        .upload(filename, buffer, {
-          contentType: "image/webp",
-          upsert: false,
-        });
-      if (uploadErr) {
-        console.error("upload failed:", uploadErr);
-        continue;
-      }
+    const { error: uploadErr } = await admin.storage
+      .from("gallery")
+      .upload(filename, buffer, {
+        contentType: "image/webp",
+        upsert: false,
+      });
+    if (uploadErr) {
+      console.error("upload failed:", uploadErr);
+      return { ok: false, error: "Greška pri slanju slike na server" };
+    }
 
-      const { error: insertErr } = await admin.from("gallery_images").insert({
+    const { data: inserted, error: insertErr } = await admin
+      .from("gallery_images")
+      .insert({
         storage_path: filename,
         category,
         alt_text: file.name.replace(/\.[^.]+$/, ""),
         order_index: nextOrder,
-      });
-      if (insertErr) {
-        console.error("insert failed:", insertErr);
-        // pokušaj ukloniti upload-ovani fajl da ne curimo storage
-        await admin.storage.from("gallery").remove([filename]);
-        continue;
-      }
+      })
+      .select("id")
+      .single();
 
-      nextOrder += 1;
-      uploaded += 1;
+    if (insertErr || !inserted) {
+      console.error("insert failed:", insertErr);
+      await admin.storage.from("gallery").remove([filename]);
+      return { ok: false, error: "Greška pri spremanju slike u bazu" };
     }
 
-    revalidatePath("/admin/galerija");
-    revalidatePath("/galerija");
-    revalidatePath("/");
-
-    if (uploaded === 0) {
-      return { ok: false, error: "Nije uspjelo slanje ni jedne slike" };
-    }
-    return { ok: true, data: { uploaded } };
+    return { ok: true, data: { id: inserted.id } };
   } catch (e) {
     return { ok: false, error: (e as Error).message };
   }
+}
+
+/** Revalidate gallery pages — call once after all uploads complete */
+export async function revalidateGallery(): Promise<void> {
+  revalidatePath("/admin/galerija");
+  revalidatePath("/galerija");
+  revalidatePath("/");
 }
 
 export async function deleteGalleryImage(id: number): Promise<ActionResult> {
