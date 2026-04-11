@@ -21,6 +21,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   obuka: "Obuka",
 };
 
+const CATEGORY_ORDER = ["sminkanje", "pedikir", "trepavice", "obuka"] as const;
+
 export function ServicesManager({
   initialServices,
 }: {
@@ -78,107 +80,130 @@ export function ServicesManager({
         </button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {services.map((service, index) => {
-          const priceDisplay =
-            service.price_note ?? formatPrice(Number(service.price));
-          const durationDisplay =
-            service.duration_note ?? formatDuration(service.duration_min);
-          const justMoved = lastMovedId === service.id;
-          const isFirst = index === 0;
-          const isLast = index === services.length - 1;
-
+      <div className="space-y-10">
+        {CATEGORY_ORDER.map((cat) => {
+          const catItems = services.filter((s) => s.category === cat);
+          if (catItems.length === 0) return null;
           return (
-            <div
-              key={service.id}
-              className={cn(
-                "border bg-white p-5 transition-all duration-300",
-                service.active
-                  ? "border-cream"
-                  : "border-stone-200 opacity-50",
-                justMoved && "card-just-moved",
-              )}
-            >
-              <div className="mb-3 flex items-start justify-between gap-2">
-                <div className="flex-1">
-                  <p className="mb-1 text-[10px] uppercase tracking-wider text-rose">
-                    {CATEGORY_LABELS[service.category]}
-                  </p>
-                  <h3 className="font-display text-lg text-dark">
-                    {service.name}
-                  </h3>
-                </div>
-                <div className="flex gap-1">
-                  <button
-                    type="button"
-                    disabled={pending || isFirst}
-                    onClick={() => handleReorder(service.id, "up")}
-                    aria-label="Pomjeri gore"
-                    title="Pomjeri gore u redoslijedu"
-                    className={cn(
-                      "flex size-7 items-center justify-center transition-colors cursor-pointer",
-                      isFirst
-                        ? "text-cream cursor-not-allowed"
-                        : "text-light hover:text-rose hover:bg-warm rounded",
-                    )}
-                  >
-                    <ArrowUp size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    disabled={pending || isLast}
-                    onClick={() => handleReorder(service.id, "down")}
-                    aria-label="Pomjeri dole"
-                    title="Pomjeri dole u redoslijedu"
-                    className={cn(
-                      "flex size-7 items-center justify-center transition-colors cursor-pointer",
-                      isLast
-                        ? "text-cream cursor-not-allowed"
-                        : "text-light hover:text-rose hover:bg-warm rounded",
-                    )}
-                  >
-                    <ArrowDown size={14} />
-                  </button>
-                </div>
-              </div>
+            <div key={cat}>
+              <h3 className="mb-4 font-display text-xl text-dark">
+                {CATEGORY_LABELS[cat]}
+              </h3>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {catItems.map((service, catIndex) => {
+                  const priceDisplay =
+                    service.price_note ??
+                    formatPrice(Number(service.price));
+                  const durationDisplay =
+                    service.duration_note ??
+                    formatDuration(service.duration_min);
+                  const justMoved = lastMovedId === service.id;
+                  const isFirst = catIndex === 0;
+                  const isLast = catIndex === catItems.length - 1;
 
-              {service.description && (
-                <p className="mb-3 line-clamp-2 text-[12px] text-light">
-                  {service.description}
-                </p>
-              )}
+                  return (
+                    <div
+                      key={service.id}
+                      className={cn(
+                        "border bg-white p-5 transition-all duration-300",
+                        service.active
+                          ? "border-cream"
+                          : "border-stone-200 opacity-50",
+                        justMoved && "card-just-moved",
+                      )}
+                    >
+                      <div className="mb-3 flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <h4 className="font-display text-lg text-dark">
+                            {service.name}
+                          </h4>
+                        </div>
+                        <div className="flex gap-1">
+                          <button
+                            type="button"
+                            disabled={pending || isFirst}
+                            onClick={() =>
+                              handleReorder(service.id, "up")
+                            }
+                            aria-label="Pomjeri gore"
+                            title="Pomjeri gore u redoslijedu"
+                            className={cn(
+                              "flex size-7 items-center justify-center transition-colors cursor-pointer",
+                              isFirst
+                                ? "text-cream cursor-not-allowed"
+                                : "text-light hover:text-rose hover:bg-warm rounded",
+                            )}
+                          >
+                            <ArrowUp size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={pending || isLast}
+                            onClick={() =>
+                              handleReorder(service.id, "down")
+                            }
+                            aria-label="Pomjeri dole"
+                            title="Pomjeri dole u redoslijedu"
+                            className={cn(
+                              "flex size-7 items-center justify-center transition-colors cursor-pointer",
+                              isLast
+                                ? "text-cream cursor-not-allowed"
+                                : "text-light hover:text-rose hover:bg-warm rounded",
+                            )}
+                          >
+                            <ArrowDown size={14} />
+                          </button>
+                        </div>
+                      </div>
 
-              <div className="mb-4 flex items-baseline justify-between">
-                <span className="font-display text-xl text-rose">
-                  {priceDisplay}
-                </span>
-                <span className="text-[11px] text-light">
-                  {durationDisplay}
-                </span>
-              </div>
+                      {service.description && (
+                        <p className="mb-3 line-clamp-2 text-[12px] text-light">
+                          {service.description}
+                        </p>
+                      )}
 
-              <div className="flex gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setEditingId(service.id)}
-                  className="inline-flex flex-1 items-center justify-center gap-1 border border-cream bg-white px-3 py-2 text-[10px] uppercase tracking-wider text-dark hover:border-rose hover:text-rose cursor-pointer"
-                >
-                  <Edit2 size={11} />
-                  Izmijeni
-                </button>
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() =>
-                    startTransition(async () => {
-                      await toggleServiceActive(service.id, !service.active);
-                      router.refresh();
-                    })
-                  }
-                  className="inline-flex items-center justify-center gap-1 border border-cream bg-white px-3 py-2 text-[10px] uppercase tracking-wider text-dark hover:border-rose hover:text-rose cursor-pointer"
-                >
-                  {service.active ? <EyeOff size={11} /> : <Eye size={11} />}
-                </button>
+                      <div className="mb-4 flex items-baseline justify-between">
+                        <span className="font-display text-xl text-rose">
+                          {priceDisplay}
+                        </span>
+                        <span className="text-[11px] text-light">
+                          {durationDisplay}
+                        </span>
+                      </div>
+
+                      <div className="flex gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setEditingId(service.id)}
+                          className="inline-flex flex-1 items-center justify-center gap-1 border border-cream bg-white px-3 py-2 text-[10px] uppercase tracking-wider text-dark hover:border-rose hover:text-rose cursor-pointer"
+                        >
+                          <Edit2 size={11} />
+                          Izmijeni
+                        </button>
+                        <button
+                          type="button"
+                          disabled={pending}
+                          onClick={() =>
+                            startTransition(async () => {
+                              await toggleServiceActive(
+                                service.id,
+                                !service.active,
+                              );
+                              router.refresh();
+                            })
+                          }
+                          className="inline-flex items-center justify-center gap-1 border border-cream bg-white px-3 py-2 text-[10px] uppercase tracking-wider text-dark hover:border-rose hover:text-rose cursor-pointer"
+                        >
+                          {service.active ? (
+                            <EyeOff size={11} />
+                          ) : (
+                            <Eye size={11} />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );
