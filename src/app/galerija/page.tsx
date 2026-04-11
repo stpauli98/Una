@@ -20,17 +20,13 @@ export default async function GalerijaPage() {
     .select("id, storage_path, category, alt_text")
     .order("order_index");
 
-  const mapped = (images ?? []).map((img) => {
-    const { data: publicUrl } = supabase.storage
-      .from("gallery")
-      .getPublicUrl(img.storage_path);
-    return {
-      id: img.id,
-      url: publicUrl.publicUrl,
-      category: img.category,
-      alt: img.alt_text ?? `UP Beauty Studio — ${img.category}`,
-    };
-  });
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const mapped = (images ?? []).map((img) => ({
+    id: img.id,
+    url: `${supabaseUrl}/storage/v1/object/public/gallery/${img.storage_path}`,
+    category: img.category,
+    alt: img.alt_text ?? `UP Beauty Studio — ${img.category}`,
+  }));
 
   return (
     <>

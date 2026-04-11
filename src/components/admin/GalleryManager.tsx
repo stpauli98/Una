@@ -469,7 +469,7 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
                   src={item.url}
                   alt={item.alt}
                   fill
-                  sizes="(min-width:1024px) 240px, (min-width:768px) 33vw, 50vw"
+                  sizes="(min-width:1024px) 25vw, (min-width:768px) 33vw, 50vw"
                   className={cn(
                     "object-cover",
                     isSelected && "opacity-75",

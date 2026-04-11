@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState, useCallback, useEffect } from "react";
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 type GalleryImage = {
@@ -27,6 +27,7 @@ type Props = {
 export function GalleryGrid({ images }: Props) {
   const [activeFilter, setActiveFilter] = useState<string>("sve");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [lightboxLoaded, setLightboxLoaded] = useState(false);
 
   const filtered =
     activeFilter === "sve"
@@ -37,12 +38,14 @@ export function GalleryGrid({ images }: Props) {
   const currentImage = lightboxOpen ? filtered[lightboxIndex] : null;
 
   const goNext = useCallback(() => {
+    setLightboxLoaded(false);
     setLightboxIndex((prev) =>
       prev !== null ? (prev + 1) % filtered.length : null,
     );
   }, [filtered.length]);
 
   const goPrev = useCallback(() => {
+    setLightboxLoaded(false);
     setLightboxIndex((prev) =>
       prev !== null ? (prev - 1 + filtered.length) % filtered.length : null,
     );
@@ -113,21 +116,32 @@ export function GalleryGrid({ images }: Props) {
           {filtered.map((img, index) => (
             <div
               key={img.id}
-              onClick={() => setLightboxIndex(index)}
-              className="group relative aspect-square cursor-pointer overflow-hidden"
+              onClick={() => {
+                setLightboxLoaded(false);
+                setLightboxIndex(index);
+              }}
+              className="group relative aspect-square cursor-pointer overflow-hidden bg-cream animate-pulse"
               role="button"
               tabIndex={0}
               aria-label={`Pogledaj sliku: ${img.alt}`}
               onKeyDown={(e) => {
-                if (e.key === "Enter") setLightboxIndex(index);
+                if (e.key === "Enter") {
+                  setLightboxLoaded(false);
+                  setLightboxIndex(index);
+                }
               }}
             >
               <Image
                 src={img.url}
                 alt={img.alt}
                 fill
-                sizes="(min-width:1024px) 240px, (min-width:768px) 33vw, 50vw"
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                sizes="(min-width:1024px) 25vw, (min-width:768px) 33vw, 50vw"
+                className="object-cover transition-all duration-500 group-hover:scale-105"
+                onLoad={(e) => {
+                  (e.target as HTMLElement)
+                    .closest(".animate-pulse")
+                    ?.classList.remove("animate-pulse");
+                }}
               />
               <div className="absolute inset-0 bg-dark/0 transition-colors duration-300 group-hover:bg-dark/10" />
             </div>
@@ -175,17 +189,30 @@ export function GalleryGrid({ images }: Props) {
 
           {/* Image */}
           <div
-            className="relative max-h-[85vh] max-w-[90vw] md:max-w-[80vw]"
+            className="relative flex max-h-[85vh] max-w-[90vw] items-center justify-center md:max-w-[80vw]"
             onClick={(e) => e.stopPropagation()}
           >
+            {!lightboxLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Loader2
+                  size={32}
+                  className="animate-spin text-white/40"
+                  strokeWidth={1.5}
+                />
+              </div>
+            )}
             <Image
               src={currentImage.url}
               alt={currentImage.alt}
               width={1600}
               height={1200}
-              className="max-h-[85vh] w-auto object-contain"
+              className={cn(
+                "max-h-[85vh] w-auto object-contain transition-opacity duration-300",
+                lightboxLoaded ? "opacity-100" : "opacity-0",
+              )}
               priority
               sizes="90vw"
+              onLoad={() => setLightboxLoaded(true)}
             />
           </div>
 
