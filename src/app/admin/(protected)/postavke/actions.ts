@@ -56,11 +56,20 @@ export async function updateWorkingHour(
   }
 }
 
-const blockedDateSchema = z.object({
-  date_from: z.string(),
-  date_to: z.string(),
-  reason: z.string().optional().nullable(),
-});
+const blockedDateSchema = z
+  .object({
+    date_from: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Format mora biti YYYY-MM-DD"),
+    date_to: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Format mora biti YYYY-MM-DD"),
+    reason: z.string().max(200).optional().nullable(),
+  })
+  .refine((d) => d.date_to >= d.date_from, {
+    message: "Datum kraja mora biti isti ili poslije datuma početka",
+    path: ["date_to"],
+  });
 
 export async function addBlockedDate(
   formData: FormData,
@@ -100,6 +109,15 @@ export async function changePassword(
     const sb = await requireAuth();
     if (newPassword.length < 8) {
       return { ok: false, error: "Lozinka mora imati najmanje 8 karaktera" };
+    }
+    if (!/[A-Z]/.test(newPassword)) {
+      return { ok: false, error: "Lozinka mora sadržavati najmanje jedno veliko slovo" };
+    }
+    if (!/[a-z]/.test(newPassword)) {
+      return { ok: false, error: "Lozinka mora sadržavati najmanje jedno malo slovo" };
+    }
+    if (!/\d/.test(newPassword)) {
+      return { ok: false, error: "Lozinka mora sadržavati najmanje jednu cifru" };
     }
     const { error } = await sb.auth.updateUser({ password: newPassword });
     if (error) return { ok: false, error: error.message };
