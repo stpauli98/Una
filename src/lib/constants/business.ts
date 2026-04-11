@@ -5,7 +5,7 @@
 export const BUSINESS = {
   name: "UP Beauty & Makeup Studio",
   owner: "Una Peranović",
-  address: "Vidovdanska 89 / stan 25, Gradiška",
+  address: "Majora Milana Tepića 13, Gradiška",
   phone: "+387 65 810 323",
   phoneRaw: "38765810323",
   email: "peranovicuna6@gmail.com",
@@ -13,7 +13,7 @@ export const BUSINESS = {
   tiktok: "https://tiktok.com/@upmakeup21",
   instagramHandle: "@_upmakeup._",
   tiktokHandle: "@upmakeup21",
-  geo: { lat: 45.1441, lng: 17.2514 },
+  geo: { lat: 45.1492, lng: 17.2599 },
   timezone: "Europe/Sarajevo",
 } as const;
 

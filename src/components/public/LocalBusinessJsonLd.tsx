@@ -17,7 +17,7 @@ export function LocalBusinessJsonLd() {
     email: BUSINESS.email,
     address: {
       "@type": "PostalAddress",
-      streetAddress: "Vidovdanska 89 / stan 25",
+      streetAddress: "Majora Milana Tepića 13",
       addressLocality: "Gradiška",
       postalCode: "78400",
       addressCountry: "BA",

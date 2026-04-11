@@ -89,7 +89,7 @@ export default function KontaktPage() {
           <div className="mx-auto mt-16 max-w-[1100px] overflow-hidden rounded-sm border border-cream bg-cream">
             <iframe
               title="Lokacija UP Beauty Studio"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2820.5!2d17.2514!3d45.1441!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sVidovdanska%2089%2C%20Gradi%C5%A1ka!5e0!3m2!1sbs!2sba!4v1"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1410!2d17.2599!3d45.1492!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sMajora%20Milana%20Tepi%C4%87a%2013%2C%20Gradi%C5%A1ka!5e0!3m2!1sbs!2sba!4v1"
               width="100%"
               height="380"
               loading="lazy"
