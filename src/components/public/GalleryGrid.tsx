@@ -60,7 +60,7 @@ export function GalleryGrid({ images }: Props) {
     triggerRef.current = null;
   }, []);
 
-  // Keyboard navigation + focus trap
+  // Keyboard navigation + focus trap + touch swipe
   useEffect(() => {
     if (!lightboxOpen) return;
     const handleKey = (e: KeyboardEvent) => {
@@ -69,6 +69,25 @@ export function GalleryGrid({ images }: Props) {
       if (e.key === "ArrowLeft") goPrev();
     };
     document.addEventListener("keydown", handleKey);
+
+    // Touch swipe for mobile
+    let touchStartX = 0;
+    let touchStartY = 0;
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    };
+    const handleTouchEnd = (e: TouchEvent) => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+        if (dx < 0) goNext();
+        else goPrev();
+      }
+    };
+    document.addEventListener("touchstart", handleTouchStart);
+    document.addEventListener("touchend", handleTouchEnd);
+
     // Prevent body scroll
     document.body.style.overflow = "hidden";
     // Set inert on main content to trap focus
@@ -78,6 +97,8 @@ export function GalleryGrid({ images }: Props) {
     closeRef.current?.focus();
     return () => {
       document.removeEventListener("keydown", handleKey);
+      document.removeEventListener("touchstart", handleTouchStart);
+      document.removeEventListener("touchend", handleTouchEnd);
       document.body.style.overflow = "";
       main?.removeAttribute("inert");
     };
@@ -199,7 +220,7 @@ export function GalleryGrid({ images }: Props) {
                 e.stopPropagation();
                 goPrev();
               }}
-              className="absolute left-2 z-10 flex size-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 md:left-6 cursor-pointer"
+              className="absolute left-2 z-10 hidden size-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 md:left-6 md:flex cursor-pointer"
               aria-label="Prethodna"
             >
               <ChevronLeft size={22} strokeWidth={1.5} />
@@ -243,7 +264,7 @@ export function GalleryGrid({ images }: Props) {
                 e.stopPropagation();
                 goNext();
               }}
-              className="absolute right-3 z-10 flex size-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 md:right-6 cursor-pointer"
+              className="absolute right-3 z-10 hidden size-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 md:right-6 md:flex cursor-pointer"
               aria-label="Sljedeća"
             >
               <ChevronRight size={22} strokeWidth={1.5} />
