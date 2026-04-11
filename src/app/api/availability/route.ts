@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { computeAvailableSlots } from "@/lib/booking/availability";
 import { hoursMapFromRows } from "@/lib/booking/rules";
 import { parseBookingSettings } from "@/lib/settings/read";
+import { checkRateLimit } from "@/lib/utils/rate-limit";
 
 // Ova ruta mora uvijek čitati svježe podatke — baza se mijenja u realnom
 // vremenu kada klijenti rezervišu termine. Keš bi prikazao zastarjele slotove.
@@ -19,6 +20,15 @@ export const revalidate = 0;
  * izračunatu listu slobodnih slotova — nikad sirove podatke o terminima.
  */
 export async function GET(req: NextRequest) {
+  // Rate limit: 30 requests per minute per IP
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown";
+  if (!checkRateLimit(ip, 30, 60_000)) {
+    return NextResponse.json(
+      { error: "Previše zahtjeva. Pokušajte ponovo za minutu." },
+      { status: 429 },
+    );
+  }
+
   const dateStr = req.nextUrl.searchParams.get("date");
   const serviceIdStr = req.nextUrl.searchParams.get("service_id");
   // Verify admin session before trusting the admin flag
