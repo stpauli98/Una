@@ -10,8 +10,9 @@ export const metadata: Metadata = {
   alternates: { canonical: "/zakazi" },
 };
 
-// Booking stranica se ne smije keširati — uvijek svježi podaci o uslugama
-export const dynamic = "force-dynamic";
+// Lista usluga se rijetko mijenja — ISR 5 min. Dostupnost slotova
+// se svejedno dohvata client-side putem /api/availability.
+export const revalidate = 300;
 
 type PageProps = {
   searchParams: Promise<{ service?: string }>;
