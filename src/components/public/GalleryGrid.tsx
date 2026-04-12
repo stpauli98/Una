@@ -191,45 +191,33 @@ export function GalleryGrid({ images }: Props) {
       {/* Lightbox */}
       {lightboxOpen && currentImage && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-dark/95 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] bg-dark/95 backdrop-blur-sm"
           onClick={closeLightbox}
           role="dialog"
           aria-label="Prikaz slike"
         >
-          {/* Close */}
-          <button
-            ref={closeRef}
-            type="button"
-            onClick={closeLightbox}
-            className="absolute right-4 top-4 z-10 flex size-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 cursor-pointer"
-            aria-label="Zatvori"
-          >
-            <X size={20} strokeWidth={1.5} />
-          </button>
-
-          {/* Counter */}
-          <div className="absolute left-4 top-4 z-10 text-[11px] tracking-wider text-white/50">
-            {lightboxIndex + 1} / {filtered.length}
-          </div>
-
-          {/* Prev */}
-          {filtered.length > 1 && (
+          {/* Top bar — close + counter */}
+          <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between px-4 py-3">
+            <div className="text-[11px] tracking-wider text-white/50">
+              {lightboxIndex + 1} / {filtered.length}
+            </div>
             <button
+              ref={closeRef}
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                goPrev();
+                closeLightbox();
               }}
-              className="absolute left-2 z-10 hidden size-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 md:left-6 md:flex cursor-pointer"
-              aria-label="Prethodna"
+              className="flex size-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 cursor-pointer"
+              aria-label="Zatvori"
             >
-              <ChevronLeft size={22} strokeWidth={1.5} />
+              <X size={20} strokeWidth={1.5} />
             </button>
-          )}
+          </div>
 
-          {/* Image */}
+          {/* Image — centered, responsive */}
           <div
-            className="relative flex max-h-[85vh] max-w-[90vw] items-center justify-center md:max-w-[80vw]"
+            className="flex h-full w-full items-center justify-center px-4 py-16"
             onClick={(e) => e.stopPropagation()}
           >
             {!lightboxLoaded && (
@@ -247,28 +235,41 @@ export function GalleryGrid({ images }: Props) {
               width={1600}
               height={1200}
               className={cn(
-                "max-h-[85vh] w-auto object-contain transition-opacity duration-300",
+                "max-h-[calc(100vh-8rem)] max-w-full object-contain transition-opacity duration-300",
                 lightboxLoaded ? "opacity-100" : "opacity-0",
               )}
               priority
-              sizes="90vw"
+              sizes="(min-width: 768px) 80vw, 100vw"
               onLoad={() => setLightboxLoaded(true)}
             />
           </div>
 
-          {/* Next */}
+          {/* Desktop arrows */}
           {filtered.length > 1 && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                goNext();
-              }}
-              className="absolute right-3 z-10 hidden size-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 md:right-6 md:flex cursor-pointer"
-              aria-label="Sljedeća"
-            >
-              <ChevronRight size={22} strokeWidth={1.5} />
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goPrev();
+                }}
+                className="absolute left-4 top-1/2 z-10 hidden -translate-y-1/2 size-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 md:flex cursor-pointer"
+                aria-label="Prethodna"
+              >
+                <ChevronLeft size={22} strokeWidth={1.5} />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goNext();
+                }}
+                className="absolute right-4 top-1/2 z-10 hidden -translate-y-1/2 size-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 md:flex cursor-pointer"
+                aria-label="Sljedeća"
+              >
+                <ChevronRight size={22} strokeWidth={1.5} />
+              </button>
+            </>
           )}
         </div>
       )}
