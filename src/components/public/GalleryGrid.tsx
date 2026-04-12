@@ -216,10 +216,8 @@ export function GalleryGrid({ images }: Props) {
           </div>
 
           {/* Image — centered, responsive */}
-          <div
-            className="flex h-full w-full items-center justify-center px-4 py-16"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="pointer-events-none flex h-full w-full items-center justify-center px-4 py-16">
+
             {!lightboxLoaded && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <Loader2
@@ -235,7 +233,7 @@ export function GalleryGrid({ images }: Props) {
               width={1600}
               height={1200}
               className={cn(
-                "max-h-[calc(100vh-8rem)] max-w-full object-contain transition-opacity duration-300",
+                "pointer-events-auto max-h-[calc(100vh-8rem)] max-w-full object-contain transition-opacity duration-300",
                 lightboxLoaded ? "opacity-100" : "opacity-0",
               )}
               priority
