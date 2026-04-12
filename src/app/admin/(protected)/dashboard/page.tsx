@@ -74,6 +74,21 @@ export default async function AdminDashboardPage() {
       />
 
       <div className="p-5 md:p-8">
+        {/* Domain warning */}
+        {(!process.env.NEXT_PUBLIC_SITE_URL ||
+          process.env.NEXT_PUBLIC_SITE_URL.includes("localhost")) && (
+          <div className="mb-6 border border-amber-300 bg-amber-50 p-4">
+            <p className="text-[13px] font-medium text-amber-800">
+              ⚠ Domena nije podešena
+            </p>
+            <p className="mt-1 text-[12px] text-amber-700">
+              NEXT_PUBLIC_SITE_URL je još uvijek na localhost. SEO, sitemap i OG
+              slike neće raditi ispravno dok se ne podesi produkcijska domena u
+              Vercel environment varijablama.
+            </p>
+          </div>
+        )}
+
         {/* Stat cards */}
         <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard
