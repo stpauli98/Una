@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { Clock, Sparkles, Users, BookOpen } from "lucide-react";
+import { Clock, Sparkles, Users, BookOpen, MessageCircle, Phone } from "lucide-react";
 import { Nav } from "@/components/public/Nav";
 import { Footer } from "@/components/public/Footer";
 import { SectionHeader } from "@/components/public/SectionHeader";
-import { TrainingInquiryForm } from "@/components/public/TrainingInquiryForm";
+import { BUSINESS } from "@/lib/constants/business";
+import { waLink } from "@/lib/utils/wa";
 
 export const metadata: Metadata = {
   title: "Obuka za šminkanje",
@@ -95,15 +96,35 @@ export default function ObukaPage() {
             </div>
           </div>
 
-          <div className="mx-auto max-w-[900px]">
-            <h3 className="mb-6 text-center font-display text-2xl text-dark md:text-3xl">
-              Prijavite se na obuku
+          <div className="mx-auto max-w-[520px] text-center">
+            <h3 className="mb-3 font-display text-2xl text-dark md:text-3xl">
+              Zainteresovani?
             </h3>
-            <p className="mx-auto mb-8 max-w-[480px] text-center text-[13px] leading-relaxed text-body">
-              Ostavite svoje kontakt podatke i uskoro ću vas kontaktirati sa
-              detaljima o sljedećem terminu obuke.
+            <p className="mb-8 text-[13px] leading-relaxed text-body">
+              Javite se direktno putem WhatsApp-a ili telefona za sve detalje
+              o sljedećem terminu obuke.
             </p>
-            <TrainingInquiryForm />
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+              <a
+                href={waLink(
+                  BUSINESS.phoneRaw,
+                  "Zdravo Una, zanima me obuka za šminkanje. Možeš li mi reći više o sljedećem terminu?",
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 bg-green-600 px-8 py-3.5 text-[11px] uppercase tracking-[0.25em] text-white transition-colors hover:bg-green-700"
+              >
+                <MessageCircle size={14} />
+                Pišite na WhatsApp
+              </a>
+              <a
+                href={`tel:${BUSINESS.phoneRaw}`}
+                className="inline-flex items-center justify-center gap-2 border border-cream bg-white px-8 py-3.5 text-[11px] uppercase tracking-[0.25em] text-dark transition-colors hover:border-rose hover:text-rose"
+              >
+                <Phone size={14} />
+                Pozovite {BUSINESS.phone}
+              </a>
+            </div>
           </div>
         </section>
       </main>
