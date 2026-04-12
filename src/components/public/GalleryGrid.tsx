@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState, useCallback, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { X, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
@@ -188,8 +189,8 @@ export function GalleryGrid({ images }: Props) {
         </div>
       )}
 
-      {/* Lightbox */}
-      {lightboxOpen && currentImage && (
+      {/* Lightbox — rendered via portal to escape <main inert> */}
+      {lightboxOpen && currentImage && createPortal(
         <div
           className="fixed inset-0 z-[100] bg-dark/95 backdrop-blur-sm"
           onClick={closeLightbox}
@@ -217,7 +218,6 @@ export function GalleryGrid({ images }: Props) {
 
           {/* Image — centered, responsive */}
           <div className="pointer-events-none flex h-full w-full items-center justify-center px-4 py-16">
-
             {!lightboxLoaded && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <Loader2
@@ -269,7 +269,8 @@ export function GalleryGrid({ images }: Props) {
               </button>
             </>
           )}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
