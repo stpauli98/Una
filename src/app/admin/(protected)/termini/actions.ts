@@ -1,8 +1,8 @@
 "use server";
 
+import { requireAdmin } from "@/lib/supabase/require-admin";
 import { addMinutes } from "date-fns";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
 import { manualAppointmentSchema } from "@/lib/booking/schemas";
 import { normalizePhone } from "@/lib/utils/phone";
 import { isGridAligned } from "@/lib/utils/grid";
@@ -18,20 +18,10 @@ export type CreateManualAppointmentResult =
       conflict?: boolean;
     };
 
-async function requireAuth() {
-  const sb = await createClient();
-  const {
-    data: { user },
-  } = await sb.auth.getUser();
-  if (!user) {
-    throw new Error("Nije autorizovan");
-  }
-  return sb;
-}
 
 export async function confirmAppointment(id: number): Promise<ActionResult> {
   try {
-    const sb = await requireAuth();
+    const sb = await requireAdmin();
     const { error } = await sb
       .from("appointments")
       .update({
@@ -53,7 +43,7 @@ export async function confirmAppointment(id: number): Promise<ActionResult> {
 
 export async function cancelAppointment(id: number): Promise<ActionResult> {
   try {
-    const sb = await requireAuth();
+    const sb = await requireAdmin();
     const { error } = await sb
       .from("appointments")
       .update({ status: "otkazan" })
@@ -69,7 +59,7 @@ export async function cancelAppointment(id: number): Promise<ActionResult> {
 
 export async function markCompleted(id: number): Promise<ActionResult> {
   try {
-    const sb = await requireAuth();
+    const sb = await requireAdmin();
     const { error } = await sb
       .from("appointments")
       .update({ status: "zavrsen" })
@@ -87,7 +77,7 @@ export async function createManualAppointment(
   formData: FormData,
 ): Promise<CreateManualAppointmentResult> {
   try {
-    const sb = await requireAuth();
+    const sb = await requireAdmin();
 
     const raw = {
       service_id: Number(formData.get("service_id") ?? 0),

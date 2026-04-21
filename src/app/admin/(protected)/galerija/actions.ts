@@ -1,8 +1,8 @@
 "use server";
 
+import { requireAdmin } from "@/lib/supabase/require-admin";
 import { revalidatePath } from "next/cache";
 import sharp from "sharp";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -20,13 +20,6 @@ type ActionResult<T = void> =
 const VALID_CATEGORIES = ["sminkanje", "svadbeno", "pedikir", "trepavice"] as const;
 type GalleryCategory = (typeof VALID_CATEGORIES)[number];
 
-async function requireAuth() {
-  const sb = await createClient();
-  const {
-    data: { user },
-  } = await sb.auth.getUser();
-  if (!user) throw new Error("Nije autorizovan");
-}
 
 /**
  * Upload a single gallery image (chunked approach — client calls once per image).
@@ -36,7 +29,7 @@ export async function uploadSingleGalleryImage(
   formData: FormData,
 ): Promise<ActionResult<{ id: number }>> {
   try {
-    await requireAuth();
+    await requireAdmin();
     const category = String(formData.get("category") ?? "") as GalleryCategory;
     if (!VALID_CATEGORIES.includes(category)) {
       return { ok: false, error: "Neispravna kategorija" };
@@ -132,7 +125,7 @@ export async function revalidateGallery(): Promise<void> {
 
 export async function deleteGalleryImage(id: number): Promise<ActionResult> {
   try {
-    await requireAuth();
+    await requireAdmin();
     const admin = createAdminClient();
 
     const { data: row } = await admin
@@ -159,7 +152,7 @@ export async function deleteGalleryImages(
   ids: number[],
 ): Promise<ActionResult<{ deleted: number }>> {
   try {
-    await requireAuth();
+    await requireAdmin();
     if (ids.length === 0) return { ok: false, error: "Nema slika za brisanje" };
 
     const admin = createAdminClient();

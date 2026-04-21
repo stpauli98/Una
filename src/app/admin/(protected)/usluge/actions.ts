@@ -1,19 +1,12 @@
 "use server";
 
+import { requireAdmin } from "@/lib/supabase/require-admin";
+
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
 import { serviceSchema, type ServiceInput } from "@/lib/services/schema";
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
-async function requireAuth() {
-  const sb = await createClient();
-  const {
-    data: { user },
-  } = await sb.auth.getUser();
-  if (!user) throw new Error("Nije autorizovan");
-  return sb;
-}
 
 function parseFormData(fd: FormData): ServiceInput {
   const durationStr = String(fd.get("duration_min") ?? "");
@@ -34,7 +27,7 @@ function parseFormData(fd: FormData): ServiceInput {
 
 export async function createService(formData: FormData): Promise<ActionResult> {
   try {
-    const sb = await requireAuth();
+    const sb = await requireAdmin();
     const parsed = parseFormData(formData);
     const { data: maxOrder } = await sb
       .from("services")
@@ -62,7 +55,7 @@ export async function updateService(
   formData: FormData,
 ): Promise<ActionResult> {
   try {
-    const sb = await requireAuth();
+    const sb = await requireAdmin();
     const parsed = parseFormData(formData);
     const { error } = await sb.from("services").update(parsed).eq("id", id);
     if (error) return { ok: false, error: error.message };
@@ -81,7 +74,7 @@ export async function toggleServiceActive(
   active: boolean,
 ): Promise<ActionResult> {
   try {
-    const sb = await requireAuth();
+    const sb = await requireAdmin();
     const { error } = await sb
       .from("services")
       .update({ active })
@@ -102,7 +95,7 @@ export async function reorderService(
   direction: "up" | "down",
 ): Promise<ActionResult> {
   try {
-    const sb = await requireAuth();
+    const sb = await requireAdmin();
     const { data: current } = await sb
       .from("services")
       .select("id,order_index")

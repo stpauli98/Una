@@ -1,20 +1,13 @@
 "use server";
 
+import { requireAdmin } from "@/lib/supabase/require-admin";
+
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
 import { isGridAligned } from "@/lib/utils/grid";
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
-async function requireAuth() {
-  const sb = await createClient();
-  const {
-    data: { user },
-  } = await sb.auth.getUser();
-  if (!user) throw new Error("Nije autorizovan");
-  return sb;
-}
 
 const workingHourSchema = z.object({
   day_of_week: z.number().int().min(0).max(6),
@@ -31,7 +24,7 @@ export async function updateWorkingHour(
   formData: FormData,
 ): Promise<ActionResult> {
   try {
-    const sb = await requireAuth();
+    const sb = await requireAdmin();
     const parsed = workingHourSchema.parse({
       day_of_week: Number(formData.get("day_of_week")),
       open_time: String(formData.get("open_time")),
@@ -75,7 +68,7 @@ export async function addBlockedDate(
   formData: FormData,
 ): Promise<ActionResult> {
   try {
-    const sb = await requireAuth();
+    const sb = await requireAdmin();
     const parsed = blockedDateSchema.parse({
       date_from: String(formData.get("date_from")),
       date_to: String(formData.get("date_to")),
@@ -92,7 +85,7 @@ export async function addBlockedDate(
 
 export async function removeBlockedDate(id: number): Promise<ActionResult> {
   try {
-    const sb = await requireAuth();
+    const sb = await requireAdmin();
     const { error } = await sb.from("blocked_dates").delete().eq("id", id);
     if (error) return { ok: false, error: error.message };
     revalidatePath("/admin/postavke");
@@ -106,7 +99,7 @@ export async function changePassword(
   newPassword: string,
 ): Promise<ActionResult> {
   try {
-    const sb = await requireAuth();
+    const sb = await requireAdmin();
     if (newPassword.length < 8) {
       return { ok: false, error: "Lozinka mora imati najmanje 8 karaktera" };
     }
@@ -137,7 +130,7 @@ export async function createTimeBlock(
   formData: FormData,
 ): Promise<ActionResult> {
   try {
-    const sb = await requireAuth();
+    const sb = await requireAdmin();
     const parsed = timeBlockSchema.parse({
       start_time: String(formData.get("start_time")),
       end_time: String(formData.get("end_time")),
@@ -165,7 +158,7 @@ export async function createTimeBlock(
 
 export async function deleteTimeBlock(id: number): Promise<ActionResult> {
   try {
-    const sb = await requireAuth();
+    const sb = await requireAdmin();
     const { error } = await sb.from("time_blocks").delete().eq("id", id);
     if (error) return { ok: false, error: error.message };
     revalidatePath("/admin/postavke");
@@ -187,7 +180,7 @@ export async function updateSetting(
   value: string,
 ): Promise<ActionResult> {
   try {
-    const sb = await requireAuth();
+    const sb = await requireAdmin();
     if (!(ALLOWED_SETTING_KEYS as readonly string[]).includes(key)) {
       return { ok: false, error: "Nepoznat ključ podešavanja" };
     }
