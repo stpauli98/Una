@@ -1,12 +1,8 @@
 import { test, expect } from "@playwright/test";
 
 test("admin login flow — valid credentials", async ({ page }) => {
-  const email =
-    process.env.E2E_ADMIN_EMAIL ?? "peranovicuna6@gmail.com";
-  const password = process.env.E2E_ADMIN_PASSWORD;
-  if (!password) {
-    test.skip(true, "E2E_ADMIN_PASSWORD env var nije postavljen");
-  }
+  const email = process.env.E2E_ADMIN_EMAIL ?? "test@admin.com";
+  const password = process.env.E2E_ADMIN_PASSWORD ?? "Test1234A";
 
   // Neautentifikovan pristup se redirectuje na login
   await page.goto("/admin/dashboard");
@@ -15,7 +11,7 @@ test("admin login flow — valid credentials", async ({ page }) => {
   // Login forma
   await expect(page.getByRole("heading", { name: "Admin panel" })).toBeVisible();
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Lozinka").fill(password!);
+  await page.getByLabel("Lozinka").fill(password);
   await page.getByRole("button", { name: "Prijavi se" }).click();
 
   // Dashboard se učitava nakon logina

@@ -12,18 +12,14 @@ function futureWeekday(offsetDays: number): Date {
   return date;
 }
 
-/**
- * Books via UI, then verifies ALL database fields are correctly persisted:
- * client_name, client_phone, client_email, notes, status, service_id,
- * confirmation_token, start_time, end_time duration consistency.
- */
 test("booking data integrity — all fields persisted correctly", async ({
   page,
 }) => {
   test.skip(!SERVICE_ROLE_KEY, "Needs E2E_SUPABASE_SERVICE_ROLE_KEY");
 
   const uniqueName = `E2E Integrity ${Date.now()}`;
-  const target = futureWeekday(30);
+  // Use offset 4 to avoid collisions — weekday only
+  const target = futureWeekday(4);
   const dayNumber = target.getDate();
 
   try {
@@ -66,7 +62,7 @@ test("booking data integrity — all fields persisted correctly", async ({
     expect(row.start_time).toBeTruthy();
     expect(row.end_time).toBeTruthy();
 
-    // end_time should be start_time + 60min (Šminkanje duration)
+    // end_time = start_time + 60min (Šminkanje duration)
     const start = new Date(row.start_time);
     const end = new Date(row.end_time);
     expect(end.getTime() - start.getTime()).toBe(60 * 60 * 1000);

@@ -37,12 +37,9 @@ async function cleanupBlockByReason(reason: string): Promise<void> {
 test("admin creates time block → public calendar hides overlapping slot", async ({
   page,
 }) => {
-  const adminEmail =
-    process.env.E2E_ADMIN_EMAIL ?? "peranovicuna6@gmail.com";
-  const adminPassword = process.env.E2E_ADMIN_PASSWORD;
-  if (!adminPassword || !SERVICE_ROLE_KEY) {
-    test.skip(true, "admin credentials ili service role key nedostaje");
-  }
+  const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "test@admin.com";
+  const adminPassword = process.env.E2E_ADMIN_PASSWORD ?? "Test1234A";
+  test.skip(!SERVICE_ROLE_KEY, "E2E_SUPABASE_SERVICE_ROLE_KEY needed");
 
   const uniqueReason = `E2E block ${Date.now()}`;
 
@@ -50,7 +47,7 @@ test("admin creates time block → public calendar hides overlapping slot", asyn
     // Login
     await page.goto("/admin/login");
     await page.getByLabel("Email").fill(adminEmail);
-    await page.getByLabel("Lozinka").fill(adminPassword!);
+    await page.getByLabel("Lozinka").fill(adminPassword);
     await page.getByRole("button", { name: "Prijavi se" }).click();
     await expect(page).toHaveURL(/\/admin\/dashboard/);
 

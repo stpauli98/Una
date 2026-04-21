@@ -5,7 +5,7 @@ import {
   updateAppointmentStatus,
   SERVICE_ROLE_KEY,
 } from "./helpers";
-import { addDays, getDay, format } from "date-fns";
+import { addDays, getDay } from "date-fns";
 
 function futureWeekday(offsetDays: number): Date {
   let date = addDays(new Date(), offsetDays);
@@ -16,42 +16,57 @@ function futureWeekday(offsetDays: number): Date {
 
 /**
  * Verifies that cancelling an appointment frees the slot for new bookings.
- * Uses the availability API directly to check slot presence.
+ * Uses the public booking UI to check slot visibility before and after cancel.
  */
 test("cancelled appointment frees the slot for new bookings", async ({
-  request,
+  page,
 }) => {
   test.skip(!SERVICE_ROLE_KEY, "Needs E2E_SUPABASE_SERVICE_ROLE_KEY");
 
-  const target = futureWeekday(20);
-  const dateStr = format(target, "yyyy-MM-dd");
+  // +5 days to stay visible in current month calendar view
+  const target = futureWeekday(5);
+  const dayNumber = target.getDate();
 
   // Seed: Šminkanje (id=1, 60min) at 17:00
   const id = await insertAppointment(1, target, 60, "E2E Cancel Frees");
 
   try {
-    // Verify 17:00 is blocked
-    const before = await request.get(
-      `/api/availability?date=${dateStr}&service_id=1`,
-    );
-    const dataBefore = await before.json();
-    const has17Before = dataBefore.slots?.some((s: { start: string }) =>
-      s.start.includes("T17:00"),
-    );
-    expect(has17Before).toBeFalsy();
+    // Step 1: Verify 17:00 is NOT shown in booking UI
+    await page.goto("/zakazi?service=1");
+    await expect(
+      page.getByRole("heading", { name: "Izaberite termin" }),
+    ).toBeVisible();
+    await page
+      .getByRole("button", { name: String(dayNumber), exact: true })
+      .first()
+      .click();
+    await expect(page.getByText("Slobodni termini")).toBeVisible();
 
-    // Cancel the appointment
+    const slotsBefore = await page
+      .getByRole("button")
+      .filter({ hasText: /^\d{2}:\d{2}$/ })
+      .allTextContents();
+    expect(slotsBefore).not.toContain("17:00");
+
+    // Step 2: Cancel the appointment
     await updateAppointmentStatus(id, "otkazan");
 
-    // Verify 17:00 is now available
-    const after = await request.get(
-      `/api/availability?date=${dateStr}&service_id=1`,
-    );
-    const dataAfter = await after.json();
-    const has17After = dataAfter.slots?.some((s: { start: string }) =>
-      s.start.includes("T17:00"),
-    );
-    expect(has17After).toBeTruthy();
+    // Step 3: Refresh and verify 17:00 IS now available
+    await page.goto("/zakazi?service=1");
+    await expect(
+      page.getByRole("heading", { name: "Izaberite termin" }),
+    ).toBeVisible();
+    await page
+      .getByRole("button", { name: String(dayNumber), exact: true })
+      .first()
+      .click();
+    await expect(page.getByText("Slobodni termini")).toBeVisible();
+
+    const slotsAfter = await page
+      .getByRole("button")
+      .filter({ hasText: /^\d{2}:\d{2}$/ })
+      .allTextContents();
+    expect(slotsAfter).toContain("17:00");
   } finally {
     await deleteAppointment(id);
   }

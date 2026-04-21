@@ -14,16 +14,12 @@ test("admin canceled appointment → WhatsApp button carries cancellation messag
   page,
 }) => {
   // Login — koristi env varijable da se ne commit-uje lozinka u git
-  const email =
-    process.env.E2E_ADMIN_EMAIL ?? "peranovicuna6@gmail.com";
-  const password = process.env.E2E_ADMIN_PASSWORD;
-  if (!password) {
-    test.skip(true, "E2E_ADMIN_PASSWORD env var nije postavljen");
-  }
+  const email = process.env.E2E_ADMIN_EMAIL ?? "test@admin.com";
+  const password = process.env.E2E_ADMIN_PASSWORD ?? "Test1234A";
 
   await page.goto("/admin/login");
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Lozinka").fill(password!);
+  await page.getByLabel("Lozinka").fill(password);
   await page.getByRole("button", { name: "Prijavi se" }).click();
   await expect(page).toHaveURL(/\/admin\/dashboard/);
 
