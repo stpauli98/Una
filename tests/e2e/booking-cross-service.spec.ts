@@ -26,14 +26,17 @@ const SUPABASE_URL = process.env.E2E_SUPABASE_URL ?? "http://127.0.0.1:54321";
 const SERVICE_ROLE_KEY = process.env.E2E_SUPABASE_SERVICE_ROLE_KEY;
 
 function nextBookableWeekday(): Date {
-  // +10 dana da izbjegnemo kolizije sa drugim e2e testovima
-  // koji koriste +3 do +7 days (booking-conflict, booking, time-blocks, itd.)
-  let date = addDays(new Date(), 10);
+  // +8 dana da izbjegnemo kolizije, ali ostanemo u istom mjesecu
+  let date = addDays(new Date(), 8);
   while (getDay(date) === 0 || getDay(date) === 6) {
     date = addDays(date, 1);
   }
-  date.setHours(17, 0, 0, 0);
-  return date;
+  // Use explicit UTC offset for Sarajevo CEST (UTC+2)
+  // to avoid server TZ mismatch
+  const y = date.getFullYear();
+  const m = date.getMonth(); // 0-based
+  const d = date.getDate();
+  return new Date(Date.UTC(y, m, d, 15, 0)); // 17:00 CEST = 15:00 UTC
 }
 
 async function insertAppointment(
@@ -111,11 +114,15 @@ test("cross-service blocking — Šminkanje 17:00 blocks Pedikir 17:00 slot", as
       .click();
 
     await expect(page.getByText("Slobodni termini")).toBeVisible();
+    // Wait for availability API to return and render slots
+    await expect(
+      page.getByRole("button").filter({ hasText: /^\d{2}:\d{2}$/ }).first(),
+    ).toBeVisible({ timeout: 10000 });
 
-    const slotButtons = page
+    const slotTexts = await page
       .getByRole("button")
-      .filter({ hasText: /^\d{2}:\d{2}$/ });
-    const slotTexts = await slotButtons.allTextContents();
+      .filter({ hasText: /^\d{2}:\d{2}$/ })
+      .allTextContents();
 
     // Glavna assertion — 17:00 za Pedikir mora biti SKRIVENO
     // jer je Una zauzeta Šminkanjem u tom vremenu
