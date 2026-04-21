@@ -11,7 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:e2e:local": "env $(cat .env.test | grep -v '^#' | xargs) npx playwright test",
+    "test:e2e:local": "DOTENV_CONFIG_PATH=.env.test npx playwright test",
     "test:all": "npm test && npm run test:e2e:local",
     "test:setup": "bash scripts/setup-test-env.sh",
     "supabase:start": "supabase start",

@@ -1,8 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 import { config } from "dotenv";
 
-// Load .env.test for local testing (local Docker Supabase keys)
-config({ path: ".env.test" });
+// Load env file: DOTENV_CONFIG_PATH=.env.test for local, or defaults to .env.local
+config({ path: process.env.DOTENV_CONFIG_PATH ?? ".env.local" });
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -30,7 +30,9 @@ export default defineConfig({
   webServer: process.env.PLAYWRIGHT_SKIP_WEB_SERVER
     ? undefined
     : {
-        command: "npm run dev",
+        command: process.env.DOTENV_CONFIG_PATH
+          ? `env $(cat ${process.env.DOTENV_CONFIG_PATH} | grep -v '^#' | grep -v '^$' | xargs) npm run dev`
+          : "npm run dev",
         url: "http://localhost:3000",
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
