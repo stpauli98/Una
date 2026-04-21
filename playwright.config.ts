@@ -1,4 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
+import { config } from "dotenv";
+
+// Load .env.test for local testing (local Docker Supabase keys)
+config({ path: ".env.test" });
 
 export default defineConfig({
   testDir: "./tests/e2e",
