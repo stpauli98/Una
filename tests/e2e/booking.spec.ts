@@ -73,7 +73,7 @@ test("booking flow happy path — Šminkanje 60min", async ({ page }) => {
     await page.getByRole("button", { name: "Potvrdi rezervaciju" }).click();
 
     // Uspjesno stranica
-    await expect(page).toHaveURL(/\/zakazi\/uspjesno\?id=\d+/);
+    await expect(page).toHaveURL(/\/zakazi\/uspjesno\?token=[\w-]+/);
     await expect(
       page.getByRole("heading", { name: "Termin primljen" }),
     ).toBeVisible();
