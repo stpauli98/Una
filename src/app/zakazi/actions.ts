@@ -8,6 +8,7 @@ import { normalizePhone } from "@/lib/utils/phone";
 import { isGridAligned } from "@/lib/utils/grid";
 import { parseBookingSettings } from "@/lib/settings/read";
 import { checkRateLimit } from "@/lib/utils/rate-limit";
+import { nowSarajevo } from "@/lib/utils/tz";
 import { headers } from "next/headers";
 
 export type CreateAppointmentResult =
@@ -74,7 +75,7 @@ export async function createAppointment(
   // Server-side min_hours_before enforcement
   const { data: settingsRows } = await sb.from("settings").select("key,value");
   const bookingSettings = parseBookingSettings(settingsRows ?? []);
-  const hoursUntilStart = differenceInHours(start, new Date());
+  const hoursUntilStart = differenceInHours(start, nowSarajevo());
   if (hoursUntilStart < bookingSettings.minHoursBefore) {
     return {
       ok: false,

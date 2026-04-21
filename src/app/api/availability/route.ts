@@ -1,10 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { parseISO, startOfDay, endOfDay } from "date-fns";
+import { parseISO, startOfDay, endOfDay, addDays } from "date-fns";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { computeAvailableSlots } from "@/lib/booking/availability";
 import { hoursMapFromRows } from "@/lib/booking/rules";
 import { parseBookingSettings } from "@/lib/settings/read";
 import { checkRateLimit } from "@/lib/utils/rate-limit";
+import { parseDateSarajevo, nowSarajevo } from "@/lib/utils/tz";
 
 // Ova ruta mora uvijek čitati svježe podatke — baza se mijenja u realnom
 // vremenu kada klijenti rezervišu termine. Keš bi prikazao zastarjele slotove.
@@ -56,7 +57,8 @@ export async function GET(req: NextRequest) {
 
   let date: Date;
   try {
-    date = startOfDay(parseISO(dateStr));
+    // Parse as midnight in Europe/Sarajevo (not UTC)
+    date = parseDateSarajevo(dateStr);
     if (Number.isNaN(date.getTime())) throw new Error("nan");
   } catch {
     return NextResponse.json({ error: "Neispravan datum" }, { status: 400 });
@@ -77,8 +79,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ slots: [] });
   }
 
-  const dayStart = startOfDay(date).toISOString();
-  const dayEnd = endOfDay(date).toISOString();
+  // Query range: from Sarajevo midnight to Sarajevo midnight+24h
+  const dayStart = date.toISOString();
+  const dayEnd = addDays(date, 1).toISOString();
 
   // Time blocks mogu početi prije targetiranog dana a završiti unutar njega,
   // ili početi unutar i završiti kasnije. Tražimo sve blokove koji se
@@ -128,7 +131,7 @@ export async function GET(req: NextRequest) {
   const slots = computeAvailableSlots({
     date,
     durationMin: service.duration_min,
-    now: new Date(),
+    now: nowSarajevo(),
     existing: (apptRes.data ?? []).map((a) => ({
       start: new Date(a.start_time),
       end: new Date(a.end_time),

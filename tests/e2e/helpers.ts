@@ -3,6 +3,37 @@ export const SUPABASE_URL =
 export const SERVICE_ROLE_KEY =
   process.env.E2E_SUPABASE_SERVICE_ROLE_KEY;
 
+/**
+ * Create a Date representing a specific hour in Europe/Sarajevo timezone.
+ * Works correctly regardless of the machine's local timezone.
+ *
+ * sarajevoDate(2026, 4, 28, 17, 0) → 28 April 2026, 17:00 CET (15:00 UTC in summer)
+ */
+export function sarajevoDate(
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  min = 0,
+): Date {
+  // Format as ISO with explicit Sarajevo offset
+  // CET = +01:00, CEST (summer) = +02:00
+  // Use Intl to detect the correct offset for the given date
+  const temp = new Date(Date.UTC(year, month - 1, day, hour, min));
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Sarajevo",
+    timeZoneName: "shortOffset",
+  });
+  const parts = formatter.formatToParts(temp);
+  const offsetPart = parts.find((p) => p.type === "timeZoneName")?.value ?? "+02";
+  // offsetPart is like "GMT+2" or "GMT+1"
+  const offsetMatch = offsetPart.match(/([+-]?\d+)/);
+  const offsetHours = offsetMatch ? parseInt(offsetMatch[1]) : 2;
+
+  // Create UTC date that represents the desired local time in Sarajevo
+  return new Date(Date.UTC(year, month - 1, day, hour - offsetHours, min));
+}
+
 export function supabaseHeaders() {
   if (!SERVICE_ROLE_KEY)
     throw new Error("E2E_SUPABASE_SERVICE_ROLE_KEY not set");

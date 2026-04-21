@@ -4,14 +4,15 @@ import {
   deleteAppointment,
   updateAppointmentStatus,
   SERVICE_ROLE_KEY,
+  sarajevoDate,
 } from "./helpers";
 import { addDays, getDay } from "date-fns";
 
 function futureWeekday(offsetDays: number): Date {
   let date = addDays(new Date(), offsetDays);
   while (getDay(date) === 0 || getDay(date) === 6) date = addDays(date, 1);
-  date.setHours(17, 0, 0, 0);
-  return date;
+  // Create 17:00 in Sarajevo timezone (not local machine TZ)
+  return sarajevoDate(date.getFullYear(), date.getMonth() + 1, date.getDate(), 17, 0);
 }
 
 /**

@@ -11,7 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:e2e:local": "DOTENV_CONFIG_PATH=.env.test npx playwright test",
+    "test:e2e:local": "mv .env.local .env.local.prod 2>/dev/null; cp .env.test .env.local; npx playwright test; EXIT=$?; mv .env.local.prod .env.local 2>/dev/null; exit $EXIT",
     "test:all": "npm test && npm run test:e2e:local",
     "test:setup": "bash scripts/setup-test-env.sh",
     "supabase:start": "supabase start",
