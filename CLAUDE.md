@@ -26,6 +26,8 @@ npm run test:e2e     # Playwright e2e (needs dev server running)
 
 `src/proxy.ts` is the auth guard and session refresh layer. It runs on `/admin/:path*` routes only. There is no `middleware.ts`. Check `node_modules/next/dist/docs/` before using any Next.js API — this version has breaking changes from training data.
 
+**API routes are NOT covered by the proxy.** New `/api/*` routes that need auth must call `requireAdmin()` (or check the session manually) inside the handler — see `src/app/api/availability/route.ts` for the pattern. The protected admin layout (`src/app/admin/(protected)/layout.tsx`) double-checks admin email as defense-in-depth, but it only fires when the request reaches a page route, not an API route.
+
 ### Two Supabase Clients
 
 | Client | File | Key | RLS | Use for |

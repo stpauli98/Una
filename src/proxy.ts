@@ -54,6 +54,17 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
+/**
+ * Matcher: SAMO `/admin/:path*`. API rute (`/api/*`) NISU pokrivene proxy-jem.
+ *
+ * Ako dodaješ novu API rutu koja zahtijeva auth, uradi jednu od:
+ *   1) Pozovi `requireAdmin()` unutar route handler-a (vidi
+ *      `src/app/api/availability/route.ts` za primjer).
+ *   2) Proširi matcher i dodaj odgovarajući guard ovdje.
+ *
+ * Public rute (`/`, `/zakazi`, `/galerija`, ...) namjerno nisu pokrivene
+ * — proxy se ne troši na rute gdje nema sesije za refresh.
+ */
 export const config = {
   matcher: ["/admin/:path*"],
 };
