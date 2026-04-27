@@ -23,7 +23,7 @@ export const revalidate = 0;
 export async function GET(req: NextRequest) {
   // Rate limit: 30 requests per minute per IP
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown";
-  if (!checkRateLimit(ip, 30, 60_000)) {
+  if (!(await checkRateLimit(ip, 30, 60_000))) {
     return NextResponse.json(
       { error: "Previše zahtjeva. Pokušajte ponovo za minutu." },
       { status: 429 },

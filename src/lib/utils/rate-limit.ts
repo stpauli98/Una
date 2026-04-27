@@ -1,47 +1,80 @@
 /**
- * Simple in-memory rate limiter for serverless functions.
+ * Rate limiter sa Upstash Redis backend-om u produkciji,
+ * in-memory fallback-om u dev/test (gdje Upstash env vars nisu setovane).
  *
- * Limitations:
- * - Resets on cold start (Vercel serverless)
- * - Not shared across instances
- *
- * For production hardening, replace with Upstash Redis or Vercel KV.
+ * Upstash je distribuirani — radi i na multi-region Vercel deploy-evima.
+ * In-memory fallback resetuje na cold start; OK za lokalni dev i CI.
  */
 
-const store = new Map<string, { count: number; resetAt: number }>();
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
 
-// Cleanup stale entries every 5 minutes to prevent memory leaks
-const CLEANUP_INTERVAL = 5 * 60 * 1000;
+const upstashUrl = process.env.UPSTASH_REDIS_REST_URL;
+const upstashToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+const memStore = new Map<string, { count: number; resetAt: number }>();
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 let lastCleanup = Date.now();
 
-function cleanup() {
-  const now = Date.now();
-  if (now - lastCleanup < CLEANUP_INTERVAL) return;
+function memCleanup(now: number) {
+  if (now - lastCleanup < CLEANUP_INTERVAL_MS) return;
   lastCleanup = now;
-  for (const [key, entry] of store) {
-    if (now > entry.resetAt) store.delete(key);
+  for (const [key, entry] of memStore) {
+    if (now > entry.resetAt) memStore.delete(key);
   }
 }
 
+function memCheck(ip: string, limit: number, windowMs: number): boolean {
+  const now = Date.now();
+  memCleanup(now);
+  const entry = memStore.get(ip);
+  if (!entry || now > entry.resetAt) {
+    memStore.set(ip, { count: 1, resetAt: now + windowMs });
+    return true;
+  }
+  entry.count++;
+  return entry.count <= limit;
+}
+
+// Cache Ratelimit instances po (limit, windowMs) — Upstash kreira novi
+// sliding window per instance.
+const upstashCache = new Map<string, Ratelimit>();
+
+function getUpstashLimiter(limit: number, windowMs: number): Ratelimit | null {
+  if (!upstashUrl || !upstashToken) return null;
+  const key = `${limit}:${windowMs}`;
+  const cached = upstashCache.get(key);
+  if (cached) return cached;
+  const redis = new Redis({ url: upstashUrl, token: upstashToken });
+  const seconds = Math.max(1, Math.round(windowMs / 1000));
+  const limiter = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(limit, `${seconds} s`),
+    analytics: false,
+    prefix: "up-beauty:rl",
+  });
+  upstashCache.set(key, limiter);
+  return limiter;
+}
+
 /**
- * Check if a request should be rate limited.
- * @returns `true` if the request is allowed, `false` if rate limited.
+ * @returns `true` ako je zahtjev dozvoljen, `false` ako je rate-limited.
  */
-export function checkRateLimit(
+export async function checkRateLimit(
   ip: string,
   limit = 10,
   windowMs = 60_000,
-): boolean {
-  cleanup();
-
-  const now = Date.now();
-  const entry = store.get(ip);
-
-  if (!entry || now > entry.resetAt) {
-    store.set(ip, { count: 1, resetAt: now + windowMs });
-    return true;
+): Promise<boolean> {
+  const limiter = getUpstashLimiter(limit, windowMs);
+  if (limiter) {
+    try {
+      const { success } = await limiter.limit(ip);
+      return success;
+    } catch {
+      // Fail-open na fallback ako Upstash padne (ne fail-closed da ne
+      // blokiramo legitimni saobraćaj na grešci infrastrukture).
+      return memCheck(ip, limit, windowMs);
+    }
   }
-
-  entry.count++;
-  return entry.count <= limit;
+  return memCheck(ip, limit, windowMs);
 }

@@ -22,7 +22,7 @@ export async function createAppointment(
   // Rate limit: 5 booking attempts per minute per IP
   const hdrs = await headers();
   const ip = hdrs.get("x-forwarded-for")?.split(",")[0] ?? "unknown";
-  if (!checkRateLimit(ip, 5, 60_000)) {
+  if (!(await checkRateLimit(ip, 5, 60_000))) {
     return { ok: false, error: "Previše zahtjeva. Pokušajte ponovo za minutu." };
   }
 
