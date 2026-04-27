@@ -20,9 +20,12 @@ describe("admin-emails", () => {
     expect(isAdminEmail(null as unknown as string)).toBe(false);
   });
 
-  it("test admin user is only present when ADMIN_EMAILS_EXTRA env var is set", () => {
-    if (!process.env.ADMIN_EMAILS_EXTRA) {
-      expect(ADMIN_EMAILS.has("test@admin.com")).toBe(false);
-    }
+  it("test admin user is present iff ADMIN_EMAILS_EXTRA contains it", () => {
+    const extras = (process.env.ADMIN_EMAILS_EXTRA ?? "")
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean);
+    const expectsTestAdmin = extras.includes("test@admin.com");
+    expect(ADMIN_EMAILS.has("test@admin.com")).toBe(expectsTestAdmin);
   });
 });
