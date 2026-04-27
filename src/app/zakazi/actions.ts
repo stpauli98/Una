@@ -8,6 +8,7 @@ import { normalizePhone } from "@/lib/utils/phone";
 import { isGridAligned } from "@/lib/utils/grid";
 import { parseBookingSettings } from "@/lib/settings/read";
 import { checkRateLimit } from "@/lib/utils/rate-limit";
+import { sanitizeError } from "@/lib/utils/log";
 import { nowSarajevo } from "@/lib/utils/tz";
 import { headers } from "next/headers";
 
@@ -93,7 +94,7 @@ export async function createAppointment(
     .limit(1);
 
   if (clashErr) {
-    console.error("race-guard query failed:", clashErr);
+    console.error("race-guard query failed:", sanitizeError(clashErr));
     return { ok: false, error: "Greška pri provjeri termina, pokušajte ponovo" };
   }
   if (clashing && clashing.length > 0) {
@@ -123,7 +124,7 @@ export async function createAppointment(
     .single();
 
   if (insErr || !inserted) {
-    console.error("appointment insert failed:", insErr);
+    console.error("appointment insert failed:", sanitizeError(insErr));
     return {
       ok: false,
       error: "Došlo je do greške pri spremanju. Molimo pokušajte ponovo.",
