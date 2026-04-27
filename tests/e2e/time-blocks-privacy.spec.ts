@@ -52,13 +52,24 @@ test.describe("time_blocks privacy", () => {
     expect(leaked).toBe(false);
   });
 
-  test("anon može čitati start_time/end_time kroz public view", async () => {
+  test("anon kroz public view dobija seedovan red sa start/end ali bez reason", async () => {
     const anon = createClient(url, anonKey);
     const { data, error } = await anon
       .from("time_blocks_public")
-      .select("start_time,end_time")
+      .select("*")
       .gte("start_time", new Date().toISOString());
     expect(error).toBeNull();
     expect(Array.isArray(data)).toBe(true);
+    // Verifikuj da je seedovan blok stvarno vidljiv kroz view
+    const seeded = (data ?? []).find(
+      (r) =>
+        r.start_time != null &&
+        new Date(r.start_time).getTime() > Date.now() + 28 * 24 * 60 * 60 * 1000,
+    );
+    expect(seeded).toBeDefined();
+    expect(seeded?.start_time).toBeTruthy();
+    expect(seeded?.end_time).toBeTruthy();
+    // Reason kolona NE smije biti prisutna na view-u
+    expect("reason" in (seeded as object)).toBe(false);
   });
 });

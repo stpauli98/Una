@@ -287,17 +287,14 @@ export type Database = {
       time_blocks_public: {
         Row: {
           end_time: string | null
-          id: number | null
           start_time: string | null
         }
         Insert: {
           end_time?: string | null
-          id?: number | null
           start_time?: string | null
         }
         Update: {
           end_time?: string | null
-          id?: number | null
           start_time?: string | null
         }
         Relationships: []
