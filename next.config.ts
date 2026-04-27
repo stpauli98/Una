@@ -19,7 +19,11 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               // Next.js inline runtime trenutno zahtijeva 'unsafe-inline' do nonce setup-a.
               // Report-Only mode — pratimo violations u browser konzoli prije enforce-a.
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              // 'unsafe-eval' je samo u dev mode (Turbopack fast-refresh ga zahtijeva).
+              // U prod buildu se izostavlja — strožija CSP i prije enforce iteracije.
+              process.env.NODE_ENV === "development"
+                ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+                : "script-src 'self' 'unsafe-inline'",
               "style-src 'self' 'unsafe-inline'",
               `img-src 'self' data: blob: https://${supabaseHostname}`,
               `connect-src 'self' https://${supabaseHostname} wss://${supabaseHostname}`,
