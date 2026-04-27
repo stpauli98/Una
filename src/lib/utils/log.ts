@@ -6,7 +6,7 @@
  */
 
 const EMAIL_RE = /[\w.+-]+@[\w.-]+\.[a-z]{2,}/gi;
-const PHONE_RE = /[+]?\d[\d\s().-]{6,}\d/g;
+const PHONE_RE = /[+]?\d[\d\s().\-/]{6,}\d/g;
 const TRAILING_QUOTED_RE = /\s+"[^"]*"\s*$/;
 
 export function sanitizeError(err: unknown): {

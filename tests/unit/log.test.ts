@@ -43,4 +43,26 @@ describe("sanitizeError", () => {
     const out = sanitizeError(err);
     expect(out.message).not.toContain("38765");
   });
+
+  it("strips slash-formatted phone (Bosnian local format)", () => {
+    const err = { message: "Number 065/123-456 is invalid" };
+    const out = sanitizeError(err);
+    expect(out.message).not.toContain("065");
+    expect(out.message).not.toContain("123-456");
+  });
+
+  it("strips space-separated phone format", () => {
+    const err = { message: "Phone 38 765 123 456 invalid" };
+    const out = sanitizeError(err);
+    expect(out.message).not.toContain("38 765");
+  });
+
+  it("strips trailing quoted identifier from Postgres messages", () => {
+    const err = {
+      message: 'duplicate key value violates unique constraint "appointments_pkey"',
+    };
+    expect(sanitizeError(err).message).toBe(
+      "duplicate key value violates unique constraint",
+    );
+  });
 });
