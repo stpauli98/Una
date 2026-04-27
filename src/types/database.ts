@@ -284,7 +284,24 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      time_blocks_public: {
+        Row: {
+          end_time: string | null
+          id: number | null
+          start_time: string | null
+        }
+        Insert: {
+          end_time?: string | null
+          id?: number | null
+          start_time?: string | null
+        }
+        Update: {
+          end_time?: string | null
+          id?: number | null
+          start_time?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
