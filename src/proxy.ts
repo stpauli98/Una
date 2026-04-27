@@ -1,11 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-
-/** Dozvoljeni admin email-ovi. Samo Una ima pristup admin panelu. */
-const ADMIN_EMAILS = new Set([
-  "peranovicuna6@gmail.com",
-  "test@admin.com", // E2E test user
-]);
+import { isAdminEmail } from "@/lib/auth/admin-emails";
 
 /**
  * Next.js 16 proxy (ex-middleware) za Supabase session refresh.
@@ -40,7 +35,7 @@ export async function proxy(request: NextRequest) {
 
   // Guard: ako nije admin a pokušava /admin/* (osim login), redirect
   if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
-    if (!user || !ADMIN_EMAILS.has(user.email ?? "")) {
+    if (!user || !isAdminEmail(user.email)) {
       const url = request.nextUrl.clone();
       url.pathname = "/admin/login";
       url.searchParams.set("redirect", pathname);
@@ -59,6 +54,17 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
+/**
+ * Matcher: SAMO `/admin/:path*`. API rute (`/api/*`) NISU pokrivene proxy-jem.
+ *
+ * Ako dodaješ novu API rutu koja zahtijeva auth, uradi jednu od:
+ *   1) Pozovi `requireAdmin()` unutar route handler-a (vidi
+ *      `src/app/api/availability/route.ts` za primjer).
+ *   2) Proširi matcher i dodaj odgovarajući guard ovdje.
+ *
+ * Public rute (`/`, `/zakazi`, `/galerija`, ...) namjerno nisu pokrivene
+ * — proxy se ne troši na rute gdje nema sesije za refresh.
+ */
 export const config = {
   matcher: ["/admin/:path*"],
 };

@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/supabase/require-admin";
 import { revalidatePath } from "next/cache";
 import sharp from "sharp";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sanitizeError } from "@/lib/utils/log";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 const MAX_DIMENSION = 4096;
@@ -89,7 +90,7 @@ export async function uploadSingleGalleryImage(
         upsert: false,
       });
     if (uploadErr) {
-      console.error("upload failed:", uploadErr);
+      console.error("upload failed:", sanitizeError(uploadErr));
       return { ok: false, error: "Greška pri slanju slike na server" };
     }
 
@@ -105,7 +106,7 @@ export async function uploadSingleGalleryImage(
       .single();
 
     if (insertErr || !inserted) {
-      console.error("insert failed:", insertErr);
+      console.error("insert failed:", sanitizeError(insertErr));
       await admin.storage.from("gallery").remove([filename]);
       return { ok: false, error: "Greška pri spremanju slike u bazu" };
     }

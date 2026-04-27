@@ -23,7 +23,7 @@ export const revalidate = 0;
 export async function GET(req: NextRequest) {
   // Rate limit: 30 requests per minute per IP
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown";
-  if (!checkRateLimit(ip, 30, 60_000)) {
+  if (!(await checkRateLimit(ip, 30, 60_000))) {
     return NextResponse.json(
       { error: "Previše zahtjeva. Pokušajte ponovo za minutu." },
       { status: 429 },
@@ -97,7 +97,7 @@ export async function GET(req: NextRequest) {
       sb.from("blocked_dates").select("date_from,date_to"),
       sb.from("working_hours").select("day_of_week,open_time,close_time,is_open"),
       sb
-        .from("time_blocks")
+        .from("time_blocks_public")
         .select("start_time,end_time")
         .lt("start_time", dayEnd)
         .gt("end_time", dayStart),
@@ -141,10 +141,12 @@ export async function GET(req: NextRequest) {
       to: parseISO(b.date_to),
     })),
     hoursByWeekday: hoursMapFromRows(hoursRes.data ?? []),
-    blockedTimes: (timeBlocksRes.data ?? []).map((t) => ({
-      start: new Date(t.start_time),
-      end: new Date(t.end_time),
-    })),
+    blockedTimes: (timeBlocksRes.data ?? [])
+      .filter((t) => t.start_time != null && t.end_time != null)
+      .map((t) => ({
+        start: new Date(t.start_time!),
+        end: new Date(t.end_time!),
+      })),
     skipMinHoursBefore: isAdmin,
     settings: bookingSettings,
   });

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LoginForm } from "@/components/admin/LoginForm";
+import { safeRedirect } from "@/lib/utils/safe-redirect";
 
 export const metadata: Metadata = {
   title: "Prijava — Admin",
@@ -12,6 +13,7 @@ export default async function AdminLoginPage({
   searchParams: Promise<{ redirect?: string }>;
 }) {
   const { redirect } = await searchParams;
+  const safe = safeRedirect(redirect, "/admin/dashboard");
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-marble px-6 py-16">
@@ -31,7 +33,7 @@ export default async function AdminLoginPage({
           </h1>
           <p className="mt-1 text-[12px] text-light">Prijavite se za nastavak</p>
         </div>
-        <LoginForm redirectTo={redirect ?? "/admin/dashboard"} />
+        <LoginForm redirectTo={safe} />
       </div>
     </main>
   );
