@@ -66,7 +66,7 @@ supabase gen types typescript --local > src/types/database.ts
 
 - **Server actions** live in `actions.ts` files next to their page (e.g., `src/app/zakazi/actions.ts`).
 - **Revalidation** uses `revalidatePath()` + `router.refresh()` for RSC data sync.
-- **Rate limiting** via in-memory Map in `src/lib/utils/rate-limit.ts` (soft limit, resets on cold start).
+- **Rate limiting** via Upstash Redis sliding window in `src/lib/utils/rate-limit.ts` when `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` env vars are set; otherwise falls back to in-memory Map (dev/test). Async API: `await checkRateLimit(ip, limit, windowMs)`.
 - **Success page** uses UUID `confirmation_token` (not sequential ID) to prevent IDOR.
 - **Gallery lightbox** renders via `createPortal(lightbox, document.body)` to escape `<main inert>` focus trap.
 - **Tailwind v4** uses `@theme` in `globals.css` for colors. `@layer base` for global styles. No `tailwind.config.ts`.

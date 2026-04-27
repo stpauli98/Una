@@ -12,6 +12,11 @@ import { Redis } from "@upstash/redis";
 const upstashUrl = process.env.UPSTASH_REDIS_REST_URL;
 const upstashToken = process.env.UPSTASH_REDIS_REST_TOKEN;
 
+const upstashRedis =
+  upstashUrl && upstashToken
+    ? new Redis({ url: upstashUrl, token: upstashToken })
+    : null;
+
 const memStore = new Map<string, { count: number; resetAt: number }>();
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 let lastCleanup = Date.now();
@@ -41,14 +46,15 @@ function memCheck(ip: string, limit: number, windowMs: number): boolean {
 const upstashCache = new Map<string, Ratelimit>();
 
 function getUpstashLimiter(limit: number, windowMs: number): Ratelimit | null {
-  if (!upstashUrl || !upstashToken) return null;
+  if (!upstashRedis) return null;
   const key = `${limit}:${windowMs}`;
   const cached = upstashCache.get(key);
   if (cached) return cached;
-  const redis = new Redis({ url: upstashUrl, token: upstashToken });
+  // Minimum window granularnost je 1 sekunda — Upstash sliding window
+  // ne podržava sub-second prozore. Sub-1000ms windowMs se zaokružuje na 1 s.
   const seconds = Math.max(1, Math.round(windowMs / 1000));
   const limiter = new Ratelimit({
-    redis,
+    redis: upstashRedis,
     limiter: Ratelimit.slidingWindow(limit, `${seconds} s`),
     analytics: false,
     prefix: "up-beauty:rl",
