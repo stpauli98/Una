@@ -9,7 +9,7 @@ const NON_ADMIN_PASSWORD = "Test1234A";
 test.describe("admin layout guard", () => {
   test.beforeAll(async () => {
     const admin = createClient(url, serviceKey);
-    // Idempotently create the non-admin user (ignore "already exists" error)
+    // Idempotentno kreiraj non-admin korisnika (greška "već postoji" se ignoriše)
     await admin.auth.admin.createUser({
       email: NON_ADMIN_EMAIL,
       password: NON_ADMIN_PASSWORD,
@@ -18,25 +18,28 @@ test.describe("admin layout guard", () => {
   });
 
   test.afterAll(async () => {
+    // NAPOMENA: Ako se test run prekine između beforeAll i afterAll
+    // (npr. SIGINT, OOM), korisnik ostaje u Auth bazi. Sljedeći beforeAll
+    // tolerira to kroz idempotentni create, pa nije blokirajuće.
     const admin = createClient(url, serviceKey);
-    const { data } = await admin.auth.admin.listUsers();
+    const { data } = await admin.auth.admin.listUsers({ perPage: 1000 });
     const u = data.users.find((x) => x.email === NON_ADMIN_EMAIL);
     if (u) await admin.auth.admin.deleteUser(u.id);
   });
 
-  test("non-admin authenticated user cannot reach /admin/dashboard", async ({
+  test("non-admin korisnik ne može doći do /admin/dashboard", async ({
     page,
   }) => {
-    // Sign in via the login form. Proxy will reject before layout runs;
-    // this asserts the user-visible behavior is "you cannot reach the dashboard."
+    // Login kroz UI. Proxy je primarni guard — ovaj test asertuje
+    // user-visible ponašanje (proxy ILI layout fallback ga vraća).
     await page.goto("/admin/login");
-    await page.fill('input[name="email"]', NON_ADMIN_EMAIL);
-    await page.fill('input[name="password"]', NON_ADMIN_PASSWORD);
-    await page.click('button[type="submit"]');
+    await page.getByLabel("Email").fill(NON_ADMIN_EMAIL);
+    await page.getByLabel("Lozinka").fill(NON_ADMIN_PASSWORD);
+    await page.getByRole("button", { name: "Prijavi se" }).click();
 
-    // The user should not land on the dashboard. They will either remain on
-    // /admin/login (with an error) or be redirected back to it by the proxy.
-    await page.waitForLoadState("networkidle");
+    // Eksplicitno čekaj da URL ostane (ili se vrati) na login — sprječava
+    // networkidle flake (Supabase realtime drži konekciju otvorenu).
+    await expect(page).toHaveURL(/\/admin\/login/, { timeout: 10_000 });
     expect(page.url()).not.toContain("/admin/dashboard");
   });
 });
