@@ -40,6 +40,7 @@ E2E_SUPABASE_URL=${API_URL}
 E2E_SUPABASE_SERVICE_ROLE_KEY=${SERVICE_ROLE_KEY}
 E2E_ADMIN_EMAIL=test@admin.com
 E2E_ADMIN_PASSWORD=Test1234A
+ADMIN_EMAILS_EXTRA=test@admin.com
 EOF
 
 # Create test admin user (ignore error if already exists)

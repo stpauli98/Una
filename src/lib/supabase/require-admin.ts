@@ -1,12 +1,7 @@
 "use server";
 
 import { createClient } from "./server";
-
-/** Dozvoljeni admin email-ovi. */
-const ADMIN_EMAILS = new Set([
-  "peranovicuna6@gmail.com",
-  "test@admin.com", // E2E test user
-]);
+import { isAdminEmail } from "@/lib/auth/admin-emails";
 
 /**
  * Provjerava da je korisnik autentificiran I da je admin (po email-u).
@@ -21,7 +16,7 @@ export async function requireAdmin() {
   if (!user) {
     throw new Error("Nije autorizovan");
   }
-  if (!ADMIN_EMAILS.has(user.email ?? "")) {
+  if (!isAdminEmail(user.email)) {
     throw new Error("Nemate admin pristup");
   }
 
