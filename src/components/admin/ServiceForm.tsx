@@ -91,10 +91,19 @@ export function ServiceForm({ service, onClose, onSaved }: Props) {
               type="number"
               min={0}
               step="0.01"
-              required
               defaultValue={service?.price ?? ""}
+              placeholder="npr. 70 — opciono ako koristiš napomenu"
               className="w-full border border-cream bg-marble px-3 py-2 text-sm text-dark focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose"
             />
+            <div className="mt-1.5 flex gap-2 text-[11px] leading-relaxed text-light">
+              <Info size={12} className="mt-0.5 shrink-0" strokeWidth={1.5} />
+              <span>
+                Možeš ostaviti prazno ako će cijena biti samo tekst (npr.{" "}
+                <em>&quot;Od 50 KM&quot;</em>). U tom slučaju čekiraj
+                &quot;Varijabilna cijena&quot; ispod i upiši napomenu. Mora biti
+                popunjeno barem jedno (broj ili tekst).
+              </span>
+            </div>
           </Field>
 
           <Field label="Trajanje">

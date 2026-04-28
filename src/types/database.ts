@@ -153,7 +153,7 @@ export type Database = {
           id: number
           name: string
           order_index: number
-          price: number
+          price: number | null
           price_note: string | null
           variable_price: boolean
         }
@@ -168,7 +168,7 @@ export type Database = {
           id?: never
           name: string
           order_index?: number
-          price: number
+          price?: number | null
           price_note?: string | null
           variable_price?: boolean
         }
@@ -183,7 +183,7 @@ export type Database = {
           id?: never
           name?: string
           order_index?: number
-          price?: number
+          price?: number | null
           price_note?: string | null
           variable_price?: boolean
         }
