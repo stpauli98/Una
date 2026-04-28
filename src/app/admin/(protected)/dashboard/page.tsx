@@ -5,14 +5,14 @@ import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { formatTime, formatPrice } from "@/lib/utils/format";
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import {
-  startOfDay,
-  endOfDay,
-  startOfWeek,
-  endOfWeek,
-  startOfMonth,
-  endOfMonth,
-} from "date-fns";
+  getSarajevoDayBounds,
+  sarajevoTodayDateStr,
+  addDaysToDateStr,
+} from "@/lib/utils/day-bounds";
+import { parseBookingSettings } from "@/lib/settings/read";
+import { DashboardDayPicker } from "@/components/admin/DashboardDayPicker";
 
 export const metadata: Metadata = {
   title: "Dashboard — Admin",
@@ -21,23 +21,56 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminDashboardPage() {
+export default async function AdminDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string }>;
+}) {
   const sb = await createClient();
 
   const now = new Date();
-  const todayStart = startOfDay(now).toISOString();
-  const todayEnd = endOfDay(now).toISOString();
+  const todayStr = sarajevoTodayDateStr(now);
+
+  // advance_booking_days iz settings tabele — Una može mijenjati u Postavkama.
+  // parseBookingSettings interno fallback-uje na BOOKING_RULES ako ključ
+  // nedostaje ili vrijednost neispravna, tako da uvijek dobijamo broj.
+  const { data: settingsRows } = await sb.from("settings").select("key,value");
+  const bookingSettings = parseBookingSettings(settingsRows ?? []);
+  const maxDateStr = addDaysToDateStr(
+    todayStr,
+    bookingSettings.advanceBookingDays,
+  );
+
+  const params = await searchParams;
+  // Validacija + fallback na današnji dan
+  let selectedDateStr = todayStr;
+  if (params.date) {
+    try {
+      // getSarajevoDayBounds baca ako neispravan
+      getSarajevoDayBounds(params.date);
+      selectedDateStr = params.date > maxDateStr ? maxDateStr : params.date;
+    } catch {
+      selectedDateStr = todayStr;
+    }
+  }
+
+  // Granice za listu termina (izabrani dan u Sarajevo TZ)
+  const selectedDayBounds = getSarajevoDayBounds(selectedDateStr);
+  // Granice za "Termini danas" stat card (uvijek stvarni današnji dan)
+  const todayBounds = getSarajevoDayBounds(todayStr);
+
+  // Stats sedmica/mjesec ostaju vezani za `now` (stvarni datum, ne izabrani)
   const weekStart = startOfWeek(now, { weekStartsOn: 1 }).toISOString();
   const weekEnd = endOfWeek(now, { weekStartsOn: 1 }).toISOString();
   const monthStart = startOfMonth(now).toISOString();
   const monthEnd = endOfMonth(now).toISOString();
 
-  const [todayRes, weekRes, monthRes, todayListRes] = await Promise.all([
+  const [todayRes, weekRes, monthRes, dayListRes] = await Promise.all([
     sb
       .from("appointments")
       .select("id", { count: "exact", head: true })
-      .gte("start_time", todayStart)
-      .lte("start_time", todayEnd)
+      .gte("start_time", todayBounds.start)
+      .lt("start_time", todayBounds.end)
       .in("status", ["ceka", "potvrdjen"]),
     sb
       .from("appointments")
@@ -54,8 +87,8 @@ export default async function AdminDashboardPage() {
     sb
       .from("appointments")
       .select("id,client_name,client_phone,start_time,status,services(name)")
-      .gte("start_time", todayStart)
-      .lte("start_time", todayEnd)
+      .gte("start_time", selectedDayBounds.start)
+      .lt("start_time", selectedDayBounds.end)
       .order("start_time"),
   ]);
 
@@ -113,10 +146,10 @@ export default async function AdminDashboardPage() {
           />
         </div>
 
-        {/* Danas */}
+        {/* Termini za izabrani dan */}
         <div className="mb-8">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-display text-xl text-dark">Termini danas</h2>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="font-display text-xl text-dark">Termini</h2>
             <Link
               href="/admin/termini"
               className="text-[11px] uppercase tracking-wider text-rose hover:underline"
@@ -125,19 +158,29 @@ export default async function AdminDashboardPage() {
             </Link>
           </div>
 
-          {(todayListRes.data?.length ?? 0) === 0 ? (
+          <div className="mb-3 border border-cream bg-white p-3">
+            <DashboardDayPicker
+              selectedDateStr={selectedDateStr}
+              todayDateStr={todayStr}
+              maxDateStr={maxDateStr}
+            />
+          </div>
+
+          {(dayListRes.data?.length ?? 0) === 0 ? (
             <div className="border border-cream bg-white p-8 text-center">
               <p className="text-sm text-light">
-                Danas nema zakazanih termina.
+                {selectedDateStr === todayStr
+                  ? "Danas nema zakazanih termina."
+                  : "Nema zakazanih termina za izabrani dan."}
               </p>
             </div>
           ) : (
             <div className="overflow-hidden border border-cream bg-white">
-              {todayListRes.data!.map((appt, i) => (
+              {dayListRes.data!.map((appt, i) => (
                 <div
                   key={appt.id}
                   className={`flex items-center justify-between gap-4 px-5 py-4 ${
-                    i < todayListRes.data!.length - 1
+                    i < dayListRes.data!.length - 1
                       ? "border-b border-cream"
                       : ""
                   }`}
