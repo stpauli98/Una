@@ -9,7 +9,7 @@ const serviceKey = process.env.E2E_SUPABASE_SERVICE_ROLE_KEY;
 test.describe("dashboard day navigator", () => {
   test.skip(!serviceKey, "E2E_SUPABASE_SERVICE_ROLE_KEY nije setovan");
 
-  let createdIds: number[] = [];
+  const createdIds: number[] = [];
   let todayStr: string;
   let tomorrowStr: string;
 
