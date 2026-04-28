@@ -1,22 +1,29 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { atSarajevo } from "@/lib/utils/tz";
 import { addDaysToDateStr, sarajevoTodayDateStr } from "@/lib/utils/day-bounds";
 
 const url = process.env.E2E_SUPABASE_URL!;
-const serviceKey = process.env.E2E_SUPABASE_SERVICE_ROLE_KEY!;
-
-const todayStr = sarajevoTodayDateStr();
-const tomorrowStr = addDaysToDateStr(todayStr, 1);
-const dayAfterStr = addDaysToDateStr(todayStr, 2);
+const serviceKey = process.env.E2E_SUPABASE_SERVICE_ROLE_KEY;
 
 test.describe("dashboard day navigator", () => {
+  test.skip(!serviceKey, "E2E_SUPABASE_SERVICE_ROLE_KEY nije setovan");
+
   let createdIds: number[] = [];
+  let todayStr: string;
+  let tomorrowStr: string;
 
   test.beforeAll(async () => {
-    const admin = createClient(url, serviceKey);
+    // Compute dates u beforeAll (ne na module-level) — sigurno čak i ako
+    // modul bude import-ovan davno prije nego što suite počne.
+    todayStr = sarajevoTodayDateStr();
+    tomorrowStr = addDaysToDateStr(todayStr, 1);
+    const dayAfterStr = addDaysToDateStr(todayStr, 2);
+
+    const admin = createClient(url, serviceKey!);
     // Seed 3 termina: danas, sutra, prekosutra. Service id 1 = Šminkanje 60min.
-    // Status = potvrdjen (zaobilazi anon RLS check za status='ceka').
+    // Status = potvrdjen (ne 'ceka') — admin ručno potvrđen termin, pa ne
+    // ide kroz anon insert flow (i RLS check za confirmation_sent_at).
     const seeds = [
       { dateStr: todayStr, hour: 18, name: "E2E_NAV_DANAS" },
       { dateStr: tomorrowStr, hour: 18, name: "E2E_NAV_SUTRA" },
@@ -45,12 +52,12 @@ test.describe("dashboard day navigator", () => {
   });
 
   test.afterAll(async () => {
-    if (createdIds.length === 0) return;
+    if (createdIds.length === 0 || !serviceKey) return;
     const admin = createClient(url, serviceKey);
     await admin.from("appointments").delete().in("id", createdIds);
   });
 
-  async function login(page: import("@playwright/test").Page) {
+  async function login(page: Page) {
     await page.goto("/admin/login");
     await page.getByLabel("Email").fill(process.env.E2E_ADMIN_EMAIL!);
     await page.getByLabel("Lozinka").fill(process.env.E2E_ADMIN_PASSWORD!);
@@ -63,8 +70,8 @@ test.describe("dashboard day navigator", () => {
   }) => {
     await login(page);
 
-    // "danas" oznaka u date label
-    await expect(page.getByText("· danas")).toBeVisible();
+    // "danas" indikator je dio aria-live label-a u DashboardDayPicker
+    await expect(page.locator('[aria-live="polite"]')).toContainText("· danas");
     // Današnji termin vidljiv u listi
     await expect(page.getByText("E2E_NAV_DANAS")).toBeVisible();
     // Sutra/prekosutra NIJE vidljivo
@@ -80,6 +87,7 @@ test.describe("dashboard day navigator", () => {
 
     await expect(page.getByText("E2E_NAV_SUTRA")).toBeVisible();
     await expect(page.getByText("E2E_NAV_DANAS")).not.toBeVisible();
+    await expect(page.getByText("E2E_NAV_PREKOSUTRA")).not.toBeVisible();
 
     // "Danas" dugme se sad pojavilo
     await expect(page.getByRole("button", { name: "Danas" })).toBeVisible();
@@ -89,9 +97,9 @@ test.describe("dashboard day navigator", () => {
     await login(page);
 
     await page.goto("/admin/dashboard?date=not-a-date");
-    // Ne treba reload-ovati URL — server fallback radi tiho i prikazuje danas
+    // Fallback radi tiho (server) → vidi današnji termin
     await expect(page.getByText("E2E_NAV_DANAS")).toBeVisible();
-    // "danas" oznaka prisutna (znači selectedDateStr === todayStr nakon fallback-a)
-    await expect(page.getByText("· danas")).toBeVisible();
+    // "danas" oznaka prisutna nakon fallback-a
+    await expect(page.locator('[aria-live="polite"]')).toContainText("· danas");
   });
 });
