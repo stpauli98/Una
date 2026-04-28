@@ -6,6 +6,7 @@ import {
   formatTime,
   formatDateTime,
 } from "@/lib/utils/format";
+import { atSarajevo } from "@/lib/utils/tz";
 
 describe("formatPrice", () => {
   it("appends KM to numeric price", () => {
@@ -42,7 +43,7 @@ describe("formatDuration", () => {
 
 describe("formatDate", () => {
   it("formats in Serbian latin", () => {
-    const d = new Date("2026-04-15T12:00:00");
+    const d = atSarajevo(2026, 4, 15, 12, 0);
     const out = formatDate(d);
     // srijeda, 15. april
     expect(out.toLowerCase()).toContain("srijeda");
@@ -53,18 +54,18 @@ describe("formatDate", () => {
 
 describe("formatTime", () => {
   it("HH:mm", () => {
-    const d = new Date(2026, 3, 15, 17, 30);
+    const d = atSarajevo(2026, 4, 15, 17, 30);
     expect(formatTime(d)).toBe("17:30");
   });
   it("pads single-digit hour", () => {
-    const d = new Date(2026, 3, 15, 9, 5);
+    const d = atSarajevo(2026, 4, 15, 9, 5);
     expect(formatTime(d)).toBe("09:05");
   });
 });
 
 describe("formatDateTime", () => {
   it("combines date and time", () => {
-    const d = new Date(2026, 3, 15, 17, 30);
+    const d = atSarajevo(2026, 4, 15, 17, 30);
     const out = formatDateTime(d);
     expect(out).toContain("17:30");
     expect(out).toContain("15");

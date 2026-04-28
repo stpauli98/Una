@@ -3,11 +3,12 @@ import {
   buildAppointmentWaMessage,
   waButtonLabel,
 } from "@/lib/utils/wa-messages";
+import { atSarajevo } from "@/lib/utils/tz";
 
 const BASE = {
   clientName: "Marija Testić",
   serviceName: "Šminkanje",
-  startTime: new Date(2026, 3, 20, 17, 0), // 20. april 2026, 17:00
+  startTime: atSarajevo(2026, 4, 20, 17, 0), // 20. april 2026, 17:00 Sarajevo
 };
 
 describe("buildAppointmentWaMessage", () => {
