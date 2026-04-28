@@ -1,10 +1,5 @@
-import {
-  addMinutes,
-  differenceInHours,
-  differenceInCalendarDays,
-  isBefore,
-  startOfDay,
-} from "date-fns";
+import { addMinutes, differenceInHours } from "date-fns";
+import { formatInTimeZone, fromZonedTime, toZonedTime } from "date-fns-tz";
 import type {
   BlockedRange,
   ExistingAppointment,
@@ -12,6 +7,9 @@ import type {
 } from "@/types/booking";
 import { BOOKING_RULES, getHoursForDay, type DailyHoursMap } from "./rules";
 import type { BookingSettings } from "@/lib/settings/read";
+import { BUSINESS } from "@/lib/constants/business";
+
+const TZ = BUSINESS.timezone;
 
 /**
  * Fixed grid korak za generisanje slotova. Nezavisan od trajanja usluge
@@ -73,36 +71,43 @@ export type AvailabilityInput = {
 export function computeAvailableSlots(input: AvailabilityInput): Slot[] {
   const { date, durationMin, now, existing, blocked } = input;
 
-  const target = startOfDay(date);
-  const today = startOfDay(now);
+  // Sarajevo wall-clock date stringovi (ne UTC) — konzistentno na bilo kojem
+  // server TZ-u (lokalni Sarajevo dev, Vercel UTC). `getDay()`/`setHours()` na
+  // sirovom Date objektu koristi server-local TZ što je lomilo logiku na UTC
+  // serveru — pomjeralo dan unazad za jedan.
+  const targetDateStr = formatInTimeZone(date, TZ, "yyyy-MM-dd");
+  const todayDateStr = formatInTimeZone(now, TZ, "yyyy-MM-dd");
 
-  // 1. Prošlost
-  if (isBefore(target, today)) return [];
+  // 1. Prošlost — string compare na YYYY-MM-DD je leksikografski ispravan
+  if (targetDateStr < todayDateStr) return [];
 
-  // 2. Advance booking limit
+  // 2. Advance booking limit — broj kalendarskih dana razlike u Sarajevo TZ
   const advanceDays = input.settings?.advanceBookingDays ?? BOOKING_RULES.advance_booking_days;
-  const daysAhead = differenceInCalendarDays(target, today);
+  const targetMidnightUtc = fromZonedTime(`${targetDateStr}T00:00:00`, TZ);
+  const todayMidnightUtc = fromZonedTime(`${todayDateStr}T00:00:00`, TZ);
+  const daysAhead = Math.round(
+    (targetMidnightUtc.getTime() - todayMidnightUtc.getTime()) / 86_400_000,
+  );
   if (daysAhead > advanceDays) return [];
 
-  // 3. Blokirani datumi
+  // 3. Blokirani datumi — usporedi Sarajevo date stringove
   for (const range of blocked) {
-    const from = startOfDay(range.from);
-    const to = startOfDay(range.to);
-    if (target >= from && target <= to) return [];
+    const fromStr = formatInTimeZone(range.from, TZ, "yyyy-MM-dd");
+    const toStr = formatInTimeZone(range.to, TZ, "yyyy-MM-dd");
+    if (targetDateStr >= fromStr && targetDateStr <= toStr) return [];
   }
 
-  // 4. Radno vrijeme — iz DB mape ako postoji, inače iz BOOKING_RULES
-  const weekday = target.getDay();
+  // 4. Radno vrijeme — weekday u Sarajevo TZ (na UTC serveru bez ovog
+  // koraka, getDay() je vraćao prethodni dan jer je interno UTC bilo
+  // 22:00 prethodnog dana)
+  const weekday = toZonedTime(date, TZ).getDay();
   const hours = input.hoursByWeekday?.[weekday] ?? getHoursForDay(weekday);
   if (!hours.isOpen) return [];
 
-  const [openH, openM] = hours.open.split(":").map(Number);
-  const [closeH, closeM] = hours.close.split(":").map(Number);
-
-  const dayOpen = new Date(target);
-  dayOpen.setHours(openH, openM, 0, 0);
-  const dayClose = new Date(target);
-  dayClose.setHours(closeH, closeM, 0, 0);
+  // dayOpen/dayClose: konstruiši kao Sarajevo wall-clock, vrati real UTC.
+  // Slot ISO će biti tačan i kad se klijent renderuje u bilo kojoj TZ.
+  const dayOpen = fromZonedTime(`${targetDateStr}T${hours.open}:00`, TZ);
+  const dayClose = fromZonedTime(`${targetDateStr}T${hours.close}:00`, TZ);
 
   const slots: Slot[] = [];
   let cursor = dayOpen;

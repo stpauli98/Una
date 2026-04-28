@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
+import { formatInTimeZone } from "date-fns-tz";
 import { computeAvailableSlots } from "@/lib/booking/availability";
 import type { DailyHoursMap } from "@/lib/booking/rules";
 import type { BookingSettings } from "@/lib/settings/read";
+import { atSarajevo, TZ } from "@/lib/utils/tz";
 import type {
   BlockedRange,
   ExistingAppointment,
@@ -9,9 +11,9 @@ import type {
 } from "@/types/booking";
 
 /**
- * Svi testovi koriste lokalna vremena (bez TZ suffix) — booking logika
- * radi u lokalnoj TZ koju browser/server interpretira. Za CI stabilnost
- * to je dovoljno jer svi test datumi koriste isti sistem.
+ * Svi testovi konstruišu i čitaju datume u Sarajevo TZ-u (bez obzira na
+ * server-local TZ). Engine je TZ-aware (Vercel UTC ili lokalni Sarajevo
+ * dev — isti rezultat).
  *
  * Slot grid je fiksnih 30 minuta (SLOT_INTERVAL_MIN). Trajanje usluge se
  * koristi samo za overlap check — posljednji slot mora završiti ≤ close.
@@ -24,19 +26,14 @@ import type {
  */
 
 const hhmm = (slots: Slot[]) =>
-  slots.map(
-    (s) =>
-      `${String(s.start.getHours()).padStart(2, "0")}:${String(
-        s.start.getMinutes(),
-      ).padStart(2, "0")}`,
-  );
+  slots.map((s) => formatInTimeZone(s.start, TZ, "HH:mm"));
 
-/** Ponoć tog dana (lokalno). */
-const day = (y: number, m: number, d: number) => new Date(y, m - 1, d, 0, 0, 0);
+/** Ponoć tog dana u Sarajevo TZ. */
+const day = (y: number, m: number, d: number) => atSarajevo(y, m, d, 0, 0);
 
-/** Određeni sat/minuta tog dana (lokalno). */
+/** Određeni sat/minuta tog dana u Sarajevo TZ. */
 const at = (y: number, m: number, d: number, h: number, min = 0) =>
-  new Date(y, m - 1, d, h, min, 0);
+  atSarajevo(y, m, d, h, min);
 
 // "sada" = ponedjeljak 2026-04-06 10:00 — daleko prije 17:00 termina sutra/sljedećih dana.
 const NOW_FAR = at(2026, 4, 6, 10, 0);
