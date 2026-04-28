@@ -11,10 +11,12 @@ type ActionResult = { ok: true } | { ok: false; error: string };
 function parseFormData(fd: FormData): ServiceInput {
   const durationStr = String(fd.get("duration_min") ?? "");
   const duration = durationStr === "" ? null : Number(durationStr);
+  const priceStr = String(fd.get("price") ?? "");
+  const price = priceStr === "" ? null : Number(priceStr);
   return serviceSchema.parse({
     name: String(fd.get("name") ?? ""),
     description: String(fd.get("description") ?? "") || null,
-    price: Number(fd.get("price") ?? 0),
+    price,
     price_note: String(fd.get("price_note") ?? "") || null,
     duration_min: duration,
     duration_note: String(fd.get("duration_note") ?? "") || null,

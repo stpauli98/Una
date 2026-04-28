@@ -108,6 +108,53 @@ describe("serviceSchema — duration_min validacija", () => {
   });
 });
 
+describe("serviceSchema — price + price_note (jedno mora biti popunjeno)", () => {
+  it("prihvata samo price (broj), bez napomene", () => {
+    const result = serviceSchema.safeParse({
+      ...VALID_BASE,
+      price: 70,
+      price_note: null,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("prihvata samo price_note (tekst), bez broja", () => {
+    const result = serviceSchema.safeParse({
+      ...VALID_BASE,
+      price: null,
+      price_note: "Od 50 KM",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("prihvata oba (price i price_note)", () => {
+    const result = serviceSchema.safeParse({
+      ...VALID_BASE,
+      price: 50,
+      price_note: "Od 50 KM",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("odbija ako su oba prazna (null + null)", () => {
+    const result = serviceSchema.safeParse({
+      ...VALID_BASE,
+      price: null,
+      price_note: null,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("odbija ako su oba prazna (null + prazan string)", () => {
+    const result = serviceSchema.safeParse({
+      ...VALID_BASE,
+      price: null,
+      price_note: "",
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
 describe("ALLOWED_DURATIONS", () => {
   it("počinje sa 30 i završava sa 240", () => {
     expect(ALLOWED_DURATIONS[0]).toBe(30);
