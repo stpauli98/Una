@@ -9,20 +9,20 @@ import Image from "next/image";
 export function Hero() {
   return (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 pb-16 pt-28">
-      {/* Foto pozadina */}
+      {/* Foto pozadina — interijer studija (atmosfera + suptilan brand) */}
       <Image
-        src="/images/studio-storefront.jpg"
+        src="/images/hero-studio.jpg"
         alt=""
         aria-hidden
         fill
         priority
         sizes="100vw"
-        className="object-cover object-center"
+        className="object-cover object-[center_30%]"
       />
-      {/* Gradient overlay za čitljivost — ide preko slike, ispod sadržaja */}
+      {/* Gradient overlay za čitljivost — tamniji u centru (preko teksta) */}
       <div
         aria-hidden
-        className="absolute inset-0 bg-gradient-to-br from-dark/85 via-[#5a3e3e]/70 to-pink/55"
+        className="absolute inset-0 bg-gradient-to-b from-dark/70 via-dark/55 to-dark/75"
       />
 
       {/* Dekorativni krugovi */}
