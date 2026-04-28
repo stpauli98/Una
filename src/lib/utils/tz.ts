@@ -9,18 +9,10 @@
  * helpere umjesto golih `new Date()` i `parseISO()`.
  */
 
-import { toZonedTime, fromZonedTime } from "date-fns-tz";
+import { fromZonedTime } from "date-fns-tz";
 import { BUSINESS } from "@/lib/constants/business";
 
 export const TZ = BUSINESS.timezone; // "Europe/Sarajevo"
-
-/**
- * Trenutno vrijeme u Sarajevo timezone-u.
- * Zamjena za `new Date()` u svim booking kalkulacijama.
- */
-export function nowSarajevo(): Date {
-  return toZonedTime(new Date(), TZ);
-}
 
 /**
  * Parsira YYYY-MM-DD string kao ponoć u Sarajevo timezone-u.

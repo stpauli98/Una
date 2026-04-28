@@ -5,7 +5,7 @@ import { computeAvailableSlots } from "@/lib/booking/availability";
 import { hoursMapFromRows } from "@/lib/booking/rules";
 import { parseBookingSettings } from "@/lib/settings/read";
 import { checkRateLimit } from "@/lib/utils/rate-limit";
-import { parseDateSarajevo, nowSarajevo } from "@/lib/utils/tz";
+import { parseDateSarajevo } from "@/lib/utils/tz";
 
 // Ova ruta mora uvijek čitati svježe podatke — baza se mijenja u realnom
 // vremenu kada klijenti rezervišu termine. Keš bi prikazao zastarjele slotove.
@@ -131,7 +131,7 @@ export async function GET(req: NextRequest) {
   const slots = computeAvailableSlots({
     date,
     durationMin: service.duration_min,
-    now: nowSarajevo(),
+    now: new Date(),
     existing: (apptRes.data ?? []).map((a) => ({
       start: new Date(a.start_time),
       end: new Date(a.end_time),
