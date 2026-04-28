@@ -1,12 +1,30 @@
 import Link from "next/link";
+import Image from "next/image";
 
 /**
- * Hero sekcija — puna visina ekrana, tamni gradijent,
- * italic Cormorant headline, dva CTA dugmeta.
+ * Hero sekcija — puna visina ekrana, foto pozadina (studio storefront)
+ * sa tamnim gradient overlay-em za čitljivost teksta, italic Cormorant
+ * headline, dva CTA dugmeta.
  */
 export function Hero() {
   return (
-    <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-dark via-[#5a3e3e] to-pink px-6 pb-16 pt-28">
+    <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 pb-16 pt-28">
+      {/* Foto pozadina */}
+      <Image
+        src="/images/studio-storefront.jpg"
+        alt=""
+        aria-hidden
+        fill
+        priority
+        sizes="100vw"
+        className="object-cover object-center"
+      />
+      {/* Gradient overlay za čitljivost — ide preko slike, ispod sadržaja */}
+      <div
+        aria-hidden
+        className="absolute inset-0 bg-gradient-to-br from-dark/85 via-[#5a3e3e]/70 to-pink/55"
+      />
+
       {/* Dekorativni krugovi */}
       <div
         aria-hidden
