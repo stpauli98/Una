@@ -21,6 +21,20 @@ describe("getSarajevoDayBounds", () => {
     expect(summer.start).toBe("2026-10-24T22:00:00.000Z");
   });
 
+  it("spring-forward dan (29. mart 2026) — start CET, end CEST", () => {
+    // 29. mart 2026 = nedjelja DST start. Sarajevo dan je samo 23 stvarna sata.
+    const { start, end } = getSarajevoDayBounds("2026-03-29");
+    expect(start).toBe("2026-03-28T23:00:00.000Z"); // 00:00 CET
+    expect(end).toBe("2026-03-29T22:00:00.000Z"); // 00:00 CEST sljedećeg dana
+  });
+
+  it("fall-back dan (25. okt 2026) — start CEST, end CET", () => {
+    // 25. okt 2026 = nedjelja DST end. Sarajevo dan je 25 stvarnih sati.
+    const { start, end } = getSarajevoDayBounds("2026-10-25");
+    expect(start).toBe("2026-10-24T22:00:00.000Z"); // 00:00 CEST
+    expect(end).toBe("2026-10-25T23:00:00.000Z"); // 00:00 CET sljedećeg dana
+  });
+
   it("baca grešku za neispravan datum string", () => {
     expect(() => getSarajevoDayBounds("not-a-date")).toThrow();
     expect(() => getSarajevoDayBounds("")).toThrow();
@@ -59,6 +73,15 @@ describe("addDaysToDateStr", () => {
     // 25. okt 2026 = nedjelja DST kraj. addDays preko atSarajevo ne smije
     // biti pomjeren od TZ shift-a.
     expect(addDaysToDateStr("2026-10-25", 1)).toBe("2026-10-26");
+  });
+
+  it("days = 0 → vraća isti datum", () => {
+    expect(addDaysToDateStr("2026-05-04", 0)).toBe("2026-05-04");
+  });
+
+  it("prelazi godišnju granicu", () => {
+    expect(addDaysToDateStr("2026-12-31", 1)).toBe("2027-01-01");
+    expect(addDaysToDateStr("2027-01-01", -1)).toBe("2026-12-31");
   });
 
   it("baca grešku za neispravan datum", () => {
