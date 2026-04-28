@@ -2,6 +2,16 @@ import type { NextConfig } from "next";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseHostname = supabaseUrl ? new URL(supabaseUrl).hostname : "127.0.0.1";
+const isDev = process.env.NODE_ENV === "development";
+
+// U dev mode-u Supabase je lokalni Docker na http://127.0.0.1:54321 (i ws://).
+// U prod-u je https://<ref>.supabase.co (i wss://). CSP mora pokriti oba.
+const supabaseImgSrc = isDev
+  ? `http://${supabaseHostname}:54321 http://localhost:54321`
+  : `https://${supabaseHostname}`;
+const supabaseConnectSrc = isDev
+  ? `http://${supabaseHostname}:54321 http://localhost:54321 ws://${supabaseHostname}:54321 ws://localhost:54321`
+  : `https://${supabaseHostname} wss://${supabaseHostname}`;
 
 const nextConfig: NextConfig = {
   async headers() {
@@ -25,8 +35,8 @@ const nextConfig: NextConfig = {
                 ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
                 : "script-src 'self' 'unsafe-inline'",
               "style-src 'self' 'unsafe-inline'",
-              `img-src 'self' data: blob: https://${supabaseHostname}`,
-              `connect-src 'self' https://${supabaseHostname} wss://${supabaseHostname}`,
+              `img-src 'self' data: blob: ${supabaseImgSrc}`,
+              `connect-src 'self' ${supabaseConnectSrc}`,
               "font-src 'self' data:",
               "frame-ancestors 'none'",
               "base-uri 'self'",
