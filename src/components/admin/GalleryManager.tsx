@@ -11,6 +11,7 @@ import {
 } from "@/app/admin/(protected)/galerija/actions";
 import { cn } from "@/lib/utils/cn";
 import imageCompression from "browser-image-compression";
+import { GALLERY_CATEGORIES } from "@/lib/gallery/categories";
 
 type GalleryItem = {
   id: number;
@@ -26,12 +27,7 @@ type PreviewFile = {
   sizeLabel: string;
 };
 
-const CATEGORIES = [
-  { key: "sminkanje", label: "Šminkanje" },
-  { key: "svadbeno", label: "Svadbeno" },
-  { key: "pedikir", label: "Pedikir" },
-  { key: "trepavice", label: "Trepavice" },
-] as const;
+const CATEGORIES = GALLERY_CATEGORIES;
 
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_IMAGES = 20;

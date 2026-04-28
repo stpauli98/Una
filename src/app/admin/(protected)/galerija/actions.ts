@@ -5,6 +5,10 @@ import { revalidatePath } from "next/cache";
 import sharp from "sharp";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sanitizeError } from "@/lib/utils/log";
+import {
+  isValidGalleryCategory,
+  type GalleryCategory,
+} from "@/lib/gallery/categories";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 const MAX_DIMENSION = 4096;
@@ -18,8 +22,6 @@ type ActionResult<T = void> =
   | { ok: true; data?: T }
   | { ok: false; error: string };
 
-const VALID_CATEGORIES = ["sminkanje", "svadbeno", "pedikir", "trepavice"] as const;
-type GalleryCategory = (typeof VALID_CATEGORIES)[number];
 
 
 /**
@@ -31,10 +33,11 @@ export async function uploadSingleGalleryImage(
 ): Promise<ActionResult<{ id: number }>> {
   try {
     await requireAdmin();
-    const category = String(formData.get("category") ?? "") as GalleryCategory;
-    if (!VALID_CATEGORIES.includes(category)) {
+    const categoryRaw = String(formData.get("category") ?? "");
+    if (!isValidGalleryCategory(categoryRaw)) {
       return { ok: false, error: "Neispravna kategorija" };
     }
+    const category: GalleryCategory = categoryRaw;
 
     const file = formData.get("file") as File | null;
     if (!file || !(file instanceof File) || file.size === 0) {
