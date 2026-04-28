@@ -34,6 +34,9 @@ export default async function AdminDashboardPage({
   // advance_booking_days iz settings tabele — Una može mijenjati u Postavkama.
   // parseBookingSettings interno fallback-uje na BOOKING_RULES ako ključ
   // nedostaje ili vrijednost neispravna, tako da uvijek dobijamo broj.
+  // NAMJERNO sekvencijalan fetch (ne unutar Promise.all ispod): maxDateStr
+  // mora biti poznat prije validacije params.date, koja gradi
+  // selectedDayBounds za list query.
   const { data: settingsRows } = await sb.from("settings").select("key,value");
   const bookingSettings = parseBookingSettings(settingsRows ?? []);
   const maxDateStr = addDaysToDateStr(
