@@ -11,6 +11,7 @@ import {
 } from "@/app/admin/(protected)/galerija/actions";
 import { cn } from "@/lib/utils/cn";
 import imageCompression from "browser-image-compression";
+import { GALLERY_CATEGORIES } from "@/lib/gallery/categories";
 
 type GalleryItem = {
   id: number;
@@ -26,19 +27,19 @@ type PreviewFile = {
   sizeLabel: string;
 };
 
-const CATEGORIES = [
-  { key: "sminkanje", label: "Šminkanje" },
-  { key: "svadbeno", label: "Svadbeno" },
-  { key: "pedikir", label: "Pedikir" },
-  { key: "trepavice", label: "Trepavice" },
-] as const;
+const CATEGORIES = GALLERY_CATEGORIES;
 
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_IMAGES = 20;
 
 const COMPRESSION_OPTIONS = {
-  maxSizeMB: 0.3,
-  maxWidthOrHeight: 1600,
+  // 2.0 MB cap je 6.6× labavije od starih 0.3 MB — značajno čistije sjenke i
+  // detalji šminke kod 1920×1280 portreta. Server svejedno re-encoding-uje
+  // (sharp WebP q=88), pa konačni storage size je tipično 600–1000 KB.
+  maxSizeMB: 2.0,
+  // 1920 covers retina (2× density 960px viewport) — postojećih 1600 mutno
+  // izgleda na MacBook Pro / iPhone Pro retina ekranima.
+  maxWidthOrHeight: 1920,
   useWebWorker: true,
   fileType: "image/webp" as const,
 };
@@ -377,7 +378,7 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
                 </span>
               </p>
               <p className="mt-1 text-[11px] text-light">
-                JPG, PNG ili WebP · Kompresija na 1600px WebP · Max {MAX_IMAGES} slika
+                JPG, PNG ili WebP · Kompresija na 1920px WebP · Max {MAX_IMAGES} slika
               </p>
             </div>
           </div>

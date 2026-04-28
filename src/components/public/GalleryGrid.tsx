@@ -5,6 +5,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { X, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { GALLERY_CATEGORIES, type GalleryCategoryDef } from "@/lib/gallery/categories";
 
 type GalleryImage = {
   id: number;
@@ -13,13 +14,10 @@ type GalleryImage = {
   alt: string;
 };
 
-const FILTERS = [
+const FILTERS: readonly GalleryCategoryDef[] = [
   { key: "sve", label: "Sve" },
-  { key: "sminkanje", label: "Šminkanje" },
-  { key: "svadbeno", label: "Svadbeno" },
-  { key: "pedikir", label: "Pedikir" },
-  { key: "trepavice", label: "Trepavice" },
-] as const;
+  ...GALLERY_CATEGORIES,
+];
 
 type Props = {
   images: GalleryImage[];
