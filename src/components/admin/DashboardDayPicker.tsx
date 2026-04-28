@@ -41,16 +41,16 @@ export function DashboardDayPicker({
     });
   };
 
+  const nextDateStr = addDaysToDateStr(selectedDateStr, 1);
+  const canGoNext = nextDateStr <= maxDateStr;
+  const isToday = selectedDateStr === todayDateStr;
+
   const goPrev = () => navigate(addDaysToDateStr(selectedDateStr, -1));
   const goNext = () => {
-    const next = addDaysToDateStr(selectedDateStr, 1);
-    if (next > maxDateStr) return;
-    navigate(next);
+    if (!canGoNext) return;
+    navigate(nextDateStr);
   };
   const goToday = () => navigate(todayDateStr);
-
-  const canGoNext = addDaysToDateStr(selectedDateStr, 1) <= maxDateStr;
-  const isToday = selectedDateStr === todayDateStr;
 
   // formatDate prima Date — convertujemo iz dateStr preko parseDateSarajevo
   const displayLabel = formatDate(parseDateSarajevo(selectedDateStr));
@@ -73,11 +73,12 @@ export function DashboardDayPicker({
           value={selectedDateStr}
           max={maxDateStr}
           disabled={pending}
+          aria-label="Izaberi datum"
           onChange={(e) => {
             const v = e.target.value;
             if (v && v <= maxDateStr) navigate(v);
           }}
-          className="border border-cream bg-marble px-3 py-1.5 text-[13px] focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose disabled:opacity-60"
+          className="border border-cream bg-marble px-3 py-1.5 text-[13px] focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose disabled:cursor-not-allowed disabled:opacity-60"
         />
 
         <button
@@ -95,7 +96,7 @@ export function DashboardDayPicker({
             type="button"
             onClick={goToday}
             disabled={pending}
-            className="ml-2 border border-cream bg-white px-3 py-1.5 text-[10px] uppercase tracking-wider text-dark transition-colors hover:border-rose hover:text-rose disabled:opacity-60 cursor-pointer"
+            className="ml-2 border border-cream bg-white px-3 py-1.5 text-[10px] uppercase tracking-wider text-dark transition-colors hover:border-rose hover:text-rose disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
           >
             Danas
           </button>
@@ -104,7 +105,7 @@ export function DashboardDayPicker({
 
       <p
         className={cn(
-          "text-[12px] capitalize",
+          "text-[12px] first-letter:uppercase",
           isToday ? "text-rose font-medium" : "text-light",
         )}
         aria-live="polite"
