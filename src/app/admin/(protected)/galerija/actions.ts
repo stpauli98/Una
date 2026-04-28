@@ -64,8 +64,8 @@ export async function uploadSingleGalleryImage(
       // Convert to WebP server-side (handles cases where client-side
       // compression didn't produce real WebP, e.g. Safari)
       webpBuffer = await sharp(rawBuffer)
-        .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
-        .webp({ quality: 80 })
+        .resize(1920, 1920, { fit: "inside", withoutEnlargement: true })
+        .webp({ quality: 88 })
         .toBuffer();
     } catch {
       return { ok: false, error: "Ne mogu obraditi sliku" };
