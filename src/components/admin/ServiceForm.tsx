@@ -1,21 +1,33 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Info } from "lucide-react";
+import { useState, useTransition, useRef, useEffect } from "react";
+import { Info, Image as ImageIcon, X } from "lucide-react";
+import imageCompression from "browser-image-compression";
 import { createService, updateService } from "@/app/admin/(protected)/usluge/actions";
 import type { Database } from "@/types/database";
+
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const COMPRESSION_OPTIONS = {
+  maxSizeMB: 2,
+  maxWidthOrHeight: 1200,
+  useWebWorker: true,
+  fileType: "image/webp" as const,
+};
 
 type Service = Database["public"]["Tables"]["services"]["Row"];
 
 type Props = {
   service?: Service | null;
+  /** Public URL postojeće slike (parent gradi). */
+  imageUrl?: string;
   onClose: () => void;
   onSaved: () => void;
 };
 
-export function ServiceForm({ service, onClose, onSaved }: Props) {
+export function ServiceForm({ service, imageUrl, onClose, onSaved }: Props) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
 
   // Controlled state — kontroliše vidljivost note polja.
   // price_note → vidljiv samo kad variable_price je true
@@ -29,6 +41,71 @@ export function ServiceForm({ service, onClose, onSaved }: Props) {
 
   const showPriceNote = variablePrice;
   const showDurationNote = durationMin === "";
+
+  type ImageState =
+    | { mode: "none" }
+    | { mode: "existing" }
+    | { mode: "replace"; file: File; previewUrl: string }
+    | { mode: "remove" };
+
+  const [imageState, setImageState] = useState<ImageState>(() =>
+    service?.image_path ? { mode: "existing" } : { mode: "none" },
+  );
+  const [compressing, setCompressing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    return () => {
+      if (imageState.mode === "replace") {
+        URL.revokeObjectURL(imageState.previewUrl);
+      }
+    };
+  }, [imageState]);
+
+  const handleFilePick = async (file: File) => {
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      setImageError("Format slike mora biti JPG, PNG ili WebP");
+      return;
+    }
+    setImageError(null);
+    setError(null);
+    setCompressing(true);
+    try {
+      const compressed = await imageCompression(file, COMPRESSION_OPTIONS);
+      if (imageState.mode === "replace") {
+        URL.revokeObjectURL(imageState.previewUrl);
+      }
+      setImageState({
+        mode: "replace",
+        file: compressed,
+        previewUrl: URL.createObjectURL(compressed),
+      });
+    } catch {
+      if (imageState.mode === "replace") {
+        URL.revokeObjectURL(imageState.previewUrl);
+      }
+      setImageState({
+        mode: "replace",
+        file,
+        previewUrl: URL.createObjectURL(file),
+      });
+    } finally {
+      setCompressing(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleCancelReplace = () => {
+    if (imageState.mode === "replace") {
+      URL.revokeObjectURL(imageState.previewUrl);
+    }
+    setImageState(service?.image_path ? { mode: "existing" } : { mode: "none" });
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleRemove = () => setImageState({ mode: "remove" });
+
+  const handleUndoRemove = () => setImageState({ mode: "existing" });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-dark/40 p-4">
@@ -52,6 +129,13 @@ export function ServiceForm({ service, onClose, onSaved }: Props) {
             }
             if (!showDurationNote) {
               fd.set("duration_note", "");
+            }
+            // Image polja u FormData
+            if (imageState.mode === "replace") {
+              fd.set("image", imageState.file);
+            }
+            if (imageState.mode === "remove") {
+              fd.set("removeImage", "true");
             }
             startTransition(async () => {
               const result = service
@@ -83,6 +167,106 @@ export function ServiceForm({ service, onClose, onSaved }: Props) {
               defaultValue={service?.description ?? ""}
               className="w-full resize-none border border-cream bg-marble px-3 py-2 text-sm text-dark focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose"
             />
+          </Field>
+
+          <Field label="Slika (opciono)">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleFilePick(f);
+              }}
+            />
+
+            {imageState.mode === "none" && (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={compressing}
+                className="flex w-full items-center justify-center gap-2 border-2 border-dashed border-cream bg-marble px-4 py-6 text-[12px] text-light hover:border-rose hover:text-rose disabled:opacity-60"
+              >
+                <ImageIcon size={14} strokeWidth={1.5} />
+                {compressing ? "Kompresija..." : "Dodaj sliku · JPG/PNG/WebP · max 5 MB"}
+              </button>
+            )}
+
+            {imageState.mode === "existing" && imageUrl && (
+              <div className="flex items-center gap-3 border border-cream bg-marble p-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imageUrl}
+                  alt={service?.name ?? ""}
+                  className="size-16 object-cover"
+                />
+                <div className="flex flex-1 flex-col gap-1.5">
+                  <p className="text-[11px] text-dark">Trenutna slika</p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={compressing}
+                      className="text-[11px] text-rose underline-offset-2 hover:underline disabled:opacity-60"
+                    >
+                      Zamijeni
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRemove}
+                      disabled={compressing}
+                      className="text-[11px] text-red-600 underline-offset-2 hover:underline disabled:opacity-60"
+                    >
+                      Ukloni
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {imageState.mode === "replace" && (
+              <div className="flex items-center gap-3 border border-cream bg-marble p-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imageState.previewUrl}
+                  alt="Preview"
+                  className="size-16 object-cover"
+                />
+                <div className="flex flex-1 flex-col gap-1.5">
+                  <p className="text-[11px] text-dark">
+                    Nova slika · {(imageState.file.size / 1024).toFixed(0)} KB
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleCancelReplace}
+                    className="self-start text-[11px] text-rose underline-offset-2 hover:underline"
+                  >
+                    Otkaži zamjenu
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {imageState.mode === "remove" && (
+              <div className="flex items-center justify-between border border-red-200 bg-red-50 p-3">
+                <p className="flex items-center gap-2 text-[11px] text-red-700">
+                  <X size={12} strokeWidth={2} />
+                  Slika će biti uklonjena pri save-u
+                </p>
+                <button
+                  type="button"
+                  onClick={handleUndoRemove}
+                  className="text-[11px] text-rose underline-offset-2 hover:underline"
+                >
+                  Vrati
+                </button>
+              </div>
+            )}
+
+            {imageError && (
+              <p className="mt-2 text-[11px] text-red-600">{imageError}</p>
+            )}
           </Field>
 
           <Field label="Cijena (KM)">
@@ -195,10 +379,10 @@ export function ServiceForm({ service, onClose, onSaved }: Props) {
             </button>
             <button
               type="submit"
-              disabled={pending}
+              disabled={pending || compressing}
               className="flex-1 bg-rose py-2.5 text-[11px] uppercase tracking-wider text-white hover:bg-rose-hover disabled:opacity-60 cursor-pointer"
             >
-              {pending ? "Čuvam..." : "Sačuvaj"}
+              {pending ? "Čuvam..." : compressing ? "Kompresija..." : "Sačuvaj"}
             </button>
           </div>
         </form>

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { formatPrice, formatDuration } from "@/lib/utils/format";
 import type { Database } from "@/types/database";
@@ -6,6 +7,8 @@ type Service = Database["public"]["Tables"]["services"]["Row"];
 
 type Props = {
   service: Service;
+  /** Već-izgrađeni public URL slike (ako image_path postoji). */
+  imageUrl?: string;
   /** Ako true, prikaži sa većim paddingom i linkom na /zakazi */
   featured?: boolean;
   /** Nivo heading-a za ime usluge (default h3) */
@@ -19,16 +22,36 @@ const ICONS: Record<string, string> = {
   obuka: "◇",
 };
 
-export function ServiceCard({ service, featured, headingLevel = "h3" }: Props) {
+export function ServiceCard({
+  service,
+  imageUrl,
+  featured,
+  headingLevel = "h3",
+}: Props) {
   const Heading = headingLevel;
   const icon = ICONS[service.category] ?? "✧";
   const priceDisplay = service.price_note ?? formatPrice(Number(service.price));
 
+  const media = imageUrl ? (
+    <div className="relative h-[160px] overflow-hidden">
+      <Image
+        src={imageUrl}
+        alt={service.name}
+        fill
+        quality={90}
+        sizes="(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw"
+        className="object-cover"
+      />
+    </div>
+  ) : (
+    <div className="flex min-h-[120px] items-center justify-center bg-gradient-to-br from-blush to-pink">
+      <span className="text-[36px] font-light text-white/70">{icon}</span>
+    </div>
+  );
+
   const content = (
     <>
-      <div className="flex min-h-[120px] items-center justify-center bg-gradient-to-br from-blush to-pink">
-        <span className="text-[36px] font-light text-white/70">{icon}</span>
-      </div>
+      {media}
       <div className="p-5 md:p-6">
         <Heading className="mb-2 font-display text-xl font-normal text-dark">
           {service.name}

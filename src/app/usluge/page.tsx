@@ -28,6 +28,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 const CATEGORY_ORDER = ["sminkanje", "pedikir", "trepavice", "obuka"] as const;
 
 export default async function UslugePage() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabase = await createClient();
   const { data: services } = await supabase
     .from("services")
@@ -68,6 +69,11 @@ export default async function UslugePage() {
                       <ServiceCard
                         key={service.id}
                         service={service}
+                        imageUrl={
+                          service.image_path
+                            ? `${supabaseUrl}/storage/v1/object/public/services/${service.image_path}`
+                            : undefined
+                        }
                         featured={service.bookable}
                         headingLevel="h4"
                       />

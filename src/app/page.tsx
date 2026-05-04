@@ -19,6 +19,7 @@ export const metadata: Metadata = {
 export const revalidate = 300; // 5 min ISR
 
 export default async function HomePage() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabase = await createClient();
 
   const { data: featuredServices } = await supabase
@@ -47,7 +48,16 @@ export default async function HomePage() {
 
             <div className="mx-auto grid max-w-[480px] grid-cols-1 gap-4 md:max-w-[760px] md:grid-cols-2 md:gap-5 lg:max-w-[1100px] lg:grid-cols-4">
               {(featuredServices ?? []).map((service) => (
-                <ServiceCard key={service.id} service={service} featured />
+                <ServiceCard
+                  key={service.id}
+                  service={service}
+                  imageUrl={
+                    service.image_path
+                      ? `${supabaseUrl}/storage/v1/object/public/services/${service.image_path}`
+                      : undefined
+                  }
+                  featured
+                />
               ))}
             </div>
 

@@ -213,6 +213,11 @@ export function ServicesManager({
       {(editing || creating) && (
         <ServiceForm
           service={editing}
+          imageUrl={
+            editing?.image_path
+              ? `${process.env.NEXT_PUBLIC_SUPABASE_URL!}/storage/v1/object/public/services/${editing.image_path}`
+              : undefined
+          }
           onClose={() => {
             setEditingId(null);
             setCreating(false);
