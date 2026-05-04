@@ -269,3 +269,49 @@ export async function reorderService(
     return { ok: false, error: (e as Error).message };
   }
 }
+
+export async function deleteService(id: number): Promise<ActionResult> {
+  try {
+    const sb = await requireAdmin();
+
+    // Pročitaj image_path da bismo brisali sliku iz storage-a (ako postoji).
+    const { data: existing } = await sb
+      .from("services")
+      .select("image_path")
+      .eq("id", id)
+      .maybeSingle();
+    if (!existing) return { ok: false, error: "Usluga nije pronađena" };
+
+    // Pokušaj DELETE PRVO (FK constraint će je odbiti ako ima appointments).
+    // Ako je DB delete uspio, TEK ONDA briši storage — orphan slika nakon
+    // FK fail-a bi bila gora od orphan slike koja se ipak desi (rare).
+    const { error: delErr } = await sb.from("services").delete().eq("id", id);
+    if (delErr) {
+      // Postgres FK violation — usluga je vezana za appointments.
+      if (delErr.code === "23503") {
+        return {
+          ok: false,
+          error:
+            "Ne mogu ukloniti uslugu jer ima termina koji je koriste. Možete je deaktivirati umjesto toga.",
+        };
+      }
+      return { ok: false, error: delErr.message };
+    }
+
+    // DB delete uspio — počisti sliku iz storage-a (best-effort, log on fail).
+    if (existing.image_path) {
+      const { error: rmErr } = await sb.storage
+        .from("services")
+        .remove([existing.image_path]);
+      if (rmErr) console.error("services image cleanup failed:", sanitizeError(rmErr));
+    }
+
+    revalidatePath("/admin/usluge");
+    revalidatePath("/");
+    revalidatePath("/usluge");
+    revalidatePath("/cjenovnik");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
