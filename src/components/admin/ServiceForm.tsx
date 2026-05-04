@@ -379,10 +379,10 @@ export function ServiceForm({ service, imageUrl, onClose, onSaved }: Props) {
             </button>
             <button
               type="submit"
-              disabled={pending}
+              disabled={pending || compressing}
               className="flex-1 bg-rose py-2.5 text-[11px] uppercase tracking-wider text-white hover:bg-rose-hover disabled:opacity-60 cursor-pointer"
             >
-              {pending ? "Čuvam..." : "Sačuvaj"}
+              {pending ? "Čuvam..." : compressing ? "Kompresija..." : "Sačuvaj"}
             </button>
           </div>
         </form>
