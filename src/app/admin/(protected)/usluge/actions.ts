@@ -141,8 +141,59 @@ export async function updateService(
   try {
     const sb = await requireAdmin();
     const parsed = parseFormData(formData);
+
+    // Pročitaj staru putanju za eventualno brisanje.
+    const { data: existing } = await sb
+      .from("services")
+      .select("image_path")
+      .eq("id", id)
+      .maybeSingle();
+    const oldPath = existing?.image_path ?? null;
+
+    // Update svih tekst polja (BEZ image_path — to mijenjamo posebno).
     const { error } = await sb.from("services").update(parsed).eq("id", id);
     if (error) return { ok: false, error: error.message };
+
+    const removeImage = formData.get("removeImage") === "true";
+    const file = formData.get("image") as File | null;
+
+    if (removeImage) {
+      if (oldPath) {
+        const { error: rmErr } = await sb.storage.from("services").remove([oldPath]);
+        if (rmErr) console.error("services remove failed:", sanitizeError(rmErr));
+      }
+      const { error: updErr } = await sb
+        .from("services")
+        .update({ image_path: null })
+        .eq("id", id);
+      if (updErr) return { ok: false, error: updErr.message };
+    } else if (file && file instanceof File && file.size > 0) {
+      const processed = await processServiceImage(file);
+      if (!processed.ok) return { ok: false, error: processed.error };
+      const rand = Math.random().toString(36).slice(2, 8);
+      const newPath = `${id}-${rand}.webp`;
+      const { error: upErr } = await sb.storage
+        .from("services")
+        .upload(newPath, processed.buffer, { contentType: "image/webp", upsert: false });
+      if (upErr) {
+        console.error("services upload failed:", sanitizeError(upErr));
+        return { ok: false, error: "Greška pri slanju slike na server" };
+      }
+      const { error: updErr } = await sb
+        .from("services")
+        .update({ image_path: newPath })
+        .eq("id", id);
+      if (updErr) {
+        await sb.storage.from("services").remove([newPath]);
+        return { ok: false, error: "Greška pri spremanju slike" };
+      }
+      // Stara se briše TEK SAD — nakon uspješnog uploada nove.
+      if (oldPath) {
+        const { error: rmErr } = await sb.storage.from("services").remove([oldPath]);
+        if (rmErr) console.error("services old image remove failed:", sanitizeError(rmErr));
+      }
+    }
+
     revalidatePath("/admin/usluge");
     revalidatePath("/");
     revalidatePath("/usluge");
