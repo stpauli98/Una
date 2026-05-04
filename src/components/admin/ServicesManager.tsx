@@ -2,11 +2,12 @@
 
 import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Edit2, Eye, EyeOff, Plus, ArrowUp, ArrowDown } from "lucide-react";
+import { Edit2, Eye, EyeOff, Plus, ArrowUp, ArrowDown, Trash2 } from "lucide-react";
 import { ServiceForm } from "./ServiceForm";
 import {
   toggleServiceActive,
   reorderService,
+  deleteService,
 } from "@/app/admin/(protected)/usluge/actions";
 import { formatPrice, formatDuration } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
@@ -51,6 +52,21 @@ export function ServicesManager({
       await reorderService(id, direction);
       router.refresh();
       setLastMovedId(id);
+    });
+  };
+
+  const handleDelete = (service: Service) => {
+    const message = service.active
+      ? `Ukloniti uslugu "${service.name}"? Ne može se vratiti.`
+      : `Ukloniti deaktiviranu uslugu "${service.name}"? Ne može se vratiti.`;
+    if (!confirm(message)) return;
+    startTransition(async () => {
+      const result = await deleteService(service.id);
+      if (!result.ok) {
+        alert(result.error);
+      } else {
+        router.refresh();
+      }
     });
   };
 
@@ -199,6 +215,15 @@ export function ServicesManager({
                           ) : (
                             <Eye size={11} />
                           )}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={pending}
+                          onClick={() => handleDelete(service)}
+                          aria-label={`Ukloni ${service.name}`}
+                          className="inline-flex items-center justify-center gap-1 border border-red-200 bg-white px-3 py-2 text-[10px] uppercase tracking-wider text-red-600 hover:bg-red-50 hover:border-red-300 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+                        >
+                          <Trash2 size={11} />
                         </button>
                       </div>
                     </div>

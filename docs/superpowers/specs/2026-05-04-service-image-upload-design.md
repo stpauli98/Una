@@ -111,7 +111,11 @@ Lokacija: `src/app/admin/(protected)/usluge/actions.ts`.
 
 ### Brisanje usluge
 
-Usluge se ne brišu hard (postoji FK `ON DELETE RESTRICT` od `appointments`). Postoji samo `toggleServiceActive` koji deaktivira uslugu — slika ostaje u storage-u i kartica se ne prikazuje na sajtu (jer se filtrira `active = true`). Cleanup orphan slika za deaktivirane usluge je out-of-scope.
+`deleteService(id)` pokušava hard delete. Pošto `appointments.service_id` ima `ON DELETE RESTRICT`, Postgres odbija delete (code 23503) ako ima makar jedan appointment koji referencira uslugu — server to mapira u prijateljski error (`"Ne mogu ukloniti uslugu jer ima termina koji je koriste. Možete je deaktivirati umjesto toga."`) i predlaže `toggleServiceActive` kao alternativu.
+
+Ako delete uspije, slika u `services` bucket-u (ako postoji `image_path`) se briše best-effort. Ako storage cleanup propadne — log + nastavi (orphan fajl je acceptable, neće se prikazati nigdje jer nema više row-a koji ga referencira).
+
+**Redoslijed je DB delete prvo, storage drugo** (obrnuto od galerije). Ako probamo storage prvo i DB onda fail-uje na FK, slika je trajno izgubljena dok DB row ostaje sa nevažećim `image_path`. DB delete first znači da FK-blokirana usluga zadržava sliku.
 
 ## UI: Admin `ServiceForm.tsx`
 
