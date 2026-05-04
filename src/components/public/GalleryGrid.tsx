@@ -168,6 +168,7 @@ export function GalleryGrid({ images }: Props) {
                 alt={img.alt}
                 fill
                 priority={index < 8}
+                quality={90}
                 sizes="(min-width:1024px) 25vw, (min-width:768px) 33vw, 50vw"
                 className="object-cover transition-all duration-500 group-hover:scale-105"
                 onLoad={(e) => {
@@ -235,6 +236,7 @@ export function GalleryGrid({ images }: Props) {
                 lightboxLoaded ? "opacity-100" : "opacity-0",
               )}
               priority
+              quality={90}
               sizes="(min-width: 768px) 80vw, 100vw"
               onLoad={() => setLightboxLoaded(true)}
             />

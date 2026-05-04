@@ -565,6 +565,7 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
                   src={item.url}
                   alt={item.alt}
                   fill
+                  quality={90}
                   sizes="(min-width:1024px) 25vw, (min-width:768px) 33vw, 50vw"
                   className={cn(
                     "object-cover",
