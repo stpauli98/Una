@@ -67,6 +67,10 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 2592000,
+    // Next 16 default-no blokira optimizaciju slika sa privatnih IP-jeva (SSRF zaštita).
+    // Lokalni Supabase Docker je na 127.0.0.1:54321 — bez ovoga `next/image` vraća 400.
+    // Aktivno samo u dev — produkcija koristi javni supabase.co host i ne treba bypass.
+    dangerouslyAllowLocalIP: isDev,
     remotePatterns: [
       {
         protocol: supabaseUrl?.startsWith("https") ? "https" : "http",

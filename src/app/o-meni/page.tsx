@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { Nav } from "@/components/public/Nav";
 import { Footer } from "@/components/public/Footer";
 import { SectionHeader } from "@/components/public/SectionHeader";
@@ -27,13 +28,14 @@ export default function OMeniPage() {
 
             <div className="grid gap-12 md:grid-cols-[320px_1fr] md:items-start md:gap-14">
               <div className="relative mx-auto w-[75%] max-w-[280px] md:mx-0 md:w-auto">
-                <div className="flex aspect-[3/4] flex-col items-center justify-center rounded-sm bg-gradient-to-br from-blush to-pink">
-                  <span className="font-display text-[52px] font-light text-white/50">
-                    UP
-                  </span>
-                  <span className="mt-1.5 text-[9px] uppercase tracking-[0.3em] text-white/40">
-                    Vaša fotografija
-                  </span>
+                <div className="relative aspect-[3/4] overflow-hidden rounded-sm">
+                  <Image
+                    src="/images/una-portret.jpg"
+                    alt="Una Peranović sa pedikir certifikatom u salonu"
+                    fill
+                    sizes="(min-width: 768px) 320px, 75vw"
+                    className="object-cover"
+                  />
                 </div>
                 <div
                   aria-hidden

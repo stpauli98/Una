@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { ChevronRight } from "lucide-react";
 import { Nav } from "@/components/public/Nav";
 import { Footer } from "@/components/public/Footer";
@@ -66,13 +67,14 @@ export default async function HomePage() {
         <section className="bg-marble px-6 py-[60px] md:py-[90px] lg:py-[110px]">
           <div className="mx-auto flex max-w-[900px] flex-col items-center gap-8 md:flex-row md:gap-14">
             <div className="relative w-[75%] max-w-[280px] md:w-auto md:flex-[0_0_320px]">
-              <div className="flex aspect-[3/4] flex-col items-center justify-center rounded-sm bg-gradient-to-br from-blush to-pink">
-                <span className="font-display text-[52px] font-light text-white/50">
-                  UP
-                </span>
-                <span className="mt-1.5 text-[9px] uppercase tracking-[0.3em] text-white/40">
-                  Vaša fotografija
-                </span>
+              <div className="relative aspect-[3/4] overflow-hidden rounded-sm">
+                <Image
+                  src="/images/una-portret.jpg"
+                  alt="Una Peranović sa pedikir certifikatom u salonu"
+                  fill
+                  sizes="(min-width: 768px) 320px, 75vw"
+                  className="object-cover"
+                />
               </div>
               <div
                 aria-hidden
