@@ -151,6 +151,7 @@ export type Database = {
           duration_min: number | null
           duration_note: string | null
           id: number
+          image_path: string | null
           name: string
           order_index: number
           price: number | null
@@ -166,6 +167,7 @@ export type Database = {
           duration_min?: number | null
           duration_note?: string | null
           id?: never
+          image_path?: string | null
           name: string
           order_index?: number
           price?: number | null
@@ -181,6 +183,7 @@ export type Database = {
           duration_min?: number | null
           duration_note?: string | null
           id?: never
+          image_path?: string | null
           name?: string
           order_index?: number
           price?: number | null
