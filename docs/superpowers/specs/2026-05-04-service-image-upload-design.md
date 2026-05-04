@@ -109,15 +109,9 @@ Lokacija: `src/app/admin/(protected)/usluge/actions.ts`.
 
 **Invariant:** stara slika se briše tek nakon uspješnog uploada nove (bez "lost in transit" perioda).
 
-### `deleteService(id)` — proširenje postojećeg
+### Brisanje usluge
 
-```
-1. requireAdmin()
-2. SELECT image_path FROM services WHERE id
-3. DELETE FROM services WHERE id (RESTRICT FK može propasti ako ima appointments → return error)
-4. Ako image_path: storage.remove([image_path]) — log on error, ne rollback
-5. revalidatePath(...)
-```
+Usluge se ne brišu hard (postoji FK `ON DELETE RESTRICT` od `appointments`). Postoji samo `toggleServiceActive` koji deaktivira uslugu — slika ostaje u storage-u i kartica se ne prikazuje na sajtu (jer se filtrira `active = true`). Cleanup orphan slika za deaktivirane usluge je out-of-scope.
 
 ## UI: Admin `ServiceForm.tsx`
 
@@ -202,7 +196,6 @@ const services = (data ?? []).map(s => ({
 | Storage upload propadne | Create rollback; update zadržava staru, vraća error |
 | INSERT prošao, upload pao | DELETE services WHERE id = X (rollback) |
 | Stara slika fail brisanja pri update | Log, ne rollback (orphan nije UX issue) |
-| Stara slika fail brisanja pri delete service | Isto — log + nastavi |
 | File > 5MB | "Slika prelazi 5 MB" |
 | Format ≠ jpg/png/webp | "Neispravan format slike" |
 | Klijent compression propala (Safari) | Server svejedno re-encodira |
