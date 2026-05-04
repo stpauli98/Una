@@ -148,12 +148,15 @@ export async function updateService(
       .select("image_path")
       .eq("id", id)
       .maybeSingle();
-    const oldPath = existing?.image_path ?? null;
+    if (!existing) return { ok: false, error: "Usluga nije pronađena" };
+    const oldPath = existing.image_path;
 
     // Update svih tekst polja (BEZ image_path — to mijenjamo posebno).
     const { error } = await sb.from("services").update(parsed).eq("id", id);
     if (error) return { ok: false, error: error.message };
 
+    // `removeImage` ima prednost nad novim `image` File-om — defensive: ako bi obje
+    // stigle iz forme (forma to sprečava state machine-om), novi file se ignoriše.
     const removeImage = formData.get("removeImage") === "true";
     const file = formData.get("image") as File | null;
 
