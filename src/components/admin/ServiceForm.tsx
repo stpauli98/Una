@@ -27,6 +27,7 @@ type Props = {
 export function ServiceForm({ service, imageUrl, onClose, onSaved }: Props) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
 
   // Controlled state — kontroliše vidljivost note polja.
   // price_note → vidljiv samo kad variable_price je true
@@ -63,9 +64,10 @@ export function ServiceForm({ service, imageUrl, onClose, onSaved }: Props) {
 
   const handleFilePick = async (file: File) => {
     if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      setError("Format slike mora biti JPG, PNG ili WebP");
+      setImageError("Format slike mora biti JPG, PNG ili WebP");
       return;
     }
+    setImageError(null);
     setError(null);
     setCompressing(true);
     try {
@@ -89,6 +91,7 @@ export function ServiceForm({ service, imageUrl, onClose, onSaved }: Props) {
       });
     } finally {
       setCompressing(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -97,6 +100,7 @@ export function ServiceForm({ service, imageUrl, onClose, onSaved }: Props) {
       URL.revokeObjectURL(imageState.previewUrl);
     }
     setImageState(service?.image_path ? { mode: "existing" } : { mode: "none" });
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleRemove = () => setImageState({ mode: "remove" });
@@ -211,7 +215,8 @@ export function ServiceForm({ service, imageUrl, onClose, onSaved }: Props) {
                     <button
                       type="button"
                       onClick={handleRemove}
-                      className="text-[11px] text-red-600 underline-offset-2 hover:underline"
+                      disabled={compressing}
+                      className="text-[11px] text-red-600 underline-offset-2 hover:underline disabled:opacity-60"
                     >
                       Ukloni
                     </button>
@@ -257,6 +262,10 @@ export function ServiceForm({ service, imageUrl, onClose, onSaved }: Props) {
                   Vrati
                 </button>
               </div>
+            )}
+
+            {imageError && (
+              <p className="mt-2 text-[11px] text-red-600">{imageError}</p>
             )}
           </Field>
 
