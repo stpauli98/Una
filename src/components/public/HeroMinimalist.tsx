@@ -62,11 +62,11 @@ export function HeroMinimalist() {
             <Image
               src="/images/unaHero.png"
               alt="Una Peranović"
-              width={290}
-              height={400}
+              width={422}
+              height={591}
               priority
               quality={90}
-              className="h-auto w-56 object-contain md:w-64 lg:w-72"
+              className="h-auto w-80 object-contain md:w-[420px] lg:w-[500px]"
             />
           </motion.div>
         </div>
