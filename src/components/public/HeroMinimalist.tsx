@@ -51,7 +51,7 @@ export function HeroMinimalist() {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
-            className="absolute z-0 size-[300px] rounded-full bg-rose/90 md:size-[400px] lg:size-[500px]"
+            className="absolute z-0 size-[380px] rounded-full bg-rose/90 md:size-[520px] lg:size-[640px]"
           />
           <motion.div
             initial={{ opacity: 0, y: 50 }}
