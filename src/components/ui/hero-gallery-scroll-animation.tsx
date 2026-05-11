@@ -97,16 +97,23 @@ BentoCell.displayName = "BentoCell";
  * Full-screen overlay koji se gasi zajedno sa ContainerScale tekstom.
  * Koristi se da dark gradient overlay (za čitljivost teksta) nestaje kad
  * tekst nestane, pa finalni bento grid ostaje čist bez tamne maske.
+ *
+ * `position` switch sa fixed na absolute nakon 0.6 progress-a (isti
+ * pattern kao ContainerScale) — sprečava da overlay nastavi da pokriva
+ * sledeće sekcije stranice nakon završetka hero scroll-a.
  */
 export const ContainerOverlay = React.forwardRef<HTMLDivElement, HTMLMotionProps<"div">>(
   ({ className, style, ...props }, ref) => {
     const { scrollYProgress } = useContainerScrollContext();
     const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+    const position = useTransform(scrollYProgress, (p) =>
+      p >= 0.6 ? "absolute" : "fixed",
+    );
     return (
       <motion.div
         ref={ref}
-        className={cn("pointer-events-none fixed inset-0", className)}
-        style={{ opacity, ...style }}
+        className={cn("pointer-events-none inset-0", className)}
+        style={{ opacity, position, top: 0, left: 0, right: 0, bottom: 0, ...style }}
         {...props}
       />
     );
