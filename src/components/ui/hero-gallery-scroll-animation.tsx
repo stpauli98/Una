@@ -93,6 +93,27 @@ export const BentoCell = React.forwardRef<HTMLDivElement, HTMLMotionProps<"div">
 );
 BentoCell.displayName = "BentoCell";
 
+/**
+ * Full-screen overlay koji se gasi zajedno sa ContainerScale tekstom.
+ * Koristi se da dark gradient overlay (za čitljivost teksta) nestaje kad
+ * tekst nestane, pa finalni bento grid ostaje čist bez tamne maske.
+ */
+export const ContainerOverlay = React.forwardRef<HTMLDivElement, HTMLMotionProps<"div">>(
+  ({ className, style, ...props }, ref) => {
+    const { scrollYProgress } = useContainerScrollContext();
+    const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+    return (
+      <motion.div
+        ref={ref}
+        className={cn("pointer-events-none fixed inset-0", className)}
+        style={{ opacity, ...style }}
+        {...props}
+      />
+    );
+  },
+);
+ContainerOverlay.displayName = "ContainerOverlay";
+
 export const ContainerScale = React.forwardRef<HTMLDivElement, HTMLMotionProps<"div">>(
   ({ className, style, ...props }, ref) => {
     const { scrollYProgress } = useContainerScrollContext();

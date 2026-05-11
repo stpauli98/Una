@@ -5,6 +5,7 @@ import Image from "next/image";
 import {
   BentoCell,
   BentoGrid,
+  ContainerOverlay,
   ContainerScale,
   ContainerScroll,
 } from "@/components/ui/hero-gallery-scroll-animation";
@@ -39,6 +40,9 @@ export function HeroAnimated() {
           </BentoCell>
         ))}
       </BentoGrid>
+
+      {/* Dark overlay za čitljivost teksta — gase se zajedno sa naslovom */}
+      <ContainerOverlay className="z-[5] bg-gradient-to-b from-dark/70 via-dark/55 to-dark/70" />
 
       <ContainerScale className="relative z-10 text-center">
         <div className="mb-7 flex items-center justify-center gap-3">
