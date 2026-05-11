@@ -1,85 +1,39 @@
-import Link from "next/link";
-import Image from "next/image";
+// src/components/public/Hero.tsx
+"use client";
+
+import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import { useReducedMotion } from "motion/react";
+import { HeroStatic } from "./HeroStatic";
 
 /**
- * Hero sekcija — puna visina ekrana, foto pozadina (studio storefront)
- * sa tamnim gradient overlay-em za čitljivost teksta, italic Cormorant
- * headline, dva CTA dugmeta.
+ * Wrapper za hero sekciju. Bira jednu od dvije varijante na osnovu:
+ * - `prefers-reduced-motion` system preference → static
+ * - viewport < md (768px) → static
+ * - inače → animated
+ *
+ * `HeroAnimated` je dinamički importovan da mobile korisnici ne učitavaju
+ * Motion v12 bundle (~45KB gzipped).
  */
+const HeroAnimated = dynamic(
+  () => import("./HeroAnimated").then((m) => ({ default: m.HeroAnimated })),
+  { ssr: false, loading: () => <HeroStatic /> },
+);
+
 export function Hero() {
-  return (
-    <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 pb-16 pt-28">
-      {/* Foto pozadina — interijer studija (atmosfera + suptilan brand) */}
-      <Image
-        src="/images/hero-studio.jpg"
-        alt=""
-        aria-hidden
-        fill
-        priority
-        sizes="100vw"
-        className="object-cover object-[center_30%]"
-      />
-      {/* Gradient overlay za čitljivost — tamniji u centru (preko teksta) */}
-      <div
-        aria-hidden
-        className="absolute inset-0 bg-gradient-to-b from-dark/70 via-dark/55 to-dark/75"
-      />
+  const prefersReducedMotion = useReducedMotion();
+  const [isDesktop, setIsDesktop] = useState(false);
 
-      {/* Dekorativni krugovi */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute right-[-10%] top-[8%] size-[280px] rounded-full border border-pink/10"
-        style={{ animation: "float 8s ease-in-out infinite" }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute bottom-[10%] left-[-15%] size-[220px] rounded-full border border-gold/10"
-        style={{ animation: "float 6s ease-in-out infinite 1s" }}
-      />
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    setIsDesktop(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
-      <div className="relative z-10 text-center">
-        <div className="mb-7 flex items-center justify-center gap-3">
-          <div className="h-px w-8 bg-gold-light" />
-          <p className="font-display text-[11px] italic uppercase tracking-[0.35em] text-gold-light">
-            Beauty Studio · Gradiška
-          </p>
-          <div className="h-px w-8 bg-gold-light" />
-        </div>
-
-        <h1 className="mb-5 font-display text-[36px] font-normal leading-[1.08] tracking-wide text-white drop-shadow-sm sm:text-[44px] md:text-[64px] lg:text-[80px]">
-          Osmijeh je
-          <br />
-          <em className="italic font-light">najljepša</em> šminka
-        </h1>
-
-        <p className="mx-auto mb-8 max-w-[320px] text-[13px] leading-relaxed tracking-wide text-white/80 md:max-w-[440px] md:text-[15px]">
-          Profesionalno šminkanje, pedikir i njega trepavica. Vaša prirodna
-          ljepota, naglašena sa stilom.
-        </p>
-
-        <div className="flex flex-col items-center justify-center gap-3 md:flex-row">
-          <Link
-            href="/zakazi"
-            className="bg-gold px-8 py-3.5 text-[11px] uppercase tracking-[0.25em] text-white transition-colors hover:bg-[#A17E47]"
-          >
-            Zakaži termin
-          </Link>
-          <Link
-            href="/usluge"
-            className="border border-white/40 bg-transparent px-8 py-3.5 text-[11px] uppercase tracking-[0.25em] text-white transition-colors hover:bg-white/10"
-          >
-            Pogledaj usluge
-          </Link>
-        </div>
-      </div>
-
-      {/* Scroll indicator */}
-      <div
-        aria-hidden
-        className="absolute bottom-8 left-1/2 -translate-x-1/2"
-      >
-        <div className="h-8 w-px bg-gradient-to-b from-white/30 to-transparent" />
-      </div>
-    </section>
-  );
+  if (prefersReducedMotion || !isDesktop) {
+    return <HeroStatic />;
+  }
+  return <HeroAnimated />;
 }
