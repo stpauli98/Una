@@ -201,14 +201,43 @@ Admin panel koristi ovaj helper na "Pošalji WhatsApp potvrdu" dugmetu — otvar
 
 ---
 
-## Email (Phase 8 — u toku)
+## Email notifikacije (Resend)
 
-Resend integracija je pripremljena ali čeka API ključ. Postoje `TODO(Phase 8)` komentari u:
-- `src/app/zakazi/actions.ts` — novi termin → email Uni
-- `src/app/admin/(protected)/termini/actions.ts` — potvrda → email klijentu (ako ima email)
-- `src/app/obuka/actions.ts` — novi upit za obuku → email Uni
+Kad klijent rezerviše termin na javnoj `/zakazi` stranici, Una automatski dobija HTML+text email obavještenje preko [Resend](https://resend.com). Email sadrži ime klijenta, telefon, opcioni email, uslugu, datum/vrijeme, opcionu napomenu i link na admin panel.
 
-Kad Resend bude podešen, treba kreirati `src/lib/email/` modul i odkomentarisati pozive.
+**Šta je trenutno pokriveno (samo ovo):**
+- ✅ Email Uni pri novoj rezervaciji (`createAppointment` u `src/app/zakazi/actions.ts`)
+
+**Out of scope za sad:**
+- ❌ Email klijentu pri potvrdi/otkazu (admin koristi WhatsApp dugme)
+- ❌ Email za obuka upite
+- ❌ 24h reminder cron
+
+### Production setup
+
+1. Kreirati Resend account na https://resend.com
+2. Verifikovati domen `upbeauty.ba`:
+   - Resend dashboard → Domains → Add Domain → unesi `upbeauty.ba`
+   - Resend daje SPF + DKIM DNS records → dodati ih kod hosting providera domena
+   - Sačekati propagaciju (~10 min) → status mora biti **Verified**
+3. Generisati API key: Resend dashboard → API Keys → Create → kopirati
+4. Postaviti env varijable na Vercel-u (Project → Settings → Environment Variables, scope: Production):
+   - `RESEND_API_KEY=re_xxxxxxxx` (iz koraka 3)
+   - `RESEND_FROM_EMAIL=rezervacije@upbeauty.ba` (već u `.env.example`)
+   - `ADMIN_NOTIFICATION_EMAIL=peranovicuna6@gmail.com` (već u `.env.example`)
+5. Redeploy production deploy iz Vercel-a (env var promjene traže redeploy)
+
+### Lokalni development
+
+Bez `RESEND_API_KEY` u `.env.local`, kod radi normalno ali ne šalje stvarne emailove — umjesto toga loguje `[email skipped] RESEND_API_KEY missing` u dev console.
+
+Za stvarni email lokalno: postaviti `RESEND_API_KEY` u `.env.local` (Resend free tier 3000 email/mjesec).
+
+### Šta se desi ako email pukne
+
+Kod je fire-and-log: rezervacija se uvijek kreira u DB-u, čak i ako Resend API vrati error ili nije konfigurisan. Greška se loguje preko `sanitizeError()` u Vercel logs.
+
+**Modul:** `src/lib/notifications/` (resend client + templates + send orchestrator). 9 Vitest unit testova u `tests/unit/notifications/`.
 
 ---
 
