@@ -36,7 +36,7 @@ export function HeroAnimated() {
               sizes="(min-width:1024px) 50vw, 100vw"
               quality={90}
               className={
-                index === 0 ? "object-cover object-top" : "object-cover"
+                index === 0 ? "object-cover object-bottom" : "object-cover"
               }
             />
           </BentoCell>
