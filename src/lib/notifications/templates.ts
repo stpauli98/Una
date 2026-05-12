@@ -78,8 +78,8 @@ export function renderNewAppointmentEmail(
 
           <h2 style="margin:24px 0 8px 0;font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:#887070;font-weight:600;">Klijent</h2>
           <div style="font-size:16px;color:#3d2b2b;margin-bottom:4px;">${escapeHtml(clientName)}</div>
-          <div style="font-size:14px;"><a href="tel:${encodeURIComponent(clientPhone)}" style="color:#c4787a;text-decoration:none;">${escapeHtml(clientPhone)}</a></div>
-          ${clientEmail ? `<div style="font-size:14px;margin-top:4px;"><a href="mailto:${encodeURIComponent(clientEmail)}" style="color:#c4787a;text-decoration:none;">${escapeHtml(clientEmail)}</a></div>` : ""}
+          <div style="font-size:14px;"><a href="tel:${escapeHtmlAttr(clientPhone)}" style="color:#c4787a;text-decoration:none;">${escapeHtml(clientPhone)}</a></div>
+          ${clientEmail ? `<div style="font-size:14px;margin-top:4px;"><a href="mailto:${escapeHtmlAttr(clientEmail)}" style="color:#c4787a;text-decoration:none;">${escapeHtml(clientEmail)}</a></div>` : ""}
 
           <h2 style="margin:32px 0 8px 0;font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:#887070;font-weight:600;">Termin</h2>
           <div style="font-size:16px;color:#3d2b2b;margin-bottom:4px;">${escapeHtml(serviceName)}</div>
@@ -129,4 +129,22 @@ function escapeHtml(str: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+/**
+ * Minimal attribute-context escape — samo `"`, `'`, `<`, `>` da spreči
+ * attribute injection. NE koristi `encodeURIComponent` jer kvari `+`
+ * u tel: (postaje %2B i neki dialer-i biraju "2B" literalno) i
+ * `+` u mailto: aliasima (user+tag@gmail.com).
+ *
+ * Phone je već normalizovan (normalizePhone), email je Zod-validovan
+ * — pa su attack chars praktično nemogući, ali defense-in-depth.
+ */
+function escapeHtmlAttr(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }

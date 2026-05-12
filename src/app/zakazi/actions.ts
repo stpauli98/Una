@@ -2,6 +2,7 @@
 
 import { addMinutes, differenceInHours } from "date-fns";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { bookingFormSchema } from "@/lib/booking/schemas";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhone } from "@/lib/utils/phone";
@@ -139,19 +140,23 @@ export async function createAppointment(
   }
 
   // Fire-and-log email obavještenje Uni — NE blokira redirect.
-  // Ako Resend pukne, appointment je već persisted u DB.
+  // `after()` (Next 16) garantuje da se email izvrši nakon response-a,
+  // čak i kad redirect() prekine handler. `void` + redirect na Vercel
+  // serverless može orphanovati promise prije nego Resend fetch završi.
   const siteUrl = (
     process.env.NEXT_PUBLIC_SITE_URL ?? "https://upbeauty.ba"
   ).replace(/\/$/, "");
-  void sendNewAppointmentEmail({
-    clientName: parsed.data.client_name,
-    clientPhone: normalizedPhone,
-    clientEmail,
-    serviceName: service.name,
-    startTime: start,
-    notes,
-    adminPanelUrl: `${siteUrl}/admin/termini`,
-  });
+  after(() =>
+    sendNewAppointmentEmail({
+      clientName: parsed.data.client_name,
+      clientPhone: normalizedPhone,
+      clientEmail,
+      serviceName: service.name,
+      startTime: start,
+      notes,
+      adminPanelUrl: `${siteUrl}/admin/termini`,
+    }),
+  );
 
   // Push notification adminima — best-effort, ne čekaj i ne baci.
   // Ako Una uskoro otvori admin, AppointmentsRealtime (Phase B) već
