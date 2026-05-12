@@ -14,6 +14,7 @@ import {
   buildNewAppointmentPayload,
   sendAdminPushNotification,
 } from "@/lib/push/send";
+import { sendNewAppointmentEmail } from "@/lib/notifications/send-admin-email";
 
 export type CreateAppointmentResult =
   | { ok: true }
@@ -134,7 +135,18 @@ export async function createAppointment(
     };
   }
 
-  // TODO(Phase 8): sendNewAppointmentEmail(inserted, service, parsed.data)
+  // Fire-and-log email obavještenje Uni — NE blokira redirect.
+  // Ako Resend pukne, appointment je već persisted u DB.
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://upbeauty.ba";
+  void sendNewAppointmentEmail({
+    clientName: parsed.data.client_name,
+    clientPhone: normalizePhone(parsed.data.client_phone),
+    clientEmail: parsed.data.client_email || null,
+    serviceName: service.name,
+    startTime: start,
+    notes: parsed.data.notes || null,
+    adminPanelUrl: `${siteUrl}/admin/termini`,
+  });
 
   // Push notification adminima — best-effort, ne čekaj i ne baci.
   // Ako Una uskoro otvori admin, AppointmentsRealtime (Phase B) već
