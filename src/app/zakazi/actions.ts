@@ -110,17 +110,20 @@ export async function createAppointment(
   }
 
   const confirmationToken = crypto.randomUUID();
+  const normalizedPhone = normalizePhone(parsed.data.client_phone);
+  const clientEmail = parsed.data.client_email || null;
+  const notes = parsed.data.notes || null;
 
   const { data: inserted, error: insErr } = await sb
     .from("appointments")
     .insert({
       service_id: parsed.data.service_id,
       client_name: parsed.data.client_name,
-      client_phone: normalizePhone(parsed.data.client_phone),
-      client_email: parsed.data.client_email || null,
+      client_phone: normalizedPhone,
+      client_email: clientEmail,
       start_time: start.toISOString(),
       end_time: end.toISOString(),
-      notes: parsed.data.notes || null,
+      notes,
       status: "ceka",
       confirmation_token: confirmationToken,
     })
@@ -137,14 +140,16 @@ export async function createAppointment(
 
   // Fire-and-log email obavještenje Uni — NE blokira redirect.
   // Ako Resend pukne, appointment je već persisted u DB.
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://upbeauty.ba";
+  const siteUrl = (
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://upbeauty.ba"
+  ).replace(/\/$/, "");
   void sendNewAppointmentEmail({
     clientName: parsed.data.client_name,
-    clientPhone: normalizePhone(parsed.data.client_phone),
-    clientEmail: parsed.data.client_email || null,
+    clientPhone: normalizedPhone,
+    clientEmail,
     serviceName: service.name,
     startTime: start,
-    notes: parsed.data.notes || null,
+    notes,
     adminPanelUrl: `${siteUrl}/admin/termini`,
   });
 
