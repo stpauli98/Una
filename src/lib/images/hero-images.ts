@@ -13,9 +13,9 @@
  * eventualno reorder ili buduće korišćenje.
  */
 export const HERO_IMAGES = [
-  "/images/hero-section-v2/13aa5e70-5f1b-41c5-b2c8-863805d60c94.webp",
+  "/images/hero-section-v2/e9fc1e3b-d963-4b96-87ab-ccfa47fcd8e4.webp",
   "/images/hero-section-v2/28ba9d00-a80b-4119-bde2-b201710413ba.webp",
-  "/images/hero-section-v2/3ccf37ba-bfb7-42c4-9d31-f842bbec195b.webp",
+  "/images/hero-section-v2/8b576802-7348-46f1-b7ab-4d6edb7b3ff1.webp",
   "/images/hero-section-v2/3ecedec1-35a6-4b09-9abf-9bb17b037ec6.webp",
   "/images/hero-section-v2/81d02e03-7238-42a4-a47b-7f36fb3338a9.webp",
 ] as const;
