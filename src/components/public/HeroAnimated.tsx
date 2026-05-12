@@ -25,7 +25,11 @@ export function HeroAnimated() {
         {HERO_IMAGES.map((src, index) => (
           <BentoCell
             key={src}
-            className="relative overflow-hidden rounded-xl shadow-xl"
+            className={
+              index === 0
+                ? "relative overflow-hidden rounded-xl bg-marble shadow-xl"
+                : "relative overflow-hidden rounded-xl shadow-xl"
+            }
           >
             <Image
               src={src}
@@ -36,7 +40,9 @@ export function HeroAnimated() {
               sizes="(min-width:1024px) 50vw, 100vw"
               quality={90}
               className={
-                index === 0 ? "object-cover object-bottom" : "object-cover"
+                index === 0
+                  ? "object-contain object-bottom"
+                  : "object-cover"
               }
             />
           </BentoCell>
