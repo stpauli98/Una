@@ -34,11 +34,11 @@ export const metadata: Metadata = {
   ),
   manifest: "/manifest.webmanifest",
   title: {
-    default: `${BUSINESS.name} · Gradiška`,
+    default: `Šminkanje Gradiška — ${BUSINESS.name}`,
     template: `%s · ${BUSINESS.name}`,
   },
   description:
-    "Profesionalno šminkanje, pedikir i trepavice u Gradišci. Una Peranović — UP Beauty & Makeup Studio. Zakažite termin online.",
+    "Profesionalno šminkanje u Gradišci — svadbeno, večernje, maturalno, terensko. Pedikir, trepavice i obuka šminkanja kod Une Peranović u UP Beauty & Makeup Studio. Zakažite termin online.",
   applicationName: "UP Beauty",
   appleWebApp: {
     capable: true,

@@ -11,9 +11,9 @@ import type { Database } from "@/types/database";
 type Service = Database["public"]["Tables"]["services"]["Row"];
 
 export const metadata: Metadata = {
-  title: "Usluge",
+  title: "Usluge šminkanja u Gradišci",
   description:
-    "Profesionalno šminkanje, pedikir, trepavice i obuka u UP Beauty Studio u Gradišci. Pogledajte sve usluge i cijene.",
+    "Sve usluge šminkanja u Gradišci — svadbeno, večernje, maturalno, terensko šminkanje. Pedikir, trepavice i obuka šminkanja. Profesionalni rad Une Peranović u UP Beauty Studio.",
   alternates: { canonical: "/usluge" },
 };
 

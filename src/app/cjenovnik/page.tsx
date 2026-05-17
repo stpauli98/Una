@@ -9,9 +9,9 @@ import type { Database } from "@/types/database";
 type Service = Database["public"]["Tables"]["services"]["Row"];
 
 export const metadata: Metadata = {
-  title: "Cjenovnik",
+  title: "Cjenovnik šminkanja Gradiška",
   description:
-    "Cjenovnik usluga UP Beauty & Makeup Studio — šminkanje, pedikir, trepavice, obuka. Sve cijene u KM.",
+    "Cijene šminkanja u Gradišci — svadbeno, večernje, maturalno, terensko. Pedikir, trepavice, obuka. Sve cijene u KM. UP Beauty & Makeup Studio kod Une Peranović.",
   alternates: { canonical: "/cjenovnik" },
 };
 
