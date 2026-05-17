@@ -84,3 +84,31 @@ test.describe("iOS PWA meta", () => {
     expect(viewport).toMatch(/viewport-fit=cover/);
   });
 });
+
+test.describe("Service worker", () => {
+  test("registers a service worker", async ({ page }) => {
+    await page.goto("/uslovi-koriscenja");
+    // Serwist registers asynchronously after page load — wait until the SW
+    // is fully activated before asserting (avoids a race on first visit).
+    await page.waitForFunction(
+      async () => {
+        if (!("serviceWorker" in navigator)) return false;
+        const reg = await navigator.serviceWorker.ready;
+        return reg.active?.state === "activated";
+      },
+      null,
+      { timeout: 10_000 },
+    );
+    const registered = await page.evaluate(async () => {
+      const reg = await navigator.serviceWorker.ready;
+      return reg.active?.state === "activated";
+    });
+    expect(registered).toBe(true);
+  });
+
+  test("/sw.js is served as JavaScript", async ({ request }) => {
+    const res = await request.get("/sw.js");
+    expect(res.status()).toBe(200);
+    expect(res.headers()["content-type"]).toMatch(/javascript/);
+  });
+});
