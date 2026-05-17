@@ -50,3 +50,37 @@ test.describe("PWA icons", () => {
     expect(res.headers()["content-type"]).toBe("image/png");
   });
 });
+
+test.describe("iOS PWA meta", () => {
+  test("html exposes mobile-web-app-capable", async ({ page }) => {
+    await page.goto("/uslovi-koriscenja");
+    // Next.js 16 emits the modern `mobile-web-app-capable` rather than the
+    // deprecated `apple-mobile-web-app-capable` (iOS Safari honours both).
+    const capable = await page
+      .locator('meta[name="mobile-web-app-capable"]')
+      .first()
+      .getAttribute("content");
+    expect(capable).toBe("yes");
+
+    const title = await page
+      .locator('meta[name="apple-mobile-web-app-title"]')
+      .first()
+      .getAttribute("content");
+    expect(title).toBe("UP Beauty");
+
+    const status = await page
+      .locator('meta[name="apple-mobile-web-app-status-bar-style"]')
+      .first()
+      .getAttribute("content");
+    expect(status).toBe("black-translucent");
+  });
+
+  test("viewport allows safe-area-inset (viewport-fit=cover)", async ({ page }) => {
+    await page.goto("/uslovi-koriscenja");
+    const viewport = await page
+      .locator('meta[name="viewport"]')
+      .first()
+      .getAttribute("content");
+    expect(viewport).toMatch(/viewport-fit=cover/);
+  });
+});

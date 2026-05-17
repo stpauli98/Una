@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { BUSINESS } from "@/lib/constants/business";
+import { BRAND_COLORS } from "@/lib/constants/theme";
 import { CookieBanner } from "@/components/public/CookieBanner";
 
 const cormorant = Cormorant_Garamond({
@@ -22,7 +23,8 @@ const dmSans = DM_Sans({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#3d2b2b",
+  themeColor: BRAND_COLORS.theme,
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
@@ -35,6 +37,15 @@ export const metadata: Metadata = {
   },
   description:
     "Profesionalno šminkanje, pedikir i trepavice u Gradišci. Una Peranović — UP Beauty & Makeup Studio. Zakažite termin online.",
+  applicationName: "UP Beauty",
+  appleWebApp: {
+    capable: true,
+    title: "UP Beauty",
+    statusBarStyle: "black-translucent",
+  },
+  formatDetection: {
+    telephone: false,
+  },
   openGraph: {
     type: "website",
     locale: "sr_Latn",

@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { BRAND_COLORS } from "@/lib/constants/theme";
 
 export const alt = "UP Beauty & Makeup Studio — Gradiška";
 export const size = { width: 1200, height: 630 };
@@ -14,8 +15,7 @@ export default async function OgImage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background:
-            "linear-gradient(155deg, #3D2B2B 0%, #5a3e3e 35%, #C4787A 80%, #D4A0A0 100%)",
+          background: `linear-gradient(155deg, ${BRAND_COLORS.theme} 0%, #5a3e3e 35%, #C4787A 80%, #D4A0A0 100%)`,
           fontFamily: "serif",
         }}
       >
