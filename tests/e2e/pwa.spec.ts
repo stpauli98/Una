@@ -190,6 +190,16 @@ test.describe("Admin PWA scope", () => {
     expect(href).toMatch(/\/manifest\.webmanifest$/);
     expect(href).not.toMatch(/\/admin\//);
   });
+
+  test("InstallPrompt component is not rendered on /admin/*", async ({ page }) => {
+    await page.goto("/admin/login");
+    const onAdminMarker = await page.evaluate(() => document.body.dataset.installPromptMounted);
+    expect(onAdminMarker).toBeUndefined();
+
+    await page.goto("/uslovi-koriscenja");
+    const onPublicMarker = await page.evaluate(() => document.body.dataset.installPromptMounted);
+    expect(onPublicMarker).toBe("true");
+  });
 });
 
 test.describe("Nav a11y", () => {
