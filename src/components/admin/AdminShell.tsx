@@ -100,8 +100,11 @@ export function AdminShell({ userEmail, children }: Props) {
         </div>
       </aside>
 
-      {/* Main content */}
-      <main className="flex-1 overflow-x-hidden">{children}</main>
+      {/* Main content. pt-safe rezerviše prostor za iPhone notch/dynamic
+          island u PWA standalone modu (viewport-fit=cover ekstenduje view
+          iza statusbar-a). Desktop dobija md:pt-0 jer ima sidebar koji
+          počinje od vrha ekrana — main je flex sibling i ne treba ofset. */}
+      <main className="flex-1 overflow-x-hidden pt-safe md:pt-0">{children}</main>
 
       {/* Bottom nav — mobile */}
       <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-cream bg-white pb-safe md:hidden">
