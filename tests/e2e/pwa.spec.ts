@@ -121,6 +121,27 @@ test.describe("Offline fallback", () => {
   });
 });
 
+test.describe("Admin PWA scope", () => {
+  test("serves admin manifest at /admin/manifest.webmanifest", async ({ request }) => {
+    const res = await request.get("/admin/manifest.webmanifest");
+    expect(res.status()).toBe(200);
+    expect(res.headers()["content-type"]).toContain("application/manifest+json");
+    const m = await res.json();
+    expect(m.id).toBe("/admin");
+    expect(m.name).toBe("UP Beauty Admin");
+    expect(m.short_name).toBe("UP Admin");
+    expect(m.start_url).toBe("/admin/dashboard");
+    expect(m.scope).toBe("/admin");
+    expect(m.display).toBe("standalone");
+    expect(m.theme_color).toBe("#3d2b2b");
+    expect(m.background_color).toBe("#faf7f2");
+    expect(m.lang).toBe("sr-Latn");
+    expect(m.icons.length).toBeGreaterThanOrEqual(3);
+    expect(m.icons.some((i: { purpose?: string }) => i.purpose === "maskable")).toBe(true);
+    expect(m.icons.some((i: { src: string }) => i.src === "/admin/icon")).toBe(true);
+  });
+});
+
 test.describe("Nav a11y", () => {
   test("Escape closes mobile menu", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
