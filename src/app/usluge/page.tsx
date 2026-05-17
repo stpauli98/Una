@@ -4,15 +4,16 @@ import { Nav } from "@/components/public/Nav";
 import { Footer } from "@/components/public/Footer";
 import { SectionHeader } from "@/components/public/SectionHeader";
 import { ServiceCard } from "@/components/public/ServiceCard";
+import { ServicesJsonLd } from "@/components/public/ServicesJsonLd";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 
 type Service = Database["public"]["Tables"]["services"]["Row"];
 
 export const metadata: Metadata = {
-  title: "Usluge",
+  title: "Usluge šminkanja u Gradišci",
   description:
-    "Profesionalno šminkanje, pedikir, trepavice i obuka u UP Beauty Studio u Gradišci. Pogledajte sve usluge i cijene.",
+    "Sve usluge šminkanja u Gradišci — svadbeno, večernje, maturalno, terensko šminkanje. Pedikir, trepavice i obuka šminkanja. Profesionalni rad Une Peranović u UP Beauty Studio.",
   alternates: { canonical: "/usluge" },
 };
 
@@ -36,6 +37,8 @@ export default async function UslugePage() {
     .eq("active", true)
     .order("order_index");
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
   const grouped = (services ?? []).reduce<Record<string, Service[]>>(
     (acc, service) => {
       (acc[service.category] ??= []).push(service);
@@ -46,6 +49,7 @@ export default async function UslugePage() {
 
   return (
     <>
+      <ServicesJsonLd services={services ?? []} siteUrl={siteUrl} />
       <Nav />
       <main className="pt-28">
         <section className="bg-warm px-6 py-16 md:py-24">
