@@ -34,10 +34,14 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Public admin assets — moraju biti dostupni bez auth-a da bi browser
-  // mogao instalirati PWA prije login-a (manifest, icons).
+  // mogao instalirati PWA prije login-a (manifest + svi PWA ikoni koje
+  // manifest referencira, plus apple-touch-icon za iOS home-screen).
   const PUBLIC_ADMIN_PATHS = new Set([
     "/admin/login",
     "/admin/manifest.webmanifest",
+    "/admin/icon",
+    "/admin/icon1",
+    "/admin/apple-icon",
   ]);
 
   // Guard: ako nije admin a pokušava /admin/* (osim public assets), redirect

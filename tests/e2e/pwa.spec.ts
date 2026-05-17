@@ -140,6 +140,16 @@ test.describe("Admin PWA scope", () => {
     expect(m.icons.some((i: { purpose?: string }) => i.purpose === "maskable")).toBe(true);
     expect(m.icons.some((i: { src: string }) => i.src === "/admin/icon")).toBe(true);
   });
+
+  for (const path of ["/admin/icon", "/admin/icon1", "/admin/apple-icon"]) {
+    test(`serves ${path} as PNG`, async ({ request }) => {
+      const res = await request.get(path);
+      expect(res.status()).toBe(200);
+      expect(res.headers()["content-type"]).toContain("image/png");
+      const buf = await res.body();
+      expect(buf.byteLength).toBeGreaterThan(500);
+    });
+  }
 });
 
 test.describe("Nav a11y", () => {
