@@ -97,3 +97,21 @@
 @utility bottom-safe-3 {
   bottom: calc(0.75rem + env(safe-area-inset-bottom));
 }
+
+/* iOS Safari auto-zoom prevention.
+   Safari na iPhone-u ZUMIRA cijelu stranicu kad korisnik tap-uje input
+   čiji je font-size < 16px (Apple-ova politika protiv "premali tekst"
+   za readability). Zum se NE vraća kad se tastatura zatvori — ostaje
+   permanentno dok korisnik ručno ne pinch-out.
+   Fix: forsiraj 16px na sve form kontrole na mobilnom viewport-u.
+   Desktop (≥768px) zadržava postojeću Tailwind tipografiju (`text-sm`,
+   `text-xs`, itd.) iz dizajna.
+   Selector isključuje radio/checkbox jer im je font-size irelevantan
+   za vizuelni prikaz (kontrola je glyph, ne tekst). */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
