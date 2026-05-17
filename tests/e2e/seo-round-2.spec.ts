@@ -37,3 +37,47 @@ test.describe("OpenGraph URL", () => {
     });
   }
 });
+
+test.describe("BreadcrumbList structured data", () => {
+  const pages: Array<{ path: string; expectedLast: string }> = [
+    { path: "/usluge", expectedLast: "Usluge" },
+    { path: "/cjenovnik", expectedLast: "Cjenovnik" },
+    { path: "/galerija", expectedLast: "Galerija" },
+    { path: "/o-meni", expectedLast: "O meni" },
+    { path: "/kontakt", expectedLast: "Kontakt" },
+    { path: "/obuka", expectedLast: "Obuka" },
+    { path: "/zakazi", expectedLast: "Zakaži termin" },
+  ];
+
+  for (const p of pages) {
+    test(`${p.path} embeds BreadcrumbList JSON-LD ending with "${p.expectedLast}"`, async ({ page }) => {
+      await page.goto(p.path);
+      const scripts = await page
+        .locator('script[type="application/ld+json"]')
+        .allTextContents();
+      type Crumbs = {
+        "@type": string;
+        itemListElement?: Array<{ position: number; name: string; item: string }>;
+      };
+      const parsed: Crumbs[] = scripts.map((s) => JSON.parse(s));
+      const crumbs = parsed.find((j) => j["@type"] === "BreadcrumbList");
+      expect(crumbs).toBeDefined();
+      expect(crumbs!.itemListElement).toHaveLength(2);
+      expect(crumbs!.itemListElement![0].name).toBe("Početna");
+      expect(crumbs!.itemListElement![0].position).toBe(1);
+      expect(crumbs!.itemListElement![1].name).toBe(p.expectedLast);
+      expect(crumbs!.itemListElement![1].position).toBe(2);
+      expect(crumbs!.itemListElement![1].item).toMatch(new RegExp(`${p.path.replace(/\//g, "\\/")}$`));
+    });
+  }
+
+  test("homepage does NOT embed BreadcrumbList (root has no breadcrumbs)", async ({ page }) => {
+    await page.goto("/");
+    const scripts = await page
+      .locator('script[type="application/ld+json"]')
+      .allTextContents();
+    const parsed: Array<{ "@type": string }> = scripts.map((s) => JSON.parse(s));
+    const crumbs = parsed.find((j) => j["@type"] === "BreadcrumbList");
+    expect(crumbs).toBeUndefined();
+  });
+});

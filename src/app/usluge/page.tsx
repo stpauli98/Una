@@ -5,6 +5,7 @@ import { Footer } from "@/components/public/Footer";
 import { SectionHeader } from "@/components/public/SectionHeader";
 import { ServiceCard } from "@/components/public/ServiceCard";
 import { ServicesJsonLd } from "@/components/public/ServicesJsonLd";
+import { BreadcrumbsJsonLd } from "@/components/public/BreadcrumbsJsonLd";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 
@@ -51,6 +52,13 @@ export default async function UslugePage() {
   return (
     <>
       <ServicesJsonLd services={services ?? []} siteUrl={siteUrl} />
+      <BreadcrumbsJsonLd
+        items={[
+          { name: "Početna", path: "/" },
+          { name: "Usluge", path: "/usluge" },
+        ]}
+        siteUrl={siteUrl}
+      />
       <Nav />
       <main className="pt-28">
         <section className="bg-warm px-6 py-16 md:py-24">

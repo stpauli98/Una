@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Nav } from "@/components/public/Nav";
 import { BookingFlow } from "@/components/booking/BookingFlow";
+import { BreadcrumbsJsonLd } from "@/components/public/BreadcrumbsJsonLd";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -38,8 +39,17 @@ export default async function ZakaziPage({ searchParams }: PageProps) {
       ? initialServiceId
       : null;
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
   return (
     <>
+      <BreadcrumbsJsonLd
+        items={[
+          { name: "Početna", path: "/" },
+          { name: "Zakaži termin", path: "/zakazi" },
+        ]}
+        siteUrl={siteUrl}
+      />
       <Nav />
       <main className="pt-28">
         <section className="bg-warm px-6 py-16 md:py-24">

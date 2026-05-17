@@ -3,6 +3,7 @@ import { MapPin, Phone, Mail, Camera, Music2 } from "lucide-react";
 import { Nav } from "@/components/public/Nav";
 import { Footer } from "@/components/public/Footer";
 import { SectionHeader } from "@/components/public/SectionHeader";
+import { BreadcrumbsJsonLd } from "@/components/public/BreadcrumbsJsonLd";
 import { BUSINESS } from "@/lib/constants/business";
 
 export const metadata: Metadata = {
@@ -51,8 +52,17 @@ const CONTACT_CARDS = [
 ] as const;
 
 export default function KontaktPage() {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
   return (
     <>
+      <BreadcrumbsJsonLd
+        items={[
+          { name: "Početna", path: "/" },
+          { name: "Kontakt", path: "/kontakt" },
+        ]}
+        siteUrl={siteUrl}
+      />
       <Nav />
       <main className="pt-28">
         <section className="bg-marble px-6 py-16 md:py-24">
