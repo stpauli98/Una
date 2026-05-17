@@ -210,16 +210,16 @@ export default async function AdminDashboardPage({
           )}
         </div>
 
-        {/* Notifications status */}
+        {/* Notifications status. Email (Resend) integracija nije završena
+            (nema RESEND_API_KEY u env vars, nema send koda), pa je raniji
+            misleading "Email aktivan" indikator uklonjen. Trenutno UP Beauty
+            koristi samo WhatsApp za ručna obavještenja klijentima preko
+            dugmeta u Termini tabu. */}
         <div className="border border-cream bg-white p-5">
           <h3 className="mb-3 font-display text-base text-dark">
             Status obavještenja
           </h3>
           <div className="space-y-2 text-[12px] text-body">
-            <div className="flex items-center gap-2">
-              <span className="size-2 rounded-full bg-green-500" />
-              Email (Resend): aktivan — automatski pri novoj rezervaciji
-            </div>
             <div className="flex items-center gap-2">
               <span className="size-2 rounded-full bg-amber-500" />
               WhatsApp: ručno slanje preko dugmeta u terminima
