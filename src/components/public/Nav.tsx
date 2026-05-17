@@ -72,12 +72,15 @@ export function Nav({ overHero = false }: NavProps) {
     <>
       <nav
         className={cn(
-          "fixed inset-x-0 top-0 z-[60] transition-all duration-400",
+          // pt-safe na svim statusima rezerviše prostor za iPhone notch
+          // u PWA standalone modu (viewport-fit=cover). Bottom padding
+          // ostaje varijabilan po stanju (scrolled / overHero / menuOpen).
+          "fixed inset-x-0 top-0 z-[60] pt-safe transition-all duration-400",
           menuOpen
-            ? "bg-transparent border-b border-transparent py-4"
+            ? "bg-transparent border-b border-transparent pb-4"
             : solid
-              ? "bg-marble/95 backdrop-blur-md border-b border-cream py-3"
-              : "bg-transparent border-b border-transparent py-4",
+              ? "bg-marble/95 backdrop-blur-md border-b border-cream pb-3"
+              : "bg-transparent border-b border-transparent pb-4",
         )}
       >
         <div className="mx-auto flex max-w-[1200px] items-center justify-between px-6">

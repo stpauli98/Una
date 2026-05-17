@@ -16,7 +16,7 @@ export default async function AdminLoginPage({
   const safe = safeRedirect(redirect, "/admin/dashboard");
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-marble px-6 py-16">
+    <main className="flex min-h-screen items-center justify-center bg-marble px-6 py-16 pt-safe pb-safe">
       <div className="w-full max-w-[400px]">
         <div className="mb-8 text-center">
           <div className="mb-4 inline-flex items-center gap-2">
