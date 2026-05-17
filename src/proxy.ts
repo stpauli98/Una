@@ -33,8 +33,15 @@ export async function proxy(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  // Guard: ako nije admin a pokušava /admin/* (osim login), redirect
-  if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
+  // Public admin assets — moraju biti dostupni bez auth-a da bi browser
+  // mogao instalirati PWA prije login-a (manifest, icons).
+  const PUBLIC_ADMIN_PATHS = new Set([
+    "/admin/login",
+    "/admin/manifest.webmanifest",
+  ]);
+
+  // Guard: ako nije admin a pokušava /admin/* (osim public assets), redirect
+  if (pathname.startsWith("/admin") && !PUBLIC_ADMIN_PATHS.has(pathname)) {
     if (!user || !isAdminEmail(user.email)) {
       const url = request.nextUrl.clone();
       url.pathname = "/admin/login";
