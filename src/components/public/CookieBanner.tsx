@@ -1,29 +1,37 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 
 const STORAGE_KEY = "up-beauty-cookie-consent";
 
 export function CookieBanner() {
+  const pathname = usePathname();
+  const isAdmin = pathname?.startsWith("/admin") ?? false;
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // Admin panel nema cookie banner — Una je interni korisnik koji je već
+    // implicitno pristao na funkcionalne kolačiće prijavom. Plus, admin
+    // namespace se ionako ne tracker-uje (vidi src/sw.ts — /admin je
+    // NetworkOnly bez cache-a, nema analytics u kodu).
+    if (isAdmin) return;
     if (localStorage.getItem(STORAGE_KEY) !== "accepted") {
       // Pokaži tek nakon kratkog delay-a da ne skače sa hero-om
       const timer = setTimeout(() => setVisible(true), 800);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [isAdmin]);
 
   const accept = () => {
     localStorage.setItem(STORAGE_KEY, "accepted");
     setVisible(false);
   };
 
-  if (!visible) return null;
+  if (isAdmin || !visible) return null;
 
   return (
     <div

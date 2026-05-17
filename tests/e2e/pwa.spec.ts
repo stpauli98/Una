@@ -200,6 +200,23 @@ test.describe("Admin PWA scope", () => {
     const onPublicMarker = await page.evaluate(() => document.body.dataset.installPromptMounted);
     expect(onPublicMarker).toBe("true");
   });
+
+  test("CookieBanner is not rendered on /admin/*", async ({ page }) => {
+    // Clear consent so the banner WOULD show on public if we navigated there.
+    await page.goto("/admin/login");
+    await page.evaluate(() => localStorage.removeItem("up-beauty-cookie-consent"));
+
+    // Admin: wait past the 800ms delay; banner must NOT appear.
+    await page.goto("/admin/login");
+    await page.waitForTimeout(1200);
+    await expect(page.getByRole("dialog", { name: /kolačićima/i })).toHaveCount(0);
+
+    // Public sanity check: banner DOES appear after the delay on public.
+    await page.goto("/uslovi-koriscenja");
+    await expect(page.getByRole("dialog", { name: /kolačićima/i })).toBeVisible({
+      timeout: 2000,
+    });
+  });
 });
 
 test.describe("Nav a11y", () => {
