@@ -156,4 +156,15 @@ describe("buildServicesJsonLd", () => {
     expect(out.itemListElement[0].item["@id"]).toBe("https://upbeauty.example/usluge#service-1");
     expect(out.itemListElement[0].item.provider["@id"]).toBe("https://upbeauty.example/#business");
   });
+
+  it("strips trailing newline from siteUrl (Vercel env var bug)", () => {
+    // Regression: NEXT_PUBLIC_SITE_URL na produkciji je sadržao literalni `\n`
+    // sa kraja, što je curilo u sredinu Schema.org @id polja
+    // (npr. "...vercel.app\n/usluge#service-1"). Google parser je takve
+    // URL-ove odbijao i ruskao rich-result eligibility.
+    const out = buildServicesJsonLd([service({ id: 1 })], "https://upbeauty.example\n");
+    expect(out.itemListElement[0].item["@id"]).toBe("https://upbeauty.example/usluge#service-1");
+    expect(out.itemListElement[0].item.provider["@id"]).toBe("https://upbeauty.example/#business");
+    expect(out.itemListElement[0].item.offers!.url).toBe("https://upbeauty.example/zakazi?service=1");
+  });
 });
