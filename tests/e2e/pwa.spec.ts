@@ -23,3 +23,24 @@ test.describe("PWA manifest", () => {
     expect(href).toMatch(/manifest\.webmanifest/);
   });
 });
+
+test.describe("PWA icons", () => {
+  for (const path of ["/icon", "/icon1", "/apple-icon"]) {
+    test(`serves ${path} as PNG`, async ({ request }) => {
+      const res = await request.get(path);
+      expect(res.status()).toBe(200);
+      expect(res.headers()["content-type"]).toContain("image/png");
+      const buf = await res.body();
+      expect(buf.byteLength).toBeGreaterThan(500);
+    });
+  }
+
+  test("layout html has apple-touch-icon link", async ({ page }) => {
+    await page.goto("/uslovi-koriscenja");
+    const href = await page
+      .locator('link[rel="apple-touch-icon"]')
+      .first()
+      .getAttribute("href");
+    expect(href).toMatch(/apple-icon/);
+  });
+});
