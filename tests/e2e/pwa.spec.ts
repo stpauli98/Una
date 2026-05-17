@@ -112,3 +112,11 @@ test.describe("Service worker", () => {
     expect(res.headers()["content-type"]).toMatch(/javascript/);
   });
 });
+
+test.describe("Offline fallback", () => {
+  test("renders /~offline as a static page", async ({ page }) => {
+    await page.goto("/~offline");
+    await expect(page.locator("h1")).toContainText(/bez konekcije|offline/i);
+    await expect(page.getByRole("link", { name: /pokušaj ponovo|nazad/i })).toBeVisible();
+  });
+});
