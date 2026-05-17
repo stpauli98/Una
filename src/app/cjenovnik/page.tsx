@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Nav } from "@/components/public/Nav";
 import { Footer } from "@/components/public/Footer";
 import { SectionHeader } from "@/components/public/SectionHeader";
+import { BreadcrumbsJsonLd } from "@/components/public/BreadcrumbsJsonLd";
 import { createClient } from "@/lib/supabase/server";
 import { formatPrice, formatDuration } from "@/lib/utils/format";
 import type { Database } from "@/types/database";
@@ -13,6 +14,7 @@ export const metadata: Metadata = {
   description:
     "Cijene šminkanja u Gradišci — svadbeno, večernje, maturalno, terensko. Pedikir, trepavice, obuka. Sve cijene u KM. UP Beauty & Makeup Studio kod Une Peranović.",
   alternates: { canonical: "/cjenovnik" },
+  openGraph: { url: "/cjenovnik" },
 };
 
 export const revalidate = 300;
@@ -42,8 +44,17 @@ export default async function CjenovnikPage() {
     {},
   );
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
   return (
     <>
+      <BreadcrumbsJsonLd
+        items={[
+          { name: "Početna", path: "/" },
+          { name: "Cjenovnik", path: "/cjenovnik" },
+        ]}
+        siteUrl={siteUrl}
+      />
       <Nav />
       <main className="pt-28">
         <section className="bg-marble px-6 py-16 md:py-24">

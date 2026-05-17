@@ -45,5 +45,5 @@ if ! curl -sf -o /dev/null http://localhost:3000/sw.js; then
 fi
 
 # 4. Run the suites
-echo "→ Running Playwright PWA + SEO suites against prod build..."
-PLAYWRIGHT_SKIP_WEB_SERVER=1 E2E_SUPABASE_SERVICE_ROLE_KEY= npx playwright test pwa.spec.ts seo.spec.ts "$@"
+echo "→ Running Playwright PWA + SEO + SEO Round 2 suites against prod build..."
+PLAYWRIGHT_SKIP_WEB_SERVER=1 E2E_SUPABASE_SERVICE_ROLE_KEY= npx playwright test pwa.spec.ts seo.spec.ts seo-round-2.spec.ts "$@"
