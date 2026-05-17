@@ -156,6 +156,40 @@ test.describe("Admin PWA scope", () => {
     expect(res.status()).toBe(200);
     expect(res.headers()["content-type"]).toBe("image/png");
   });
+
+  test("admin login page links the admin manifest (not the root manifest)", async ({ page }) => {
+    await page.goto("/admin/login");
+    const href = await page
+      .locator('link[rel="manifest"]')
+      .first()
+      .getAttribute("href");
+    expect(href).toMatch(/\/admin\/manifest\.webmanifest/);
+  });
+
+  test("admin login page has apple-mobile-web-app-title=UP Admin", async ({ page }) => {
+    await page.goto("/admin/login");
+    const title = await page
+      .locator('meta[name="apple-mobile-web-app-title"]')
+      .first()
+      .getAttribute("content");
+    expect(title).toBe("UP Admin");
+
+    const appName = await page
+      .locator('meta[name="application-name"]')
+      .first()
+      .getAttribute("content");
+    expect(appName).toBe("UP Beauty Admin");
+  });
+
+  test("public page still links the root manifest", async ({ page }) => {
+    await page.goto("/uslovi-koriscenja");
+    const href = await page
+      .locator('link[rel="manifest"]')
+      .first()
+      .getAttribute("href");
+    expect(href).toMatch(/\/manifest\.webmanifest$/);
+    expect(href).not.toMatch(/\/admin\//);
+  });
 });
 
 test.describe("Nav a11y", () => {
