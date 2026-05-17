@@ -13,6 +13,7 @@ export const metadata: Metadata = {
   description:
     "Cijene šminkanja u Gradišci — svadbeno, večernje, maturalno, terensko. Pedikir, trepavice, obuka. Sve cijene u KM. UP Beauty & Makeup Studio kod Une Peranović.",
   alternates: { canonical: "/cjenovnik" },
+  openGraph: { url: "/cjenovnik" },
 };
 
 export const revalidate = 300;

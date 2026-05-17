@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   title: "Kontakt",
   description: `Kontakt podaci UP Beauty & Makeup Studio — ${BUSINESS.address}. Telefon, email, Instagram, TikTok.`,
   alternates: { canonical: "/kontakt" },
+  openGraph: { url: "/kontakt" },
 };
 
 const CONTACT_CARDS = [

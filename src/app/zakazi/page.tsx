@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   description:
     "Zakažite termin online u UP Beauty & Makeup Studio — šminkanje, pedikir, trepavice. Tri koraka, bez čekanja.",
   alternates: { canonical: "/zakazi" },
+  openGraph: { url: "/zakazi" },
 };
 
 // Lista usluga se rijetko mijenja — ISR 5 min. Dostupnost slotova

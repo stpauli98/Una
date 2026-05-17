@@ -17,3 +17,23 @@ test.describe("Branded favicon", () => {
     expect(buf.byteLength).toBeLessThan(20000);
   });
 });
+
+test.describe("OpenGraph URL", () => {
+  for (const path of ["/", "/usluge", "/cjenovnik", "/galerija", "/o-meni", "/kontakt", "/obuka", "/zakazi"]) {
+    test(`${path} emits <meta property="og:url"> matching canonical`, async ({ page }) => {
+      await page.goto(path);
+      const ogUrl = await page
+        .locator('meta[property="og:url"]')
+        .first()
+        .getAttribute("content");
+      expect(ogUrl).toBeTruthy();
+      // og:url should be the absolute URL matching canonical, ending with the page path
+      // (root path '/' → ends with .vercel.app or .vercel.app/)
+      if (path === "/") {
+        expect(ogUrl).toMatch(/\.vercel\.app\/?$/);
+      } else {
+        expect(ogUrl).toMatch(new RegExp(`${path.replace(/\//g, "\\/")}\\/?$`));
+      }
+    });
+  }
+});

@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   description:
     "Intenzivna obuka za šminkanje u UP Beauty Studio. Pet dana praktičnog rada, tehnike, savjeti i diploma. 800 KM.",
   alternates: { canonical: "/obuka" },
+  openGraph: { url: "/obuka" },
 };
 
 const WHATS_INCLUDED = [

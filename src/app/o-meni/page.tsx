@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   description:
     "Una Peranović — vlasnica UP Beauty & Makeup Studio u Gradišci. Priča o strasti prema šminkanju i prirodnoj ljepoti.",
   alternates: { canonical: "/o-meni" },
+  openGraph: { url: "/o-meni" },
 };
 
 export default function OMeniPage() {

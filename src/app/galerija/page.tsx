@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   description:
     "Portfolio radova UP Beauty & Makeup Studio — šminkanje, svadbeno, pedikir, trepavice.",
   alternates: { canonical: "/galerija" },
+  openGraph: { url: "/galerija" },
 };
 
 export const revalidate = 300;
