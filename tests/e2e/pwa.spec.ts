@@ -43,4 +43,10 @@ test.describe("PWA icons", () => {
       .getAttribute("href");
     expect(href).toMatch(/apple-icon/);
   });
+
+  test("serves maskable icon at /icons/maskable-512.png", async ({ request }) => {
+    const res = await request.get("/icons/maskable-512.png");
+    expect(res.status()).toBe(200);
+    expect(res.headers()["content-type"]).toBe("image/png");
+  });
 });
