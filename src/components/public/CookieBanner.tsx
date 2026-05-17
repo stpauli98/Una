@@ -29,7 +29,7 @@ export function CookieBanner() {
     <div
       role="dialog"
       aria-label="Obavještenje o kolačićima"
-      className="fixed inset-x-3 bottom-3 z-[60] mx-auto max-w-[580px] border border-cream bg-white/98 p-4 shadow-lg backdrop-blur-md md:p-5"
+      className="fixed inset-x-3 bottom-safe-3 z-[60] mx-auto max-w-[580px] border border-cream bg-white/98 p-4 shadow-lg backdrop-blur-md md:p-5"
     >
       <div className="flex items-start gap-3">
         <div className="flex-1">
