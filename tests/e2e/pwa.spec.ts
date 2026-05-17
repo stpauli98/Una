@@ -150,6 +150,12 @@ test.describe("Admin PWA scope", () => {
       expect(buf.byteLength).toBeGreaterThan(500);
     });
   }
+
+  test("serves admin maskable icon at /icons/admin-maskable-512.png", async ({ request }) => {
+    const res = await request.get("/icons/admin-maskable-512.png");
+    expect(res.status()).toBe(200);
+    expect(res.headers()["content-type"]).toBe("image/png");
+  });
 });
 
 test.describe("Nav a11y", () => {
