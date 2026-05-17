@@ -1,11 +1,14 @@
 import { BUSINESS } from "@/lib/constants/business";
+import { normalizeSiteUrl } from "@/lib/utils/site-url";
 
 /**
  * Schema.org LocalBusiness structured data za SEO.
  * Renderuje se na homepage-u (page.tsx).
  */
 export function LocalBusinessJsonLd() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  // normalizeSiteUrl skida trailing whitespace/slash — defensive protiv
+  // Vercel env var-ova koji znaju imati literalni `\n` na kraju.
+  const baseUrl = normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL);
   const data = {
     "@context": "https://schema.org",
     "@type": "BeautySalon",

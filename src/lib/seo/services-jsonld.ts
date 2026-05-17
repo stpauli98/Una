@@ -1,4 +1,5 @@
 import type { Database } from "@/types/database";
+import { normalizeSiteUrl } from "@/lib/utils/site-url";
 
 type Service = Database["public"]["Tables"]["services"]["Row"];
 
@@ -16,10 +17,6 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 function categoryLabel(category: Service["category"]): string {
   return CATEGORY_LABELS[category] ?? category;
-}
-
-function stripTrailingSlash(url: string): string {
-  return url.endsWith("/") ? url.slice(0, -1) : url;
 }
 
 type Offer = {
@@ -110,11 +107,12 @@ export type ServicesJsonLd = {
  * Svaki Service linka nazad na BeautySalon (LocalBusinessJsonLd) preko
  * `provider.@id` — tako Google povezuje entitete u jedan graf.
  *
- * `siteUrl` treba biti BASE URL bez trailing slash-a, ali funkcija je
- * tolerantna i strip-uje slash ako stigne.
+ * `siteUrl` se normalizuje preko `normalizeSiteUrl` (skida trailing
+ * whitespace + slash) — defensive protiv Vercel env var-ova koji znaju
+ * uključiti literalni `\n` na kraju iz copy-paste-a.
  */
 export function buildServicesJsonLd(services: Service[], siteUrl: string): ServicesJsonLd {
-  const base = stripTrailingSlash(siteUrl);
+  const base = normalizeSiteUrl(siteUrl);
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",
