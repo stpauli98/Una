@@ -4,6 +4,7 @@ import "./globals.css";
 import { BUSINESS } from "@/lib/constants/business";
 import { BRAND_COLORS } from "@/lib/constants/theme";
 import { CookieBanner } from "@/components/public/CookieBanner";
+import { InstallPrompt } from "@/components/public/InstallPrompt";
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin", "latin-ext"],
@@ -71,6 +72,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-marble text-body">
         {children}
         <CookieBanner />
+        <InstallPrompt />
       </body>
     </html>
   );
