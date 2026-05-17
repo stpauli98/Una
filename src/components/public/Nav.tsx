@@ -54,6 +54,16 @@ export function Nav({ overHero = false }: NavProps) {
     };
   }, [menuOpen]);
 
+  // Close menu on Escape key
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
+
   // Kada je mobile meni otvoren, overlay ima svijetlu marble pozadinu pa
   // nav elementi (hamburger, logo) moraju biti tamni da bi bili vidljivi.
   const solid = scrolled || !overHero || menuOpen;
@@ -152,7 +162,7 @@ export function Nav({ overHero = false }: NavProps) {
 
       {/* Mobile overlay menu */}
       {menuOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-marble md:hidden">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-marble pt-safe pb-safe md:hidden">
           {NAV_ITEMS.map((item, i) => (
             <Link
               key={item.href}

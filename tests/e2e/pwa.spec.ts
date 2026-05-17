@@ -120,3 +120,20 @@ test.describe("Offline fallback", () => {
     await expect(page.getByRole("link", { name: /pokušaj ponovo|nazad/i })).toBeVisible();
   });
 });
+
+test.describe("Nav a11y", () => {
+  test("Escape closes mobile menu", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto("/uslovi-koriscenja");
+    const hamburger = page.getByRole("button", { name: /otvori meni/i });
+    await hamburger.click();
+    // The mobile overlay renders large display-font links — scope to those
+    // (footer also has a "Usluge" link with much smaller styling).
+    const overlayLink = page.locator("a.font-display", { hasText: /^Usluge$/ });
+    await expect(overlayLink).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(overlayLink).toHaveCount(0);
+    // Hamburger should return to "Otvori meni" label after close
+    await expect(hamburger).toBeVisible();
+  });
+});
