@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Run Playwright PWA suite against a production build.
-# Builds, starts `next start`, waits for the server, runs the suite, then cleans up.
+# Run Playwright PWA + SEO suites against a production build.
+# Builds, starts `next start`, waits for the server, runs the suites, then cleans up.
 
 set -euo pipefail
 
@@ -44,6 +44,6 @@ if ! curl -sf -o /dev/null http://localhost:3000/sw.js; then
   exit 1
 fi
 
-# 4. Run the suite
-echo "→ Running Playwright PWA suite against prod build..."
-PLAYWRIGHT_SKIP_WEB_SERVER=1 E2E_SUPABASE_SERVICE_ROLE_KEY= npx playwright test pwa.spec.ts "$@"
+# 4. Run the suites
+echo "→ Running Playwright PWA + SEO suites against prod build..."
+PLAYWRIGHT_SKIP_WEB_SERVER=1 E2E_SUPABASE_SERVICE_ROLE_KEY= npx playwright test pwa.spec.ts seo.spec.ts "$@"
