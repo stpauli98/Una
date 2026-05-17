@@ -197,7 +197,7 @@ export function GalleryGrid({ images }: Props) {
           aria-label="Prikaz slike"
         >
           {/* Top bar — close + counter */}
-          <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between px-4 py-3">
+          <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between px-4 py-3 pt-safe">
             <div className="text-[11px] tracking-wider text-white/50">
               {lightboxIndex + 1} / {filtered.length}
             </div>

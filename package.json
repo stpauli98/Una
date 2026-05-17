@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start -H 0.0.0.0",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
@@ -12,12 +12,14 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:local": "mv .env.local .env.local.prod 2>/dev/null; cp .env.test .env.local; npx playwright test; EXIT=$?; mv .env.local.prod .env.local 2>/dev/null; exit $EXIT",
+    "test:e2e:pwa": "scripts/run-pwa-e2e.sh",
     "test:all": "npm test && npm run test:e2e:local",
     "test:setup": "bash scripts/setup-test-env.sh",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop"
   },
   "dependencies": {
+    "@serwist/next": "^9.5.11",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.0",
     "@upstash/ratelimit": "^2.0.8",
@@ -31,6 +33,7 @@
     "next": "16.2.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "serwist": "^9.5.11",
     "sharp": "^0.34.5",
     "tailwind-merge": "^3.5.0",
     "zod": "^4.3.6"

@@ -2,7 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { BUSINESS } from "@/lib/constants/business";
+import { BRAND_COLORS } from "@/lib/constants/theme";
 import { CookieBanner } from "@/components/public/CookieBanner";
+import { InstallPrompt } from "@/components/public/InstallPrompt";
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin", "latin-ext"],
@@ -22,7 +24,8 @@ const dmSans = DM_Sans({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#3d2b2b",
+  themeColor: BRAND_COLORS.theme,
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
@@ -35,6 +38,15 @@ export const metadata: Metadata = {
   },
   description:
     "Profesionalno šminkanje, pedikir i trepavice u Gradišci. Una Peranović — UP Beauty & Makeup Studio. Zakažite termin online.",
+  applicationName: "UP Beauty",
+  appleWebApp: {
+    capable: true,
+    title: "UP Beauty",
+    statusBarStyle: "black-translucent",
+  },
+  formatDetection: {
+    telephone: false,
+  },
   openGraph: {
     type: "website",
     locale: "sr_Latn",
@@ -43,10 +55,6 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-  },
-  icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
   },
 };
 
@@ -64,6 +72,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-marble text-body">
         {children}
         <CookieBanner />
+        <InstallPrompt />
       </body>
     </html>
   );
