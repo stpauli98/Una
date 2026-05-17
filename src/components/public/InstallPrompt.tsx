@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Download, X } from "lucide-react";
 
 type BeforeInstallPromptEvent = Event & {
@@ -11,11 +12,17 @@ type BeforeInstallPromptEvent = Event & {
 const DISMISSED_KEY = "up-beauty-install-dismissed";
 
 export function InstallPrompt() {
+  const pathname = usePathname();
+  const isAdmin = pathname?.startsWith("/admin") ?? false;
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // Ne montiraj prompt na admin rutama — Una koristi iOS Share, ne Chrome prompt.
+    if (isAdmin) return;
+    // Test marker — Playwright potvrđuje da je effect izvršen na non-admin rutama.
+    document.body.dataset.installPromptMounted = "true";
     // Already installed (standalone display mode)?
     if (window.matchMedia("(display-mode: standalone)").matches) return;
     // User dismissed in the last 30 days?
@@ -29,8 +36,11 @@ export function InstallPrompt() {
       setTimeout(() => setVisible(true), 5000);
     };
     window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      delete document.body.dataset.installPromptMounted;
+    };
+  }, [isAdmin]);
 
   const handleInstall = async () => {
     if (!deferred) return;
@@ -45,7 +55,7 @@ export function InstallPrompt() {
     setVisible(false);
   };
 
-  if (!visible || !deferred) return null;
+  if (isAdmin || !visible || !deferred) return null;
 
   return (
     <div
