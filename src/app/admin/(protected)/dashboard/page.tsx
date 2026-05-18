@@ -12,6 +12,7 @@ import {
   addDaysToDateStr,
 } from "@/lib/utils/day-bounds";
 import { parseBookingSettings } from "@/lib/settings/read";
+import { getCachedSettings } from "@/lib/cache/cached-queries";
 import { DashboardDayPicker } from "@/components/admin/DashboardDayPicker";
 
 export const metadata: Metadata = {
@@ -37,8 +38,9 @@ export default async function AdminDashboardPage({
   // NAMJERNO sekvencijalan fetch (ne unutar Promise.all ispod): maxDateStr
   // mora biti poznat prije validacije params.date, koja gradi
   // selectedDayBounds za list query.
-  const { data: settingsRows } = await sb.from("settings").select("key,value");
-  const bookingSettings = parseBookingSettings(settingsRows ?? []);
+  // settings keširan (rijetko se mijenja, invalidate iz postavke/actions.ts)
+  const settingsRows = await getCachedSettings();
+  const bookingSettings = parseBookingSettings(settingsRows);
   const maxDateStr = addDaysToDateStr(
     todayStr,
     bookingSettings.advanceBookingDays,

@@ -1,31 +1,36 @@
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { WorkingHoursEditor } from "@/components/admin/WorkingHoursEditor";
 import { BlockedDatesManager } from "@/components/admin/BlockedDatesManager";
 import { TimeBlocksManager } from "@/components/admin/TimeBlocksManager";
 import { BookingRulesEditor } from "@/components/admin/BookingRulesEditor";
 import { ChangePasswordForm } from "@/components/admin/ChangePasswordForm";
+import {
+  getCachedWorkingHours,
+  getCachedBlockedDates,
+  getCachedTimeBlocks,
+  getCachedSettings,
+} from "@/lib/cache/cached-queries";
 
 export const metadata: Metadata = {
   title: "Postavke — Admin",
   robots: { index: false, follow: false },
 };
 
-export const dynamic = "force-dynamic";
+// Bez force-dynamic. Svaka sekcija ima svoj cached query sa svojim
+// tagom — edit radnog vremena invalidate-uje samo working_hours cache,
+// ne settings ili blocked_dates.
 
 export default async function AdminPostavkePage() {
-  const sb = await createClient();
-
-  const [hoursRes, blockedRes, timeBlocksRes, settingsRes] = await Promise.all([
-    sb.from("working_hours").select("*"),
-    sb.from("blocked_dates").select("*").order("date_from"),
-    sb.from("time_blocks").select("*").order("start_time"),
-    sb.from("settings").select("key,value"),
+  const [hours, blocked, timeBlocks, settings] = await Promise.all([
+    getCachedWorkingHours(),
+    getCachedBlockedDates(),
+    getCachedTimeBlocks(),
+    getCachedSettings(),
   ]);
 
   const settingsMap: Record<string, string> = {};
-  for (const row of settingsRes.data ?? []) {
+  for (const row of settings) {
     settingsMap[row.key] = row.value;
   }
 
@@ -54,7 +59,7 @@ export default async function AdminPostavkePage() {
             Podesite radno vrijeme po danima. Ovo se koristi kao fallback
             kada nema postavljenog specifičnog override-a za datum.
           </p>
-          <WorkingHoursEditor hours={hoursRes.data ?? []} />
+          <WorkingHoursEditor hours={hours} />
         </section>
 
         <section>
@@ -65,7 +70,7 @@ export default async function AdminPostavkePage() {
             Dani kada ste odsutni, praznici, godišnji odmor. Klijenti ne mogu
             zakazati termine u blokiranim datumima.
           </p>
-          <BlockedDatesManager dates={blockedRes.data ?? []} />
+          <BlockedDatesManager dates={blocked} />
         </section>
 
         <section>
@@ -77,7 +82,7 @@ export default async function AdminPostavkePage() {
             zubara). Za cijele dane koristite sekciju iznad &quot;Blokirani
             datumi&quot;.
           </p>
-          <TimeBlocksManager blocks={timeBlocksRes.data ?? []} />
+          <TimeBlocksManager blocks={timeBlocks} />
         </section>
 
         <section>
