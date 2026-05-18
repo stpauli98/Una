@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -12,41 +13,41 @@ import { createClient } from "@/lib/supabase/client";
  * Komponenta ne render-uje ništa vidljivo — UI feedback dolazi iz
  * router.refresh() koji forsira RSC re-fetch.
  *
- * BITNO: Realtime klijent treba authenticated JWT (ne anon) da bi
- * dobio eventove. RLS na appointments emit-uje samo za `authenticated`
- * rolu. createBrowserClient čita session iz cookies, ALI realtime
- * sub-klijent ima svoju internu auth state koja se setuje ručno preko
- * `setAuth(token)`. Bez tog koraka, subscribe ide sa anon JWT-om i
- * server odbija postgres_changes event-e.
+ * Bitno o auth propagaciji:
+ *  - `createBrowserClient` čita session iz cookies za regularne queries,
+ *    ALI realtime sub-klijent ima zasebnu auth state.
+ *  - Subscribe sa anon JWT-om → server filtrira postgres_changes
+ *    event-e jer RLS emit-uje samo za `authenticated` rolu.
+ *  - Rešenje: `realtime.setAuth(token)` PRIJE subscribe-a + listen-ovati
+ *    na `onAuthStateChange` da update-uje token kad se session refresh-uje.
  *
- * Logujemo status callback u dev/staging tako da se brzo vidi gdje
- * fail-uje (SUBSCRIBED, CHANNEL_ERROR, TIMED_OUT, CLOSED).
+ * Diagnostic logovi su namjerno tu — ako neko sutra javi "ne radi mi",
+ * konzola odmah kaže gdje pada.
  */
 export function AppointmentsRealtime() {
   const router = useRouter();
 
   useEffect(() => {
     const sb = createClient();
+    let channel: RealtimeChannel | null = null;
     let cancelled = false;
 
-    const setup = async () => {
-      // Setuj realtime auth eksplicitno iz session-a — ovo je glavni
-      // popravak. createBrowserClient ne propagira automatski JWT na
-      // realtime sub-klijent. Ako session nema (no auth), refresh
-      // session jednom — moguć race kad PWA tek hidratira.
+    const ensureSubscribed = async () => {
+      if (cancelled || channel) return;
+
       const { data: sessionData } = await sb.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
-      if (accessToken) {
-        await sb.realtime.setAuth(accessToken);
-      } else {
+      const token = sessionData.session?.access_token;
+
+      if (!token) {
         console.warn(
-          "[realtime] no session at subscribe time — events will be filtered out by RLS",
+          "[realtime] no session yet — waiting for onAuthStateChange",
         );
+        return;
       }
 
-      if (cancelled) return;
+      await sb.realtime.setAuth(token);
 
-      const channel = sb
+      channel = sb
         .channel("admin-appointments")
         .on(
           "postgres_changes",
@@ -63,17 +64,30 @@ export function AppointmentsRealtime() {
         .subscribe((status, err) => {
           console.log("[realtime] subscribe status:", status, err ?? "");
         });
-
-      return channel;
     };
 
-    const channelPromise = setup();
+    // Prvi pokušaj odmah — session bi obično trebao biti dostupan
+    // pošto admin layout već radi sb.auth.getUser() pri SSR-u.
+    void ensureSubscribed();
+
+    // Backup: ako session nije bila tu pri prvom pokušaju (PWA hydration
+    // race), onAuthStateChange će fire-ovati čim je dostupna.
+    const {
+      data: { subscription: authSub },
+    } = sb.auth.onAuthStateChange((event, session) => {
+      console.log("[realtime] auth event:", event, !!session);
+      if (session && !channel) {
+        void ensureSubscribed();
+      } else if (session && channel) {
+        // Token refresh — update realtime auth bez re-subscribe-a.
+        void sb.realtime.setAuth(session.access_token);
+      }
+    });
 
     return () => {
       cancelled = true;
-      void channelPromise.then((channel) => {
-        if (channel) void sb.removeChannel(channel);
-      });
+      authSub.unsubscribe();
+      if (channel) void sb.removeChannel(channel);
     };
   }, [router]);
 
