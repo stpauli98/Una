@@ -21,12 +21,11 @@ declare const self: ServiceWorkerGlobalScope;
 /**
  * Bypass SW completely for admin routes.
  *
- * Mora se registrovati PRIJE `serwist.addEventListeners()` — kad naš
- * listener pozove `event.respondWith(fetch(...))`, browser ga prima kao
- * konačan odgovor za taj event. Serwist's listener se i dalje pokrene
- * (W3C spec), ali njegov pokušaj `event.respondWith` baca InvalidStateError
- * jer je već "responded" — što Serwist swallow-uje silently. Net effect:
- * admin fetch ide direktno na network bez ikakvog SW posredovanja.
+ * Mora se registrovati PRIJE `serwist.addEventListeners()` — naš listener
+ * poziva stopImmediatePropagation() koji sprječava Serwist's listener da
+ * se pokrene za isti event, pa onda respondWith(fetch(...)) prosljeđuje
+ * request direktno na network. Net effect: admin fetch ide direktno na
+ * network bez ikakvog SW posredovanja, bez InvalidStateError noise-a.
  *
  * Zašto bypass umjesto NetworkOnly: NetworkOnly handler baca
  * "FetchEvent.respondWith received an error: no-response" kad mreža
@@ -40,17 +39,16 @@ declare const self: ServiceWorkerGlobalScope;
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (url.pathname.startsWith("/admin")) {
-    // Eksplicitno preuzimamo event. respondWith(fetch(...)) prosljeđuje
-    // request direktno na network — bez ikakvog SW caching-a, bez
-    // Serwist handler-a. Ako mreža fail-uje, browser pokazuje
+    // stopImmediatePropagation() sprječava Serwist's fetch listener da se
+    // uopšte pokrene za ovaj event. Bez ovoga, oba listenera rade (W3C
+    // spec) i Serwist's pokušaj respondWith() baca InvalidStateError u
+    // konzolu — funkcionalno OK ali noisy.
+    //
+    // respondWith(fetch(...)) prosljeđuje request direktno na network —
+    // bez ikakvog SW caching-a. Ako mreža fail-uje, browser pokazuje
     // standardni network error (kao da nema SW), umjesto SW-baced
     // "no-response" greške.
-    //
-    // BITNO: bez ovog respondWith poziva, Serwist's fetch listener bi
-    // se i dalje pokrenuo (W3C spec: multiple listeners run sequentially)
-    // i match-ovao admin kroz document NetworkFirst handler. Plain
-    // return ne sprječava propagaciju — respondWith ili
-    // stopImmediatePropagation jeste.
+    event.stopImmediatePropagation();
     event.respondWith(fetch(event.request));
   }
 });
