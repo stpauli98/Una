@@ -9,6 +9,7 @@ import {
   endOfMonth,
 } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
+import { AppointmentsRealtime } from "@/components/admin/AppointmentsRealtime";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { AppointmentRow } from "@/components/admin/AppointmentRow";
 import { TerminiToolbar } from "@/components/admin/TerminiToolbar";
@@ -91,6 +92,7 @@ export default async function AdminTerminiPage({
 
   return (
     <div>
+      <AppointmentsRealtime />
       <PageHeader
         title="Termini"
         subtitle={`${appointments?.length ?? 0} zabilježenih`}

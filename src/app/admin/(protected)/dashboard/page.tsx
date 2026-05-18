@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Calendar, TrendingUp, CheckCircle2, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { AppointmentsRealtime } from "@/components/admin/AppointmentsRealtime";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { formatTime, formatPrice } from "@/lib/utils/format";
@@ -106,6 +107,7 @@ export default async function AdminDashboardPage({
 
   return (
     <div>
+      <AppointmentsRealtime />
       <PageHeader
         title="Dashboard"
         subtitle="Pregled termina i prometa"
