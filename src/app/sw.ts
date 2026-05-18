@@ -131,4 +131,70 @@ const serwist = new Serwist({
   ],
 });
 
+/**
+ * Push notification handler za admin (Phase C).
+ *
+ * Server šalje payload kao JSON string sa { title, body, url }.
+ * SW prikazuje notifikaciju preko showNotification(), a click event
+ * (notificationclick listener ispod) otvara URL u browser-u/PWA.
+ *
+ * Ako parsing failuje (corrupted payload), fallback na generic
+ * "Nova rezervacija" tekst.
+ */
+self.addEventListener("push", (event) => {
+  const payloadText = event.data?.text() ?? "";
+  let payload: { title: string; body: string; url: string };
+  try {
+    payload = JSON.parse(payloadText);
+  } catch {
+    payload = {
+      title: "Nova rezervacija",
+      body: "Imate novu rezervaciju u admin panelu.",
+      url: "/admin/termini",
+    };
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: "/admin/icon",
+      badge: "/admin/icon",
+      data: { url: payload.url },
+      tag: "new-appointment",
+      requireInteraction: false,
+    }),
+  );
+});
+
+/**
+ * Klik na notifikaciju → fokusira postojeći admin tab ako postoji,
+ * inače otvara novi prozor.
+ */
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  const targetUrl =
+    (event.notification.data as { url?: string } | undefined)?.url ??
+    "/admin/termini";
+
+  event.waitUntil(
+    (async () => {
+      const clientList = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+      for (const client of clientList) {
+        if (client.url.includes("/admin") && "focus" in client) {
+          await client.focus();
+          if ("navigate" in client) {
+            await client.navigate(targetUrl);
+          }
+          return;
+        }
+      }
+      await self.clients.openWindow(targetUrl);
+    })(),
+  );
+});
+
 serwist.addEventListeners();
