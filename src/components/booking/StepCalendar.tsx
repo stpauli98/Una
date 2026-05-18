@@ -54,6 +54,11 @@ export function StepCalendar({
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [slots, setSlots] = useState<Slot[] | null>(null);
   const [loading, setLoading] = useState(false);
+  const [monthAvailability, setMonthAvailability] = useState<Record<
+    string,
+    boolean
+  > | null>(null);
+  const [monthLoading, setMonthLoading] = useState(false);
 
   const maxDate = useMemo(() => {
     const d = new Date(today);
@@ -77,6 +82,32 @@ export function StepCalendar({
 
     return [...leading, ...days, ...trailing];
   }, [viewMonth]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setMonthLoading(true);
+    const monthStr = format(viewMonth, "yyyy-MM");
+    fetch(`/api/availability/month?month=${monthStr}&service_id=${serviceId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled) {
+          setMonthAvailability(data.availability ?? {});
+          setMonthLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          // Fallback: ako month endpoint pukne, ne disable-uj nijedan dan
+          // — single-day endpoint i dalje radi i pokazaće "Nema termina"
+          // poslije klika.
+          setMonthAvailability({});
+          setMonthLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [viewMonth, serviceId]);
 
   useEffect(() => {
     if (!selectedDate) {
@@ -114,7 +145,19 @@ export function StepCalendar({
     const weekday = date.getDay();
     const weekdayDays = BOOKING_RULES.weekday.days as readonly number[];
     const weekendDays = BOOKING_RULES.weekend.days as readonly number[];
-    return !weekdayDays.includes(weekday) && !weekendDays.includes(weekday);
+    if (!weekdayDays.includes(weekday) && !weekendDays.includes(weekday)) {
+      return true;
+    }
+    // Month availability map — ako je dan poznat kao popunjen, disable.
+    // Dok je prefetch u toku (monthAvailability === null) ne disable-uj
+    // ništa da bismo izbjegli flash svih dana sivih.
+    if (
+      monthAvailability &&
+      monthAvailability[format(date, "yyyy-MM-dd")] === false
+    ) {
+      return true;
+    }
+    return false;
   };
 
   return (
@@ -172,7 +215,12 @@ export function StepCalendar({
         </div>
 
         {/* Date grid */}
-        <div className="grid grid-cols-7 gap-1">
+        <div
+          className={cn(
+            "grid grid-cols-7 gap-1 transition-opacity",
+            monthLoading && "opacity-60",
+          )}
+        >
           {monthDays.map((date, i) => {
             if (!date) return <div key={`empty-${i}`} />;
             const disabled = isDateDisabled(date);
