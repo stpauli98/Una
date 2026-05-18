@@ -21,16 +21,18 @@ declare const self: ServiceWorkerGlobalScope;
 /**
  * Bypass SW completely for admin routes.
  *
- * Mora se registrovati PRIJE `serwist.addEventListeners()` — listenere
- * obrađuje browser redom registracije, a Serwist svoj listener registruje
- * iznutra sa `event.respondWith(...)`. Ako naš listener ne pozove
- * respondWith() i ne pozove preventDefault(), browser pada na default
- * network handling — fetch ide direktno na server kao da SW ne postoji.
+ * Mora se registrovati PRIJE `serwist.addEventListeners()` — kad naš
+ * listener pozove `event.respondWith(fetch(...))`, browser ga prima kao
+ * konačan odgovor za taj event. Serwist's listener se i dalje pokrene
+ * (W3C spec), ali njegov pokušaj `event.respondWith` baca InvalidStateError
+ * jer je već "responded" — što Serwist swallow-uje silently. Net effect:
+ * admin fetch ide direktno na network bez ikakvog SW posredovanja.
  *
  * Zašto bypass umjesto NetworkOnly: NetworkOnly handler baca
  * "FetchEvent.respondWith received an error: no-response" kad mreža
- * fail-uje (mobilna mreža, Vercel cold start, slab signal). To je
- * blokiralo admin login na telefonima.
+ * fail-uje (mobilna mreža, Vercel cold start, slab signal). Naš bypass
+ * koristi raw fetch() koji baca standardni TypeError pri network fail-u,
+ * što browser prikazuje kao native network error (čitljiviji za korisnika).
  *
  * Admin nije offline-functional (zahtijeva Supabase Auth + DB), pa
  * gubitak SW caching-a za admin je 0 — samo dobitak na pouzdanosti.
@@ -38,7 +40,18 @@ declare const self: ServiceWorkerGlobalScope;
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (url.pathname.startsWith("/admin")) {
-    return;
+    // Eksplicitno preuzimamo event. respondWith(fetch(...)) prosljeđuje
+    // request direktno na network — bez ikakvog SW caching-a, bez
+    // Serwist handler-a. Ako mreža fail-uje, browser pokazuje
+    // standardni network error (kao da nema SW), umjesto SW-baced
+    // "no-response" greške.
+    //
+    // BITNO: bez ovog respondWith poziva, Serwist's fetch listener bi
+    // se i dalje pokrenuo (W3C spec: multiple listeners run sequentially)
+    // i match-ovao admin kroz document NetworkFirst handler. Plain
+    // return ne sprječava propagaciju — respondWith ili
+    // stopImmediatePropagation jeste.
+    event.respondWith(fetch(event.request));
   }
 });
 
