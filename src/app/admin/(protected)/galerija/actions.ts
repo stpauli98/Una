@@ -28,6 +28,10 @@ type ActionResult<T = void> =
 /**
  * Upload a single gallery image (chunked approach — client calls once per image).
  * This avoids the 10MB body size limit that occurs when sending many files at once.
+ *
+ * Cache invalidation (updateTag + revalidatePath) is deliberately deferred to
+ * `revalidateGallery()`, which the client calls ONCE after the batch completes.
+ * Calling updateTag per-image would invalidate the cache N times for a batch upload.
  */
 export async function uploadSingleGalleryImage(
   formData: FormData,
