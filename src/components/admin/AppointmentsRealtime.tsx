@@ -12,36 +12,68 @@ import { createClient } from "@/lib/supabase/client";
  * Komponenta ne render-uje ništa vidljivo — UI feedback dolazi iz
  * router.refresh() koji forsira RSC re-fetch.
  *
- * Mount samo u admin (protected) stranicama koje prikazuju termine.
- * Klijent koristi anon key + auth cookie → RLS authenticated policy
- * dozvoljava admin sesiji da prima eventove.
+ * BITNO: Realtime klijent treba authenticated JWT (ne anon) da bi
+ * dobio eventove. RLS na appointments emit-uje samo za `authenticated`
+ * rolu. createBrowserClient čita session iz cookies, ALI realtime
+ * sub-klijent ima svoju internu auth state koja se setuje ručno preko
+ * `setAuth(token)`. Bez tog koraka, subscribe ide sa anon JWT-om i
+ * server odbija postgres_changes event-e.
  *
- * Channel se čisti pri unmount-u (cleanup u useEffect-u) tako da ne
- * curi memory na navigaciji između admin tabova.
+ * Logujemo status callback u dev/staging tako da se brzo vidi gdje
+ * fail-uje (SUBSCRIBED, CHANNEL_ERROR, TIMED_OUT, CLOSED).
  */
 export function AppointmentsRealtime() {
   const router = useRouter();
 
   useEffect(() => {
     const sb = createClient();
+    let cancelled = false;
 
-    const channel = sb
-      .channel("admin-appointments")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "appointments",
-        },
-        () => {
-          router.refresh();
-        },
-      )
-      .subscribe();
+    const setup = async () => {
+      // Setuj realtime auth eksplicitno iz session-a — ovo je glavni
+      // popravak. createBrowserClient ne propagira automatski JWT na
+      // realtime sub-klijent. Ako session nema (no auth), refresh
+      // session jednom — moguć race kad PWA tek hidratira.
+      const { data: sessionData } = await sb.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (accessToken) {
+        await sb.realtime.setAuth(accessToken);
+      } else {
+        console.warn(
+          "[realtime] no session at subscribe time — events will be filtered out by RLS",
+        );
+      }
+
+      if (cancelled) return;
+
+      const channel = sb
+        .channel("admin-appointments")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "appointments",
+          },
+          (payload) => {
+            console.log("[realtime] appointments event:", payload.eventType);
+            router.refresh();
+          },
+        )
+        .subscribe((status, err) => {
+          console.log("[realtime] subscribe status:", status, err ?? "");
+        });
+
+      return channel;
+    };
+
+    const channelPromise = setup();
 
     return () => {
-      void sb.removeChannel(channel);
+      cancelled = true;
+      void channelPromise.then((channel) => {
+        if (channel) void sb.removeChannel(channel);
+      });
     };
   }, [router]);
 
