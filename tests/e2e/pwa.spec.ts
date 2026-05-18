@@ -217,6 +217,44 @@ test.describe("Admin PWA scope", () => {
       timeout: 2000,
     });
   });
+
+  test("service worker does not cache /admin requests", async ({ page }) => {
+    // Register the SW by loading a public page first. Admin bypass
+    // doesn't prevent SW from being installed — only from intercepting
+    // admin fetches.
+    await page.goto("/uslovi-koriscenja");
+    await page.waitForFunction(
+      async () => {
+        if (!("serviceWorker" in navigator)) return false;
+        const reg = await navigator.serviceWorker.ready;
+        return reg.active?.state === "activated";
+      },
+      null,
+      { timeout: 10_000 },
+    );
+
+    // Navigate to admin — should bypass SW entirely.
+    await page.goto("/admin/login");
+    await page.waitForLoadState("networkidle");
+
+    // Verify: no cache entry under any /admin pathname.
+    const adminInCache = await page.evaluate(async () => {
+      const cacheNames = await caches.keys();
+      for (const name of cacheNames) {
+        const cache = await caches.open(name);
+        const reqs = await cache.keys();
+        for (const req of reqs) {
+          const url = new URL(req.url);
+          if (url.pathname.startsWith("/admin")) {
+            return { cached: true, name, url: req.url };
+          }
+        }
+      }
+      return { cached: false };
+    });
+
+    expect(adminInCache.cached, JSON.stringify(adminInCache)).toBe(false);
+  });
 });
 
 test.describe("Nav a11y", () => {
