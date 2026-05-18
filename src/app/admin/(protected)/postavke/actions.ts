@@ -2,7 +2,8 @@
 
 import { requireAdmin } from "@/lib/supabase/require-admin";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
+import { ADMIN_CACHE_TAGS } from "@/lib/cache/admin-cache-tags";
 import { z } from "zod";
 import { isGridAligned } from "@/lib/utils/grid";
 
@@ -42,6 +43,7 @@ export async function updateWorkingHour(
       .eq("day_of_week", parsed.day_of_week);
 
     if (error) return { ok: false, error: error.message };
+    updateTag(ADMIN_CACHE_TAGS.workingHours);
     revalidatePath("/admin/postavke");
     return { ok: true };
   } catch (e) {
@@ -76,6 +78,7 @@ export async function addBlockedDate(
     });
     const { error } = await sb.from("blocked_dates").insert(parsed);
     if (error) return { ok: false, error: error.message };
+    updateTag(ADMIN_CACHE_TAGS.blockedDates);
     revalidatePath("/admin/postavke");
     return { ok: true };
   } catch (e) {
@@ -88,6 +91,7 @@ export async function removeBlockedDate(id: number): Promise<ActionResult> {
     const sb = await requireAdmin();
     const { error } = await sb.from("blocked_dates").delete().eq("id", id);
     if (error) return { ok: false, error: error.message };
+    updateTag(ADMIN_CACHE_TAGS.blockedDates);
     revalidatePath("/admin/postavke");
     return { ok: true };
   } catch (e) {
@@ -149,6 +153,7 @@ export async function createTimeBlock(
     }
     const { error } = await sb.from("time_blocks").insert(parsed);
     if (error) return { ok: false, error: error.message };
+    updateTag(ADMIN_CACHE_TAGS.timeBlocks);
     revalidatePath("/admin/postavke");
     return { ok: true };
   } catch (e) {
@@ -161,6 +166,7 @@ export async function deleteTimeBlock(id: number): Promise<ActionResult> {
     const sb = await requireAdmin();
     const { error } = await sb.from("time_blocks").delete().eq("id", id);
     if (error) return { ok: false, error: error.message };
+    updateTag(ADMIN_CACHE_TAGS.timeBlocks);
     revalidatePath("/admin/postavke");
     return { ok: true };
   } catch (e) {
@@ -200,6 +206,7 @@ export async function updateSetting(
       .update({ value, updated_at: new Date().toISOString() })
       .eq("key", key);
     if (error) return { ok: false, error: error.message };
+    updateTag(ADMIN_CACHE_TAGS.settings);
     revalidatePath("/admin/postavke");
     return { ok: true };
   } catch (e) {

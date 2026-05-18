@@ -1,7 +1,8 @@
 "use server";
 
 import { requireAdmin } from "@/lib/supabase/require-admin";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
+import { ADMIN_CACHE_TAGS } from "@/lib/cache/admin-cache-tags";
 import sharp from "sharp";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sanitizeError } from "@/lib/utils/log";
@@ -27,6 +28,10 @@ type ActionResult<T = void> =
 /**
  * Upload a single gallery image (chunked approach — client calls once per image).
  * This avoids the 10MB body size limit that occurs when sending many files at once.
+ *
+ * Cache invalidation (updateTag + revalidatePath) is deliberately deferred to
+ * `revalidateGallery()`, which the client calls ONCE after the batch completes.
+ * Calling updateTag per-image would invalidate the cache N times for a batch upload.
  */
 export async function uploadSingleGalleryImage(
   formData: FormData,
@@ -122,6 +127,7 @@ export async function uploadSingleGalleryImage(
 
 /** Revalidate gallery pages — call once after all uploads complete */
 export async function revalidateGallery(): Promise<void> {
+  updateTag(ADMIN_CACHE_TAGS.gallery);
   revalidatePath("/admin/galerija");
   revalidatePath("/galerija");
   revalidatePath("/");
@@ -143,6 +149,7 @@ export async function deleteGalleryImage(id: number): Promise<ActionResult> {
     const { error } = await admin.from("gallery_images").delete().eq("id", id);
     if (error) return { ok: false, error: error.message };
 
+    updateTag(ADMIN_CACHE_TAGS.gallery);
     revalidatePath("/admin/galerija");
     revalidatePath("/galerija");
     revalidatePath("/");
@@ -179,6 +186,7 @@ export async function deleteGalleryImages(
       .in("id", ids);
     if (error) return { ok: false, error: error.message };
 
+    updateTag(ADMIN_CACHE_TAGS.gallery);
     revalidatePath("/admin/galerija");
     revalidatePath("/galerija");
     revalidatePath("/");

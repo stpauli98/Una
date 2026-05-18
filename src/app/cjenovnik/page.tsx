@@ -2,17 +2,19 @@ import type { Metadata } from "next";
 import { Nav } from "@/components/public/Nav";
 import { Footer } from "@/components/public/Footer";
 import { SectionHeader } from "@/components/public/SectionHeader";
-import { createClient } from "@/lib/supabase/server";
+import { BreadcrumbsJsonLd } from "@/components/public/BreadcrumbsJsonLd";
+import { createPublicClient } from "@/lib/supabase/public";
 import { formatPrice, formatDuration } from "@/lib/utils/format";
 import type { Database } from "@/types/database";
 
 type Service = Database["public"]["Tables"]["services"]["Row"];
 
 export const metadata: Metadata = {
-  title: "Cjenovnik",
+  title: "Cjenovnik šminkanja Gradiška",
   description:
-    "Cjenovnik usluga UP Beauty & Makeup Studio — šminkanje, pedikir, trepavice, obuka. Sve cijene u KM.",
+    "Cijene šminkanja u Gradišci — svadbeno, večernje, maturalno, terensko. Pedikir, trepavice, obuka. Sve cijene u KM. UP Beauty & Makeup Studio kod Une Peranović.",
   alternates: { canonical: "/cjenovnik" },
+  openGraph: { url: "/cjenovnik" },
 };
 
 export const revalidate = 300;
@@ -27,7 +29,8 @@ const CATEGORY_LABELS: Record<string, string> = {
 const CATEGORY_ORDER = ["sminkanje", "pedikir", "trepavice", "obuka"] as const;
 
 export default async function CjenovnikPage() {
-  const supabase = await createClient();
+  // Cookie-free klijent → static prerender + Vercel CDN cache za bot scraper-e
+  const supabase = createPublicClient();
   const { data: services } = await supabase
     .from("services")
     .select("*")
@@ -42,8 +45,17 @@ export default async function CjenovnikPage() {
     {},
   );
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
   return (
     <>
+      <BreadcrumbsJsonLd
+        items={[
+          { name: "Početna", path: "/" },
+          { name: "Cjenovnik", path: "/cjenovnik" },
+        ]}
+        siteUrl={siteUrl}
+      />
       <Nav />
       <main className="pt-28">
         <section className="bg-marble px-6 py-16 md:py-24">

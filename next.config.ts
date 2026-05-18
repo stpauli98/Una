@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import withSerwistInit from "@serwist/next";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseHostname = supabaseUrl ? new URL(supabaseUrl).hostname : "127.0.0.1";
@@ -38,6 +39,8 @@ const nextConfig: NextConfig = {
               `img-src 'self' data: blob: ${supabaseImgSrc}`,
               `connect-src 'self' ${supabaseConnectSrc}`,
               "font-src 'self' data:",
+              "worker-src 'self' blob:",
+              "manifest-src 'self'",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
@@ -64,6 +67,11 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "10mb",
     },
   },
+  // Next 16: Turbopack je default. @serwist/next injektuje `webpack` config za
+  // SW bundling, što Next vidi kao konflikt sa Turbopack-om. Prazan `turbopack: {}`
+  // signal je da svjesno koegzistiraju — Turbopack za dev (`disable: isDev`
+  // svejedno preskače Serwist), webpack tek pri prod buildu kad SW treba bundlovati.
+  turbopack: {},
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 2592000,
@@ -85,4 +93,14 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+const withSerwist = withSerwistInit({
+  swSrc: "src/app/sw.ts",
+  swDest: "public/sw.js",
+  cacheOnNavigation: true,
+  reloadOnOnline: true,
+  // dev mode preskače SW generaciju — Turbopack HMR i SW caching su u konfliktu.
+  // SW se generiše samo u prod buildu (`next build`), iz src/app/sw.ts (Task 7).
+  disable: isDev,
+});
+
+export default withSerwist(nextConfig);

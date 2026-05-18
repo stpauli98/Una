@@ -39,7 +39,7 @@ export function AdminShell({ userEmail, children }: Props) {
   };
 
   return (
-    <div className="flex min-h-screen bg-stone-50 pb-20 md:pb-0">
+    <div className="flex min-h-screen bg-stone-50 pb-28 md:pb-0">
       {/* Sidebar — desktop */}
       <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-cream bg-white md:flex">
         <div className="border-b border-cream px-6 py-6">
@@ -100,11 +100,14 @@ export function AdminShell({ userEmail, children }: Props) {
         </div>
       </aside>
 
-      {/* Main content */}
-      <main className="flex-1 overflow-x-hidden">{children}</main>
+      {/* Main content. pt-safe rezerviše prostor za iPhone notch/dynamic
+          island u PWA standalone modu (viewport-fit=cover ekstenduje view
+          iza statusbar-a). Desktop dobija md:pt-0 jer ima sidebar koji
+          počinje od vrha ekrana — main je flex sibling i ne treba ofset. */}
+      <main className="flex-1 overflow-x-hidden pt-safe md:pt-0">{children}</main>
 
       {/* Bottom nav — mobile */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-cream bg-white md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-cream bg-white pb-safe md:hidden">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const active = pathname.startsWith(item.href);

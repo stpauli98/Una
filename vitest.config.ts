@@ -13,6 +13,9 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // server-only throws at runtime to prevent client imports.
+      // In unit tests there is no React server context, so we stub it out.
+      "server-only": path.resolve(__dirname, "tests/__mocks__/server-only.ts"),
     },
   },
 });
