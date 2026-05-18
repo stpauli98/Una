@@ -2,6 +2,14 @@ import { describe, it, expect } from "vitest";
 import { getMonthAvailability } from "@/lib/booking/month-availability";
 import { hoursMapFromRows } from "@/lib/booking/rules";
 import { BOOKING_RULES } from "@/lib/constants/business";
+import type { BookingSettings } from "@/lib/settings/read";
+
+const SETTINGS: BookingSettings = {
+  minHoursBefore: BOOKING_RULES.min_hours_before,
+  advanceBookingDays: BOOKING_RULES.advance_booking_days,
+  cancellationHours: BOOKING_RULES.cancellation_hours,
+  breakBetweenMin: BOOKING_RULES.break_between_min,
+};
 
 const HOURS_MON_FRI_9_TO_17 = [
   { day_of_week: 1, open_time: "09:00", close_time: "17:00", is_open: true },
@@ -22,7 +30,7 @@ describe("getMonthAvailability", () => {
       blocked: [],
       hoursByWeekday: hoursMapFromRows(HOURS_MON_FRI_9_TO_17),
       blockedTimes: [],
-      settings: BOOKING_RULES,
+      settings: SETTINGS,
     });
 
     // 2026-06-01 je ponedjeljak — radni dan, prazan, treba true
@@ -47,7 +55,7 @@ describe("getMonthAvailability", () => {
       blocked: [],
       hoursByWeekday: hoursMapFromRows(HOURS_MON_FRI_9_TO_17),
       blockedTimes: [],
-      settings: BOOKING_RULES,
+      settings: SETTINGS,
     });
 
     expect(result["2026-06-01"]).toBe(false);
@@ -70,7 +78,7 @@ describe("getMonthAvailability", () => {
       ],
       hoursByWeekday: hoursMapFromRows(HOURS_MON_FRI_9_TO_17),
       blockedTimes: [],
-      settings: BOOKING_RULES,
+      settings: SETTINGS,
     });
 
     expect(result["2026-06-03"]).toBe(false);
@@ -86,7 +94,7 @@ describe("getMonthAvailability", () => {
       blocked: [],
       hoursByWeekday: hoursMapFromRows(HOURS_MON_FRI_9_TO_17),
       blockedTimes: [],
-      settings: BOOKING_RULES,
+      settings: SETTINGS,
     });
 
     // Jun 2026 ima 30 dana
