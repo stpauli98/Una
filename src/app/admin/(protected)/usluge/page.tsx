@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 // Bez `export const dynamic = "force-dynamic"` — koristimo cached query
-// koji se invalidate-uje preko revalidateTag iz usluge/actions.ts.
+// koji se invalidate-uje preko updateTag iz usluge/actions.ts.
 
 export default async function AdminUslugePage() {
   const services = await getCachedServices();
