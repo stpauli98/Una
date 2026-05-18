@@ -1,12 +1,15 @@
 import Link from "next/link";
 import Image from "next/image";
-import { HERO_IMAGES } from "@/lib/images/hero-images";
+import { HERO_MOBILE_IMAGE } from "@/lib/images/hero-images";
 
 /**
  * Static hero — mobile (< md breakpoint) ili korisnici sa
  * prefers-reduced-motion. Jedan full-bleed foto + gradient overlay +
- * brand-styled naslov + 2 CTA. Isti vizuelan stil kao prethodni Hero
- * (samo bolja foto preko HERO_IMAGES[0]).
+ * brand-styled naslov + 2 CTA.
+ *
+ * Mobile koristi posebnu `HERO_MOBILE_IMAGE` (portrait orijentisana
+ * salon foto), ne `HERO_IMAGES[0]` (koja je optimizirana za landscape
+ * desktop bento featured cell).
  *
  * Renderuje se kao Server Component (default) — nema interaktivnosti.
  */
@@ -14,7 +17,7 @@ export function HeroStatic() {
   return (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 pb-16 pt-28">
       <Image
-        src={HERO_IMAGES[0]}
+        src={HERO_MOBILE_IMAGE}
         alt=""
         aria-hidden
         fill
