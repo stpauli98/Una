@@ -10,6 +10,10 @@ import { parseBookingSettings } from "@/lib/settings/read";
 import { checkRateLimit } from "@/lib/utils/rate-limit";
 import { sanitizeError } from "@/lib/utils/log";
 import { headers } from "next/headers";
+import {
+  buildNewAppointmentPayload,
+  sendAdminPushNotification,
+} from "@/lib/push/send";
 
 export type CreateAppointmentResult =
   | { ok: true }
@@ -131,6 +135,17 @@ export async function createAppointment(
   }
 
   // TODO(Phase 8): sendNewAppointmentEmail(inserted, service, parsed.data)
+
+  // Push notification adminima — best-effort, ne čekaj i ne baci.
+  // Ako Una uskoro otvori admin, AppointmentsRealtime (Phase B) već
+  // pokazuje novi termin. Push je dodatni signal kad admin nije otvoren.
+  void sendAdminPushNotification(
+    buildNewAppointmentPayload({
+      clientName: parsed.data.client_name,
+      serviceName: service.name,
+      startTime: start,
+    }),
+  );
 
   redirect(`/zakazi/uspjesno?token=${confirmationToken}`);
 }
