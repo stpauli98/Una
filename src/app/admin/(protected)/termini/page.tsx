@@ -9,6 +9,7 @@ import {
   endOfMonth,
 } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
+import { AppointmentsRealtime } from "@/components/admin/AppointmentsRealtime";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { AppointmentRow } from "@/components/admin/AppointmentRow";
 import { TerminiToolbar } from "@/components/admin/TerminiToolbar";
@@ -50,7 +51,7 @@ export default async function AdminTerminiPage({
 
   const sb = await createClient();
 
-  let query = sb
+  let appointmentsQuery = sb
     .from("appointments")
     .select(
       "id,client_name,client_phone,client_email,start_time,end_time,status,notes,services(name)",
@@ -59,36 +60,39 @@ export default async function AdminTerminiPage({
 
   const now = new Date();
   if (range === "danas") {
-    query = query
+    appointmentsQuery = appointmentsQuery
       .gte("start_time", startOfDay(now).toISOString())
       .lte("start_time", endOfDay(now).toISOString());
   } else if (range === "sedmica") {
-    query = query
+    appointmentsQuery = appointmentsQuery
       .gte("start_time", startOfWeek(now, { weekStartsOn: 1 }).toISOString())
       .lte("start_time", endOfWeek(now, { weekStartsOn: 1 }).toISOString());
   } else if (range === "mjesec") {
-    query = query
+    appointmentsQuery = appointmentsQuery
       .gte("start_time", startOfMonth(now).toISOString())
       .lte("start_time", endOfMonth(now).toISOString());
   }
 
   if (statusFilter !== "svi") {
-    query = query.eq("status", statusFilter);
+    appointmentsQuery = appointmentsQuery.eq("status", statusFilter);
   }
 
-  const { data: appointments } = await query;
-
-  // Usluge za ManualAppointmentForm dropdown
-  const { data: servicesData } = await sb
-    .from("services")
-    .select("*")
-    .eq("bookable", true)
-    .eq("active", true)
-    .order("order_index");
+  // Paraleliziraj: appointments i services nisu međusobno zavisni.
+  // Prije: sekvencijalno ~2 round-trip-a do Supabase-a; sad: 1 round-trip.
+  const [{ data: appointments }, { data: servicesData }] = await Promise.all([
+    appointmentsQuery,
+    sb
+      .from("services")
+      .select("*")
+      .eq("bookable", true)
+      .eq("active", true)
+      .order("order_index"),
+  ]);
   const services = servicesData ?? [];
 
   return (
     <div>
+      <AppointmentsRealtime />
       <PageHeader
         title="Termini"
         subtitle={`${appointments?.length ?? 0} zabilježenih`}

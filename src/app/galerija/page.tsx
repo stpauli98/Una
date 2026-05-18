@@ -3,19 +3,22 @@ import { Nav } from "@/components/public/Nav";
 import { Footer } from "@/components/public/Footer";
 import { SectionHeader } from "@/components/public/SectionHeader";
 import { GalleryGrid } from "@/components/public/GalleryGrid";
-import { createClient } from "@/lib/supabase/server";
+import { BreadcrumbsJsonLd } from "@/components/public/BreadcrumbsJsonLd";
+import { createPublicClient } from "@/lib/supabase/public";
 
 export const metadata: Metadata = {
   title: "Galerija",
   description:
     "Portfolio radova UP Beauty & Makeup Studio — šminkanje, svadbeno, pedikir, trepavice.",
   alternates: { canonical: "/galerija" },
+  openGraph: { url: "/galerija" },
 };
 
 export const revalidate = 300;
 
 export default async function GalerijaPage() {
-  const supabase = await createClient();
+  // Cookie-free klijent → static prerender + Vercel CDN cache za bot scraper-e
+  const supabase = createPublicClient();
   const { data: images } = await supabase
     .from("gallery_images")
     .select("id, storage_path, category, alt_text")
@@ -29,8 +32,17 @@ export default async function GalerijaPage() {
     alt: img.alt_text ?? `UP Beauty Studio — ${img.category}`,
   }));
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
   return (
     <>
+      <BreadcrumbsJsonLd
+        items={[
+          { name: "Početna", path: "/" },
+          { name: "Galerija", path: "/galerija" },
+        ]}
+        siteUrl={siteUrl}
+      />
       <Nav />
       <main className="pt-28">
         <section className="bg-warm px-6 py-16 md:py-24">

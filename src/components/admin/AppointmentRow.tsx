@@ -89,7 +89,11 @@ export function AppointmentRow({ appointment }: { appointment: Appointment }) {
             href={waLink(appointment.client_phone, waMessage)}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 bg-green-600 px-3 py-2 text-[10px] uppercase tracking-wider text-white hover:bg-green-700"
+            className={`inline-flex items-center gap-1 px-3 py-2 text-[10px] uppercase tracking-wider text-white ${
+              appointment.status === "otkazan"
+                ? "bg-red-600 hover:bg-red-700"
+                : "bg-green-600 hover:bg-green-700"
+            }`}
           >
             <MessageCircle size={12} />
             {waLabel}

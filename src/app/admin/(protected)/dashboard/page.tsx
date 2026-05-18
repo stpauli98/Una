@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Calendar, TrendingUp, CheckCircle2, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { AppointmentsRealtime } from "@/components/admin/AppointmentsRealtime";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { formatTime, formatPrice } from "@/lib/utils/format";
@@ -12,6 +13,7 @@ import {
   addDaysToDateStr,
 } from "@/lib/utils/day-bounds";
 import { parseBookingSettings } from "@/lib/settings/read";
+import { getCachedSettings } from "@/lib/cache/cached-queries";
 import { DashboardDayPicker } from "@/components/admin/DashboardDayPicker";
 
 export const metadata: Metadata = {
@@ -37,8 +39,9 @@ export default async function AdminDashboardPage({
   // NAMJERNO sekvencijalan fetch (ne unutar Promise.all ispod): maxDateStr
   // mora biti poznat prije validacije params.date, koja gradi
   // selectedDayBounds za list query.
-  const { data: settingsRows } = await sb.from("settings").select("key,value");
-  const bookingSettings = parseBookingSettings(settingsRows ?? []);
+  // settings keširan (rijetko se mijenja, invalidate iz postavke/actions.ts)
+  const settingsRows = await getCachedSettings();
+  const bookingSettings = parseBookingSettings(settingsRows);
   const maxDateStr = addDaysToDateStr(
     todayStr,
     bookingSettings.advanceBookingDays,
@@ -104,6 +107,7 @@ export default async function AdminDashboardPage({
 
   return (
     <div>
+      <AppointmentsRealtime />
       <PageHeader
         title="Dashboard"
         subtitle="Pregled termina i prometa"
@@ -210,16 +214,16 @@ export default async function AdminDashboardPage({
           )}
         </div>
 
-        {/* Notifications status */}
+        {/* Notifications status. Email (Resend) integracija nije završena
+            (nema RESEND_API_KEY u env vars, nema send koda), pa je raniji
+            misleading "Email aktivan" indikator uklonjen. Trenutno UP Beauty
+            koristi samo WhatsApp za ručna obavještenja klijentima preko
+            dugmeta u Termini tabu. */}
         <div className="border border-cream bg-white p-5">
           <h3 className="mb-3 font-display text-base text-dark">
             Status obavještenja
           </h3>
           <div className="space-y-2 text-[12px] text-body">
-            <div className="flex items-center gap-2">
-              <span className="size-2 rounded-full bg-green-500" />
-              Email (Resend): aktivan — automatski pri novoj rezervaciji
-            </div>
             <div className="flex items-center gap-2">
               <span className="size-2 rounded-full bg-amber-500" />
               WhatsApp: ručno slanje preko dugmeta u terminima

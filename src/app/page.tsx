@@ -9,7 +9,7 @@ import { SectionHeader } from "@/components/public/SectionHeader";
 import { ServiceCard } from "@/components/public/ServiceCard";
 import { TestimonialsCarousel } from "@/components/public/TestimonialsCarousel";
 import { LocalBusinessJsonLd } from "@/components/public/LocalBusinessJsonLd";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 import { BUSINESS } from "@/lib/constants/business";
 
 export const metadata: Metadata = {
@@ -20,7 +20,10 @@ export const revalidate = 300; // 5 min ISR
 
 export default async function HomePage() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabase = await createClient();
+  // Cookie-free klijent → page ostaje static prerendered umjesto dynamic.
+  // Bez ovoga, Vercel WAF challenge-uje FB/LinkedIn scraper-e (403) jer
+  // dynamic response ima Cache-Control: private, no-store (sumnja na auth).
+  const supabase = createPublicClient();
 
   const { data: featuredServices } = await supabase
     .from("services")

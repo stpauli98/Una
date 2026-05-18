@@ -69,3 +69,49 @@
     transform: translateY(-8px);
   }
 }
+
+/* Safe-area utilities for iOS notch/home-indicator (PWA standalone mode + viewport-fit=cover).
+   Tailwind v4 doesn't ship safe-area utilities by default. Use as additive padding:
+   <div class="fixed bottom-0 pb-safe"> stacks 1rem + env() inset.
+   env(safe-area-inset-*) returns 0 on devices without notch/home-indicator,
+   so max(1rem, env()) ensures a sensible minimum on all devices.
+*/
+@utility pt-safe {
+  padding-top: max(1rem, env(safe-area-inset-top));
+}
+@utility pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+@utility pl-safe {
+  padding-left: max(1rem, env(safe-area-inset-left));
+}
+@utility pr-safe {
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+@utility px-safe {
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+/* Bottom offset variant for elements positioned with bottom-N (e.g., banners
+   that sit ABOVE the home indicator with their own margin). */
+@utility bottom-safe-3 {
+  bottom: calc(0.75rem + env(safe-area-inset-bottom));
+}
+
+/* iOS Safari auto-zoom prevention.
+   Safari na iPhone-u ZUMIRA cijelu stranicu kad korisnik tap-uje input
+   čiji je font-size < 16px (Apple-ova politika protiv "premali tekst"
+   za readability). Zum se NE vraća kad se tastatura zatvori — ostaje
+   permanentno dok korisnik ručno ne pinch-out.
+   Fix: forsiraj 16px na sve form kontrole na mobilnom viewport-u.
+   Desktop (≥768px) zadržava postojeću Tailwind tipografiju (`text-sm`,
+   `text-xs`, itd.) iz dizajna.
+   Selector isključuje radio/checkbox jer im je font-size irelevantan
+   za vizuelni prikaz (kontrola je glyph, ne tekst). */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}

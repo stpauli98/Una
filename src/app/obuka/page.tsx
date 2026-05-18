@@ -3,6 +3,7 @@ import { Clock, Sparkles, Users, BookOpen, MessageCircle, Phone } from "lucide-r
 import { Nav } from "@/components/public/Nav";
 import { Footer } from "@/components/public/Footer";
 import { SectionHeader } from "@/components/public/SectionHeader";
+import { BreadcrumbsJsonLd } from "@/components/public/BreadcrumbsJsonLd";
 import { BUSINESS } from "@/lib/constants/business";
 import { waLink } from "@/lib/utils/wa";
 
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
   description:
     "Intenzivna obuka za šminkanje u UP Beauty Studio. Pet dana praktičnog rada, tehnike, savjeti i diploma. 800 KM.",
   alternates: { canonical: "/obuka" },
+  openGraph: { url: "/obuka" },
 };
 
 const WHATS_INCLUDED = [
@@ -37,8 +39,17 @@ const WHATS_INCLUDED = [
 ] as const;
 
 export default function ObukaPage() {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
   return (
     <>
+      <BreadcrumbsJsonLd
+        items={[
+          { name: "Početna", path: "/" },
+          { name: "Obuka", path: "/obuka" },
+        ]}
+        siteUrl={siteUrl}
+      />
       <Nav />
       <main className="pt-28">
         <section className="bg-warm px-6 py-16 md:py-24">

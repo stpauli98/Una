@@ -1,24 +1,21 @@
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { GalleryManager } from "@/components/admin/GalleryManager";
+import { getCachedGalleryImages } from "@/lib/cache/cached-queries";
 
 export const metadata: Metadata = {
   title: "Galerija — Admin",
   robots: { index: false, follow: false },
 };
 
-export const dynamic = "force-dynamic";
+// Cached preko getCachedGalleryImages — invalidate-uje se iz
+// galerija/actions.ts preko updateTag.
 
 export default async function AdminGalerijaPage() {
-  const sb = await createClient();
-  const { data: images } = await sb
-    .from("gallery_images")
-    .select("id, storage_path, category, alt_text")
-    .order("order_index");
+  const images = await getCachedGalleryImages();
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const mapped = (images ?? []).map((img) => ({
+  const mapped = images.map((img) => ({
     id: img.id,
     url: `${supabaseUrl}/storage/v1/object/public/gallery/${img.storage_path}`,
     category: img.category,

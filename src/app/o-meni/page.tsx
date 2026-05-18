@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Nav } from "@/components/public/Nav";
 import { Footer } from "@/components/public/Footer";
 import { SectionHeader } from "@/components/public/SectionHeader";
+import { BreadcrumbsJsonLd } from "@/components/public/BreadcrumbsJsonLd";
 import { BUSINESS } from "@/lib/constants/business";
 
 export const metadata: Metadata = {
@@ -11,11 +12,21 @@ export const metadata: Metadata = {
   description:
     "Una Peranović — vlasnica UP Beauty & Makeup Studio u Gradišci. Priča o strasti prema šminkanju i prirodnoj ljepoti.",
   alternates: { canonical: "/o-meni" },
+  openGraph: { url: "/o-meni" },
 };
 
 export default function OMeniPage() {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
   return (
     <>
+      <BreadcrumbsJsonLd
+        items={[
+          { name: "Početna", path: "/" },
+          { name: "O meni", path: "/o-meni" },
+        ]}
+        siteUrl={siteUrl}
+      />
       <Nav />
       <main className="pt-28">
         <section className="bg-marble px-6 py-16 md:py-24">
