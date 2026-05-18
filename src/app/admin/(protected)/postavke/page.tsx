@@ -5,6 +5,7 @@ import { BlockedDatesManager } from "@/components/admin/BlockedDatesManager";
 import { TimeBlocksManager } from "@/components/admin/TimeBlocksManager";
 import { BookingRulesEditor } from "@/components/admin/BookingRulesEditor";
 import { ChangePasswordForm } from "@/components/admin/ChangePasswordForm";
+import { PushNotificationToggle } from "@/components/admin/PushNotificationToggle";
 import {
   getCachedWorkingHours,
   getCachedBlockedDates,
@@ -83,6 +84,19 @@ export default async function AdminPostavkePage() {
             datumi&quot;.
           </p>
           <TimeBlocksManager blocks={timeBlocks} />
+        </section>
+
+        <section>
+          <h2 className="mb-3 font-display text-xl text-dark">
+            Obavještenja na uređaju
+          </h2>
+          <p className="mb-4 text-[12px] text-light">
+            Uključi push notifikacije da dobiješ obavještenje čim
+            klijent zakaže termin — čak i kad admin panel nije
+            otvoren. Najbolje radi kao instalirana PWA (UP Admin) na
+            telefon.
+          </p>
+          <PushNotificationToggle />
         </section>
 
         <section>
