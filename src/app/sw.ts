@@ -18,6 +18,30 @@ declare global {
 
 declare const self: ServiceWorkerGlobalScope;
 
+/**
+ * Bypass SW completely for admin routes.
+ *
+ * Mora se registrovati PRIJE `serwist.addEventListeners()` — listenere
+ * obrađuje browser redom registracije, a Serwist svoj listener registruje
+ * iznutra sa `event.respondWith(...)`. Ako naš listener ne pozove
+ * respondWith() i ne pozove preventDefault(), browser pada na default
+ * network handling — fetch ide direktno na server kao da SW ne postoji.
+ *
+ * Zašto bypass umjesto NetworkOnly: NetworkOnly handler baca
+ * "FetchEvent.respondWith received an error: no-response" kad mreža
+ * fail-uje (mobilna mreža, Vercel cold start, slab signal). To je
+ * blokiralo admin login na telefonima.
+ *
+ * Admin nije offline-functional (zahtijeva Supabase Auth + DB), pa
+ * gubitak SW caching-a za admin je 0 — samo dobitak na pouzdanosti.
+ */
+self.addEventListener("fetch", (event) => {
+  const url = new URL(event.request.url);
+  if (url.pathname.startsWith("/admin")) {
+    return;
+  }
+});
+
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
@@ -33,11 +57,6 @@ const serwist = new Serwist({
     ],
   },
   runtimeCaching: [
-    // Block admin routes — never cache auth/mutation surface.
-    {
-      matcher: ({ url }) => url.pathname.startsWith("/admin"),
-      handler: new NetworkOnly(),
-    },
     // Block API routes — booking availability must be real-time.
     {
       matcher: ({ url }) => url.pathname.startsWith("/api"),
