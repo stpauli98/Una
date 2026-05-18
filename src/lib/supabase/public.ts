@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./env";
+import { getSupabaseUrl, getSupabaseAnonKey } from "./env";
 
 /**
  * Supabase klijent za read-only PUBLIC podatke na statičkim stranicama.
@@ -23,8 +23,8 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./env";
  */
 export function createPublicClient() {
   return createClient<Database>(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY,
+    getSupabaseUrl(),
+    getSupabaseAnonKey(),
     {
       auth: {
         persistSession: false,

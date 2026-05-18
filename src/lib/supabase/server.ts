@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Database } from "@/types/database";
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./env";
+import { getSupabaseUrl, getSupabaseAnonKey } from "./env";
 
 /**
  * Supabase klijent za server komponente, route handlere i server actions.
@@ -10,8 +10,8 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./env";
 export async function createClient() {
   const cookieStore = await cookies();
   return createServerClient<Database>(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY,
+    getSupabaseUrl(),
+    getSupabaseAnonKey(),
     {
       cookies: {
         getAll() {

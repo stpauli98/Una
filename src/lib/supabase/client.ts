@@ -1,6 +1,6 @@
 import { createBrowserClient } from "@supabase/ssr";
 import type { Database } from "@/types/database";
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./env";
+import { getSupabaseUrl, getSupabaseAnonKey } from "./env";
 
 /**
  * Supabase klijent za browser (client komponente).
@@ -11,5 +11,5 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./env";
  * apikey query param).
  */
 export function createClient() {
-  return createBrowserClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
+  return createBrowserClient<Database>(getSupabaseUrl(), getSupabaseAnonKey());
 }
