@@ -18,6 +18,41 @@ declare global {
 
 declare const self: ServiceWorkerGlobalScope;
 
+/**
+ * Bypass SW completely for admin routes.
+ *
+ * Mora se registrovati PRIJE `serwist.addEventListeners()` — naš listener
+ * poziva stopImmediatePropagation() koji sprječava Serwist's listener da
+ * se pokrene za isti event, pa onda respondWith(fetch(...)) prosljeđuje
+ * request direktno na network. Net effect: admin fetch ide direktno na
+ * network bez ikakvog SW posredovanja, bez InvalidStateError noise-a.
+ *
+ * Zašto bypass umjesto NetworkOnly: NetworkOnly handler baca
+ * "FetchEvent.respondWith received an error: no-response" kad mreža
+ * fail-uje (mobilna mreža, Vercel cold start, slab signal). Naš bypass
+ * koristi raw fetch() koji baca standardni TypeError pri network fail-u,
+ * što browser prikazuje kao native network error (čitljiviji za korisnika).
+ *
+ * Admin nije offline-functional (zahtijeva Supabase Auth + DB), pa
+ * gubitak SW caching-a za admin je 0 — samo dobitak na pouzdanosti.
+ */
+self.addEventListener("fetch", (event) => {
+  const url = new URL(event.request.url);
+  if (url.pathname.startsWith("/admin")) {
+    // stopImmediatePropagation() sprječava Serwist's fetch listener da se
+    // uopšte pokrene za ovaj event. Bez ovoga, oba listenera rade (W3C
+    // spec) i Serwist's pokušaj respondWith() baca InvalidStateError u
+    // konzolu — funkcionalno OK ali noisy.
+    //
+    // respondWith(fetch(...)) prosljeđuje request direktno na network —
+    // bez ikakvog SW caching-a. Ako mreža fail-uje, browser pokazuje
+    // standardni network error (kao da nema SW), umjesto SW-baced
+    // "no-response" greške.
+    event.stopImmediatePropagation();
+    event.respondWith(fetch(event.request));
+  }
+});
+
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
@@ -33,11 +68,6 @@ const serwist = new Serwist({
     ],
   },
   runtimeCaching: [
-    // Block admin routes — never cache auth/mutation surface.
-    {
-      matcher: ({ url }) => url.pathname.startsWith("/admin"),
-      handler: new NetworkOnly(),
-    },
     // Block API routes — booking availability must be real-time.
     {
       matcher: ({ url }) => url.pathname.startsWith("/api"),
