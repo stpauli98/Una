@@ -3,7 +3,7 @@ import { Nav } from "@/components/public/Nav";
 import { Footer } from "@/components/public/Footer";
 import { SectionHeader } from "@/components/public/SectionHeader";
 import { BreadcrumbsJsonLd } from "@/components/public/BreadcrumbsJsonLd";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 import { formatPrice, formatDuration } from "@/lib/utils/format";
 import type { Database } from "@/types/database";
 
@@ -29,7 +29,8 @@ const CATEGORY_LABELS: Record<string, string> = {
 const CATEGORY_ORDER = ["sminkanje", "pedikir", "trepavice", "obuka"] as const;
 
 export default async function CjenovnikPage() {
-  const supabase = await createClient();
+  // Cookie-free klijent → static prerender + Vercel CDN cache za bot scraper-e
+  const supabase = createPublicClient();
   const { data: services } = await supabase
     .from("services")
     .select("*")

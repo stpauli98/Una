@@ -4,7 +4,7 @@ import { Footer } from "@/components/public/Footer";
 import { SectionHeader } from "@/components/public/SectionHeader";
 import { GalleryGrid } from "@/components/public/GalleryGrid";
 import { BreadcrumbsJsonLd } from "@/components/public/BreadcrumbsJsonLd";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 
 export const metadata: Metadata = {
   title: "Galerija",
@@ -17,7 +17,8 @@ export const metadata: Metadata = {
 export const revalidate = 300;
 
 export default async function GalerijaPage() {
-  const supabase = await createClient();
+  // Cookie-free klijent → static prerender + Vercel CDN cache za bot scraper-e
+  const supabase = createPublicClient();
   const { data: images } = await supabase
     .from("gallery_images")
     .select("id, storage_path, category, alt_text")
