@@ -4,7 +4,7 @@
 
 **Goal:** Smanjiti vrijeme prebacivanja između admin tabova (`/admin/dashboard`, `/admin/termini`, `/admin/usluge`, `/admin/galerija`, `/admin/postavke`) sa trenutnih ~1.5–3s na <500ms perceived latency.
 
-**Architecture:** Kombinacija (a) instant UI feedback preko `loading.tsx` skeletona, (b) paraleliziranog fetcha gdje su query-ji bili sekvencijalni, (c) granularnog cachiranja kroz `unstable_cache` + `revalidateTag` za rijetko-mijenjane tabove (Usluge, Postavke, Galerija), i (d) provjere infrastrukturnih razloga (Vercel env vars sa trailing `\n`, Vercel↔Supabase region mismatch).
+**Architecture:** Kombinacija (a) instant UI feedback preko `loading.tsx` skeletona, (b) paraleliziranog fetcha gdje su query-ji bili sekvencijalni, (c) granularnog cachiranja kroz `unstable_cache` + `updateTag` za rijetko-mijenjane tabove (Usluge, Postavke, Galerija), i (d) provjere infrastrukturnih razloga (Vercel env vars sa trailing `\n`, Vercel↔Supabase region mismatch).
 
 **Tech Stack:** Next.js 16 App Router, React 19, Supabase, Vercel.
 
@@ -36,10 +36,10 @@
 - `src/app/admin/(protected)/galerija/page.tsx` — koristi cached query, ukida `force-dynamic`.
 - `src/app/admin/(protected)/postavke/page.tsx` — koristi cached queries, ukida `force-dynamic`.
 - `src/app/admin/(protected)/dashboard/page.tsx` — settings query keširan; ostatak ostaje dynamic (real-time termini).
-- `src/app/admin/(protected)/usluge/actions.ts` — dodaje `revalidateTag("services")` pored postojećih `revalidatePath`.
-- `src/app/admin/(protected)/galerija/actions.ts` — dodaje `revalidateTag("gallery")`.
-- `src/app/admin/(protected)/postavke/actions.ts` — dodaje `revalidateTag` po sekciji koju mijenja.
-- `src/app/admin/(protected)/termini/actions.ts` — dodaje `revalidateTag("services")` ako akcija mijenja katalog (nije potrebno za većinu, samo audit).
+- `src/app/admin/(protected)/usluge/actions.ts` — dodaje `updateTag("services")` pored postojećih `revalidatePath`.
+- `src/app/admin/(protected)/galerija/actions.ts` — dodaje `updateTag("gallery")`.
+- `src/app/admin/(protected)/postavke/actions.ts` — dodaje `updateTag` po sekciji koju mijenja.
+- `src/app/admin/(protected)/termini/actions.ts` — dodaje `updateTag("services")` ako akcija mijenja katalog (nije potrebno za većinu, samo audit).
 
 **Granica:** `proxy.ts` ostaje netaknut. Defense-in-depth `getUser()` u `layout.tsx` ostaje (eksplicitno dokumentovano u kodu kao namjerno). Pošto layout `getUser()` poziva isti server client koji proxy već osvježio token cookie-jem, drugi poziv je samo cookie+JWT verifikacija, ne dodatni network round-trip — to je već optimizovano od Supabase strane.
 
@@ -340,7 +340,7 @@ Kreiraj `src/lib/cache/admin-cache-tags.ts`:
  * Centralni mapping cache tagova za admin domain.
  *
  * Svaki ključ predstavlja jednu "logičku entiti" koju keširamo. Server
- * actions koje mutate-uju entitet pozivaju `revalidateTag(tag)` da bi
+ * actions koje mutate-uju entitet pozivaju `updateTag(tag)` da bi
  * naredni server component fetch dobio svjež podatak.
  *
  * Zašto stringovi sa `admin:` prefiksom: ako kasnije dodamo public-facing
@@ -381,8 +381,8 @@ import { ADMIN_CACHE_TAGS } from "@/lib/cache/admin-cache-tags";
  * Cached query helperi za rijetko-mijenjane admin podatke.
  *
  * `unstable_cache` keširaše rezultat između requestova na nivou Vercel
- * data cache-a. Invalidacija je eksplicitna preko `revalidateTag`, što
- * znači da mutating server actions MORAJU pozvati `revalidateTag` sa
+ * data cache-a. Invalidacija je eksplicitna preko `updateTag`, što
+ * znači da mutating server actions MORAJU pozvati `updateTag` sa
  * odgovarajućim ADMIN_CACHE_TAGS ključem.
  *
  * Zašto ne `revalidate: N` (time-based): time-based cache znači stale
@@ -512,7 +512,7 @@ export const metadata: Metadata = {
 };
 
 // Bez `export const dynamic = "force-dynamic"` — koristimo cached query
-// koji se invalidate-uje preko revalidateTag iz usluge/actions.ts.
+// koji se invalidate-uje preko updateTag iz usluge/actions.ts.
 
 export default async function AdminUslugePage() {
   const services = await getCachedServices();
@@ -531,9 +531,9 @@ export default async function AdminUslugePage() {
 }
 ```
 
-- [ ] **Step 2: Dodaj revalidateTag u usluge/actions.ts**
+- [ ] **Step 2: Dodaj updateTag u usluge/actions.ts**
 
-U `src/app/admin/(protected)/usluge/actions.ts`, na vrh fajla pored postojećeg `revalidatePath` importa dodaj `revalidateTag`:
+U `src/app/admin/(protected)/usluge/actions.ts`, na vrh fajla pored postojećeg `revalidatePath` importa dodaj `updateTag`:
 
 Trenutna linija (oko linije 5):
 ```ts
@@ -542,15 +542,17 @@ import { revalidatePath } from "next/cache";
 
 Promijeni u:
 ```ts
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { ADMIN_CACHE_TAGS } from "@/lib/cache/admin-cache-tags";
 ```
 
-Zatim, za svaku akciju koja mijenja services tabelu (svaka koja već poziva `revalidatePath("/admin/usluge")`), dodaj `revalidateTag(ADMIN_CACHE_TAGS.services)` iznad njega. Ovo je obavezno — bez ovoga UI prikazuje stale podatke.
+Zatim, za svaku akciju koja mijenja services tabelu (svaka koja već poziva `revalidatePath("/admin/usluge")`), dodaj `updateTag(ADMIN_CACHE_TAGS.services)` iznad njega. Ovo je obavezno — bez ovoga UI prikazuje stale podatke.
+
+`updateTag` (Next.js 16) je dizajniran za read-your-own-writes scenarije — odmah expirira cache za tag i naredni request čeka svježe podatke umjesto da serviraju stale. Za razliku od `revalidateTag(..., "max")` koji ima stale-while-revalidate semantiku, `updateTag` garantira da admin odmah vidi promjenu.
 
 Pronađi sve linije sa `revalidatePath("/admin/usluge")` i ispred svake dodaj:
 ```ts
-    revalidateTag(ADMIN_CACHE_TAGS.services);
+    updateTag(ADMIN_CACHE_TAGS.services);
 ```
 
 Primjer:
@@ -561,7 +563,7 @@ Primjer:
     revalidatePath("/usluge");
 
 // POSLIJE:
-    revalidateTag(ADMIN_CACHE_TAGS.services);
+    updateTag(ADMIN_CACHE_TAGS.services);
     revalidatePath("/admin/usluge");
     revalidatePath("/");
     revalidatePath("/usluge");
@@ -618,7 +620,7 @@ export const metadata: Metadata = {
 };
 
 // Cached preko getCachedGalleryImages — invalidate-uje se iz
-// galerija/actions.ts preko revalidateTag.
+// galerija/actions.ts preko updateTag.
 
 export default async function AdminGalerijaPage() {
   const images = await getCachedGalleryImages();
@@ -645,19 +647,19 @@ export default async function AdminGalerijaPage() {
 }
 ```
 
-- [ ] **Step 2: Dodaj revalidateTag u galerija/actions.ts**
+- [ ] **Step 2: Dodaj updateTag u galerija/actions.ts**
 
 U `src/app/admin/(protected)/galerija/actions.ts`, linija 4 import treba postati:
 
 ```ts
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { ADMIN_CACHE_TAGS } from "@/lib/cache/admin-cache-tags";
 ```
 
 Zatim, pronađi svaku akciju koja modifikuje `gallery_images` tabelu (upload, delete, reorder, edit alt_text — svaka koja poziva `revalidatePath("/admin/galerija")`) i iznad svake takve linije dodaj:
 
 ```ts
-    revalidateTag(ADMIN_CACHE_TAGS.gallery);
+    updateTag(ADMIN_CACHE_TAGS.gallery);
 ```
 
 - [ ] **Step 3: Typecheck**
@@ -803,22 +805,22 @@ export default async function AdminPostavkePage() {
 }
 ```
 
-- [ ] **Step 2: Dodaj revalidateTag u postavke/actions.ts**
+- [ ] **Step 2: Dodaj updateTag u postavke/actions.ts**
 
 U `src/app/admin/(protected)/postavke/actions.ts`:
 
 Import (linija 5):
 ```ts
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { ADMIN_CACHE_TAGS } from "@/lib/cache/admin-cache-tags";
 ```
 
-Postavke ima više sekcija. Za svaku akciju, dodaj odgovarajući `revalidateTag` PRIJE postojećeg `revalidatePath("/admin/postavke")`:
+Postavke ima više sekcija. Za svaku akciju, dodaj odgovarajući `updateTag` PRIJE postojećeg `revalidatePath("/admin/postavke")`:
 
-- Akcije koje mijenjaju `working_hours` → `revalidateTag(ADMIN_CACHE_TAGS.workingHours)`
-- Akcije koje mijenjaju `blocked_dates` → `revalidateTag(ADMIN_CACHE_TAGS.blockedDates)`
-- Akcije koje mijenjaju `time_blocks` → `revalidateTag(ADMIN_CACHE_TAGS.timeBlocks)`
-- Akcije koje mijenjaju `settings` → `revalidateTag(ADMIN_CACHE_TAGS.settings)`
+- Akcije koje mijenjaju `working_hours` → `updateTag(ADMIN_CACHE_TAGS.workingHours)`
+- Akcije koje mijenjaju `blocked_dates` → `updateTag(ADMIN_CACHE_TAGS.blockedDates)`
+- Akcije koje mijenjaju `time_blocks` → `updateTag(ADMIN_CACHE_TAGS.timeBlocks)`
+- Akcije koje mijenjaju `settings` → `updateTag(ADMIN_CACHE_TAGS.settings)`
 
 Pomoć: pretraži koju tabelu svaka funkcija dirira. Naprimjer, funkcija koja radi `sb.from("working_hours").upsert(...)` invalidate-uje `workingHours` tag.
 
@@ -1171,7 +1173,7 @@ Tabela:
 3. Soft reload (`Cmd+R`) — promjena treba biti vidljiva.
 4. Verifikuj isto za galeriju i postavke.
 
-Expected: Sve invalidacije rade. Ako neka ne radi, znači `revalidateTag` poziv fali u odgovarajućoj akciji.
+Expected: Sve invalidacije rade. Ako neka ne radi, znači `updateTag` poziv fali u odgovarajućoj akciji.
 
 - [ ] **Step 4: Compare baseline vs final i odluči da li je dovoljno**
 

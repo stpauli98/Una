@@ -2,7 +2,7 @@
 
 import { requireAdmin } from "@/lib/supabase/require-admin";
 
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { ADMIN_CACHE_TAGS } from "@/lib/cache/admin-cache-tags";
 import { serviceSchema, type ServiceInput } from "@/lib/services/schema";
 import sharp from "sharp";
@@ -125,7 +125,7 @@ export async function createService(formData: FormData): Promise<ActionResult> {
       }
     }
 
-    revalidateTag(ADMIN_CACHE_TAGS.services, "max");
+    updateTag(ADMIN_CACHE_TAGS.services);
     revalidatePath("/admin/usluge");
     revalidatePath("/");
     revalidatePath("/usluge");
@@ -199,7 +199,7 @@ export async function updateService(
       }
     }
 
-    revalidateTag(ADMIN_CACHE_TAGS.services, "max");
+    updateTag(ADMIN_CACHE_TAGS.services);
     revalidatePath("/admin/usluge");
     revalidatePath("/");
     revalidatePath("/usluge");
@@ -221,7 +221,7 @@ export async function toggleServiceActive(
       .update({ active })
       .eq("id", id);
     if (error) return { ok: false, error: error.message };
-    revalidateTag(ADMIN_CACHE_TAGS.services, "max");
+    updateTag(ADMIN_CACHE_TAGS.services);
     revalidatePath("/admin/usluge");
     revalidatePath("/");
     revalidatePath("/usluge");
@@ -264,7 +264,7 @@ export async function reorderService(
       .update({ order_index: current.order_index })
       .eq("id", neighbor.id);
 
-    revalidateTag(ADMIN_CACHE_TAGS.services, "max");
+    updateTag(ADMIN_CACHE_TAGS.services);
     revalidatePath("/admin/usluge");
     revalidatePath("/");
     revalidatePath("/usluge");
@@ -311,7 +311,7 @@ export async function deleteService(id: number): Promise<ActionResult> {
       if (rmErr) console.error("services image cleanup failed:", sanitizeError(rmErr));
     }
 
-    revalidateTag(ADMIN_CACHE_TAGS.services, "max");
+    updateTag(ADMIN_CACHE_TAGS.services);
     revalidatePath("/admin/usluge");
     revalidatePath("/");
     revalidatePath("/usluge");
