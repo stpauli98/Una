@@ -8,16 +8,17 @@
  * Fajlovi se učitavaju kroz `next/image` (public asset), `quality={90}`
  * (dozvoljeno kroz `images.qualities` u next.config.ts).
  *
- * V2 varijanta — koristi 5 slika iz `public/images/hero-section-v2/`.
- * Ostali fajlovi u tom folderu (npr. 5 dodatnih) ostaju u repo-u za
- * eventualno reorder ili buduće korišćenje.
+ * Trenutni set: salon enterijer (umjesto klijent portreta) iz
+ * `public/images/hero-section-v2/`. Folder sadrži još 3 dodatne slike
+ * koje nisu u registry — rezerva za buduće reorder ili izmjenu prve
+ * featured pozicije.
  */
 export const HERO_IMAGES = [
-  "/images/hero-section-v2/e9fc1e3b-d963-4b96-87ab-ccfa47fcd8e4.webp",
-  "/images/hero-section-v2/28ba9d00-a80b-4119-bde2-b201710413ba.webp",
-  "/images/hero-section-v2/8b576802-7348-46f1-b7ab-4d6edb7b3ff1.webp",
-  "/images/hero-section-v2/3ecedec1-35a6-4b09-9abf-9bb17b037ec6.webp",
-  "/images/hero-section-v2/81d02e03-7238-42a4-a47b-7f36fb3338a9.webp",
+  "/images/hero-section-v2/13bbdadb-642b-438c-83a7-170c9aa1c1dd.webp",
+  "/images/hero-section-v2/1c3f575a-5fa3-4b47-acef-e9961cb95732.webp",
+  "/images/hero-section-v2/3ccf37ba-bfb7-42c4-9d31-f842bbec195b.webp",
+  "/images/hero-section-v2/41581c1d-d17e-4bbd-8444-8f610b19b588.webp",
+  "/images/hero-section-v2/94629d3b-5547-40a1-86bd-48b2703ef221.webp",
 ] as const;
 
 export type HeroImage = (typeof HERO_IMAGES)[number];
