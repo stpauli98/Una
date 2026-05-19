@@ -4,6 +4,7 @@ import {
   serializeTerminiPrefs,
   TERMINI_PREFS_COOKIE,
   DASHBOARD_DATE_COOKIE,
+  computeDefaultSort,
   type TerminiPrefs,
 } from "@/lib/utils/admin-prefs";
 
@@ -95,5 +96,27 @@ describe("serializeTerminiPrefs", () => {
       sort: "desc",
     };
     expect(parseTerminiPrefs(serializeTerminiPrefs(prefs))).toEqual(prefs);
+  });
+});
+
+describe("computeDefaultSort", () => {
+  it("returns 'asc' kad je date setovan (single-day view)", () => {
+    expect(computeDefaultSort({ date: "2026-05-19", range: "svi" })).toBe("asc");
+  });
+
+  it("returns 'asc' za range='danas' (single-day view)", () => {
+    expect(computeDefaultSort({ date: undefined, range: "danas" })).toBe("asc");
+  });
+
+  it("returns 'desc' za range='sedmica' (multi-day)", () => {
+    expect(computeDefaultSort({ date: undefined, range: "sedmica" })).toBe("desc");
+  });
+
+  it("returns 'desc' za range='mjesec' (multi-day)", () => {
+    expect(computeDefaultSort({ date: undefined, range: "mjesec" })).toBe("desc");
+  });
+
+  it("returns 'desc' za range='svi' (multi-day)", () => {
+    expect(computeDefaultSort({ date: undefined, range: "svi" })).toBe("desc");
   });
 });

@@ -102,3 +102,19 @@ export function parseDashboardDate(cookieValue: string | undefined): string | un
   if (cookieValue && ISO_DATE_RE.test(cookieValue)) return cookieValue;
   return undefined;
 }
+
+/**
+ * Default sort izračun za Termini listu:
+ *   - ASC za single-day view (date setovan ili range='danas') — jutarnji prvi.
+ *   - DESC za multi-day (sedmica/mjesec/svi) — najnoviji prvi.
+ *
+ * Izloženo kao posebna funkcija jer i page.tsx i URL builder-i u UI-u trebaju
+ * isti izračun (DRY).
+ */
+export function computeDefaultSort(args: {
+  date: string | undefined;
+  range: "danas" | "sedmica" | "mjesec" | "svi";
+}): "asc" | "desc" {
+  const isSingleDay = !!args.date || args.range === "danas";
+  return isSingleDay ? "asc" : "desc";
+}
