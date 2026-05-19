@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import {
   TERMINI_PREFS_COOKIE,
   DASHBOARD_DATE_COOKIE,
+  parseTerminiPrefs,
   serializeTerminiPrefs,
   type TerminiPrefs,
 } from "@/lib/utils/admin-prefs";
@@ -18,6 +19,14 @@ import {
  *     params i write-uje odgovarajući cookie.
  *   - `/admin/termini` → up-admin-termini-prefs (JSON sa date/range/status/sort)
  *   - `/admin/dashboard` → up-admin-dashboard-date (raw YYYY-MM-DD)
+ *
+ * Termini per-param merge: postojeći cookie se čita prije pisanja i
+ * URL params se mergeuju preko (URL pobjeđuje per-key). Bez ovog merge-a,
+ * klik na pojedinačni chip bi silently undid nalaz D (per-param merge u
+ * resolveTerminiPrefs) — kao u: cookie {range: "mjesec", sort: "asc"} +
+ * URL ?status=ceka bi rezultiralo cookie-jem {status: "ceka"} (range/sort
+ * izgubljeni). Sa merge-om: cookie postaje {range: "mjesec", status: "ceka",
+ * sort: "asc"}.
  *
  * Cookie atributi:
  *   Path=/admin           — public stranice ne dobijaju
@@ -37,6 +46,14 @@ const SECURE_ATTR =
     ? "; Secure"
     : "";
 
+function getCookie(name: string): string | undefined {
+  if (typeof document === "undefined") return undefined;
+  const match = document.cookie.match(
+    new RegExp("(^|; )" + name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "=([^;]*)"),
+  );
+  return match ? decodeURIComponent(match[2]) : undefined;
+}
+
 function writeCookie(name: string, value: string) {
   document.cookie = `${name}=${encodeURIComponent(value)}; ${COMMON_ATTRS}${SECURE_ATTR}`;
 }
@@ -47,21 +64,25 @@ export function AdminPrefsPersister() {
 
   useEffect(() => {
     if (pathname === "/admin/termini") {
-      const prefs: TerminiPrefs = {};
       const date = searchParams.get("date");
       const range = searchParams.get("range");
       const status = searchParams.get("status");
       const sort = searchParams.get("sort");
-      if (date) prefs.date = date;
-      if (range) prefs.range = range as TerminiPrefs["range"];
-      if (status) prefs.status = status as TerminiPrefs["status"];
-      if (sort) prefs.sort = sort as TerminiPrefs["sort"];
 
-      // Zapiši samo kad postoji bar jedan eksplicitni izbor.
-      // Inače bi prvi posjet brisao postojeći cookie.
-      if (Object.keys(prefs).length > 0) {
-        writeCookie(TERMINI_PREFS_COOKIE, serializeTerminiPrefs(prefs));
-      }
+      // Skip write kad URL nema NIJEDAN filter — vidi NAPOMENU iznad.
+      if (!date && !range && !status && !sort) return;
+
+      // Read postojeći cookie i merge URL params preko (URL pobjeđuje per-param).
+      // Bez ovoga, klik na samo jedan chip bi resetovao ostatak cookie-ja, što
+      // bi silently undid nalaz D (per-param merge u resolveTerminiPrefs).
+      const existing = parseTerminiPrefs(getCookie(TERMINI_PREFS_COOKIE));
+      const merged: TerminiPrefs = { ...existing };
+      if (date) merged.date = date;
+      if (range) merged.range = range as TerminiPrefs["range"];
+      if (status) merged.status = status as TerminiPrefs["status"];
+      if (sort) merged.sort = sort as TerminiPrefs["sort"];
+
+      writeCookie(TERMINI_PREFS_COOKIE, serializeTerminiPrefs(merged));
       return;
     }
 
