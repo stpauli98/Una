@@ -7,7 +7,6 @@ import {
   computeDefaultSort,
   resolveTerminiPrefs,
   type TerminiPrefs,
-  type ResolvedTerminiPrefs,
 } from "@/lib/utils/admin-prefs";
 
 describe("TERMINI_PREFS_COOKIE", () => {
