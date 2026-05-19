@@ -102,3 +102,85 @@ export function parseDashboardDate(cookieValue: string | undefined): string | un
   if (cookieValue && ISO_DATE_RE.test(cookieValue)) return cookieValue;
   return undefined;
 }
+
+/**
+ * Default sort izračun za Termini listu:
+ *   - ASC za single-day view (date setovan ili range='danas') — jutarnji prvi.
+ *   - DESC za multi-day (sedmica/mjesec/svi) — najnoviji prvi.
+ *
+ * Izloženo kao posebna funkcija jer i page.tsx i URL builder-i u UI-u trebaju
+ * isti izračun (DRY).
+ */
+export function computeDefaultSort(args: {
+  date: string | undefined;
+  range: "danas" | "sedmica" | "mjesec" | "svi";
+}): "asc" | "desc" {
+  const isSingleDay = !!args.date || args.range === "danas";
+  return isSingleDay ? "asc" : "desc";
+}
+
+export type ResolvedTerminiPrefs = {
+  date: string | undefined;
+  range: "danas" | "sedmica" | "mjesec" | "svi";
+  status: "svi" | "ceka" | "potvrdjen" | "otkazan" | "zavrsen";
+  sort: "asc" | "desc";
+  /**
+   * True ako sort nije eksplicit od user-a (ni URL ni cookie) i izveden je
+   * iz date/range. URL builder-i u page.tsx koriste ovo da ne dodaju ?sort=
+   * u URL kad je default (čistiji URL).
+   */
+  isDefaultSort: boolean;
+};
+
+/**
+ * Resolve URL params + cookie u finalne, normalizovane Termini prefs.
+ *
+ * Per-param merge: missing URL params fallback na cookie value.
+ *
+ * Date/range međusobno isključivost (deterministički 4 koraka):
+ *   1. date: ako URL ima range → date = urlDate (cookie date se odbacuje)
+ *            inače → date = urlDate ?? cookieDate
+ *   2. range: ako date postoji → range = "svi" (date pobjeđuje range)
+ *             inače → range = urlRange ?? cookieRange ?? "svi"
+ *   3. status: urlStatus ?? cookieStatus ?? "svi"
+ *   4. sort: explicit = urlSort ?? cookieSort, sort = explicit ?? defaultSort,
+ *           isDefaultSort = explicit === undefined
+ */
+export function resolveTerminiPrefs(
+  urlParams: {
+    date?: string;
+    range?: string;
+    status?: string;
+    sort?: string;
+  },
+  cookiePrefs: TerminiPrefs,
+): ResolvedTerminiPrefs {
+  const urlDate = isValidDate(urlParams.date) ? urlParams.date : undefined;
+  const urlRange = isValidRange(urlParams.range)
+    ? urlParams.range
+    : undefined;
+  const urlStatus = isValidStatus(urlParams.status)
+    ? urlParams.status
+    : undefined;
+  const urlSort = isValidSort(urlParams.sort) ? urlParams.sort : undefined;
+
+  // Korak 1: date
+  const date = urlRange ? urlDate : (urlDate ?? cookiePrefs.date);
+
+  // Korak 2: range
+  const range: ResolvedTerminiPrefs["range"] = date
+    ? "svi"
+    : (urlRange ?? cookiePrefs.range ?? "svi");
+
+  // Korak 3: status
+  const status: ResolvedTerminiPrefs["status"] =
+    urlStatus ?? cookiePrefs.status ?? "svi";
+
+  // Korak 4: sort
+  const defaultSort = computeDefaultSort({ date, range });
+  const explicit = urlSort ?? cookiePrefs.sort;
+  const sort = explicit ?? defaultSort;
+  const isDefaultSort = explicit === undefined;
+
+  return { date, range, status, sort, isDefaultSort };
+}

@@ -53,6 +53,71 @@ export function getSarajevoDayBounds(dateStr: string): {
 }
 
 /**
+ * Vraća Sarajevo sedmične granice (ponedjeljak 00:00 — sljedeći ponedjeljak 00:00)
+ * kao ISO UTC stringove. End je exclusive (koristi se sa `gte/lt` u DB query-ju).
+ *
+ * Input: bilo koji YYYY-MM-DD dateStr unutar te sedmice. Funkcija sama nađe
+ * ponedjeljak. DST-safe (sva aritmetika ide preko podneva kao bazne tačke).
+ */
+export function getSarajevoWeekBounds(dateStr: string): {
+  start: string;
+  end: string;
+} {
+  assertIsoDate(dateStr);
+  const [y, m, d] = dateStr.split("-").map(Number);
+  // Podne kao baza — daleko od DST tranzicija (uvijek 02:00/03:00)
+  const noon = atSarajevo(y, m, d, 12, 0);
+  // ISO dan: 1=Mon, 7=Sun
+  const isoDay = parseInt(formatInTimeZone(noon, TZ, "i"), 10);
+  // Pomak unazad do ponedjeljka kroz podne
+  const mondayNoon = new Date(
+    noon.getTime() - (isoDay - 1) * 24 * 60 * 60 * 1000,
+  );
+  const mondayDateStr = formatInTimeZone(mondayNoon, TZ, "yyyy-MM-dd");
+  // Sljedeći ponedjeljak = mondayNoon + 7 dana, pa format → datum
+  const nextMondayNoon = new Date(
+    mondayNoon.getTime() + 7 * 24 * 60 * 60 * 1000,
+  );
+  const nextMondayDateStr = formatInTimeZone(
+    nextMondayNoon,
+    TZ,
+    "yyyy-MM-dd",
+  );
+  // Ponoć iz date string-ova (zna DST tačno)
+  const [my, mm, md] = mondayDateStr.split("-").map(Number);
+  const [ny, nm, nd] = nextMondayDateStr.split("-").map(Number);
+  return {
+    start: atSarajevo(my, mm, md, 0, 0).toISOString(),
+    end: atSarajevo(ny, nm, nd, 0, 0).toISOString(),
+  };
+}
+
+/**
+ * Vraća Sarajevo mjesečne granice (1. dan u mjesecu 00:00 — 1. sljedećeg 00:00)
+ * kao ISO UTC stringove. End je exclusive.
+ *
+ * Input: bilo koji YYYY-MM-DD dateStr unutar tog mjeseca. Ispravno radi za
+ * sve dužine mjeseci (28/29/30/31) i decembar→januar prelaz. DST-safe.
+ */
+export function getSarajevoMonthBounds(dateStr: string): {
+  start: string;
+  end: string;
+} {
+  assertIsoDate(dateStr);
+  const [y, m] = dateStr.split("-").map(Number);
+  // Prvi dan ovog mjeseca, ponoć u Sarajevu
+  const start = atSarajevo(y, m, 1, 0, 0);
+  // Prvi dan sljedećeg mjeseca: (y, m+1, 1) sa wraparound za decembar
+  const nextY = m === 12 ? y + 1 : y;
+  const nextM = m === 12 ? 1 : m + 1;
+  const end = atSarajevo(nextY, nextM, 1, 0, 0);
+  return {
+    start: start.toISOString(),
+    end: end.toISOString(),
+  };
+}
+
+/**
  * YYYY-MM-DD u Sarajevo TZ za dati `now` (default: trenutno vrijeme).
  * Koristi se kao default kad ?date= query param nije setovan.
  */
