@@ -8,7 +8,6 @@ import {
   TERMINI_PREFS_COOKIE,
   parseTerminiPrefs,
   resolveTerminiPrefs,
-  computeDefaultSort,
 } from "@/lib/utils/admin-prefs";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { AppointmentRow } from "@/components/admin/AppointmentRow";
@@ -139,22 +138,17 @@ export default async function AdminTerminiPage({
   const multiDay = groups.length > 1;
 
   // URL helpers — koriste resolved.* (uključuje cookie fallback)
-  const defaultSort = computeDefaultSort({
-    date: resolved.date,
-    range: resolved.range,
-  });
-
   const buildPresetHref = (r: Range, s: StatusFilter): string => {
     const sp = new URLSearchParams();
     sp.set("range", r);
     if (s !== "svi") sp.set("status", s);
-    if (resolved.sort !== defaultSort) sp.set("sort", resolved.sort);
+    if (!resolved.isDefaultSort) sp.set("sort", resolved.sort);
     return `/admin/termini?${sp.toString()}`;
   };
 
   const dayPickerPreserve: Record<string, string | undefined> = {
     status: resolved.status !== "svi" ? resolved.status : undefined,
-    sort: resolved.sort !== defaultSort ? resolved.sort : undefined,
+    sort: !resolved.isDefaultSort ? resolved.sort : undefined,
   };
 
   const sortPreserve: Record<string, string | undefined> = {
@@ -174,7 +168,7 @@ export default async function AdminTerminiPage({
         ? resolved.range
         : undefined,
     date: resolved.date,
-    sort: resolved.sort !== defaultSort ? resolved.sort : undefined,
+    sort: !resolved.isDefaultSort ? resolved.sort : undefined,
   };
 
   return (
@@ -183,7 +177,7 @@ export default async function AdminTerminiPage({
       <AdminPrefsPersister />
       <PageHeader
         title="Termini"
-        subtitle={`${appointments?.length ?? 0} zabilježenih`}
+        subtitle={`${totalMatching ?? appointments?.length ?? 0} zabilježenih`}
         action={<TerminiToolbar services={services} />}
       />
 
