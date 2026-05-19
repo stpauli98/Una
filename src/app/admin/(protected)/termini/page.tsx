@@ -13,6 +13,17 @@ import { AppointmentsRealtime } from "@/components/admin/AppointmentsRealtime";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { AppointmentRow } from "@/components/admin/AppointmentRow";
 import { TerminiToolbar } from "@/components/admin/TerminiToolbar";
+import { AdminDayPicker } from "@/components/admin/AdminDayPicker";
+import { TerminiSortToggle } from "@/components/admin/TerminiSortToggle";
+import {
+  getSarajevoDayBounds,
+  sarajevoTodayDateStr,
+  addDaysToDateStr,
+} from "@/lib/utils/day-bounds";
+import { parseBookingSettings } from "@/lib/settings/read";
+import { groupAppointmentsByDay } from "@/lib/utils/group-by-day";
+import { formatDate } from "@/lib/utils/format";
+import { parseDateSarajevo } from "@/lib/utils/tz";
 import { cn } from "@/lib/utils/cn";
 
 export const metadata: Metadata = {
@@ -24,6 +35,7 @@ export const dynamic = "force-dynamic";
 
 type Range = "danas" | "sedmica" | "mjesec" | "svi";
 type StatusFilter = "svi" | "ceka" | "potvrdjen" | "otkazan" | "zavrsen";
+type Sort = "asc" | "desc";
 
 const RANGE_LABELS: Record<Range, string> = {
   danas: "Danas",
@@ -40,34 +52,85 @@ const STATUS_LABELS: Record<StatusFilter, string> = {
   zavrsen: "Završen",
 };
 
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function isRange(v: string | undefined): v is Range {
+  return v === "danas" || v === "sedmica" || v === "mjesec" || v === "svi";
+}
+function isStatus(v: string | undefined): v is StatusFilter {
+  return (
+    v === "svi" ||
+    v === "ceka" ||
+    v === "potvrdjen" ||
+    v === "otkazan" ||
+    v === "zavrsen"
+  );
+}
+
 export default async function AdminTerminiPage({
   searchParams,
 }: {
-  searchParams: Promise<{ range?: Range; status?: StatusFilter }>;
+  searchParams: Promise<{
+    range?: string;
+    status?: string;
+    date?: string;
+    sort?: string;
+  }>;
 }) {
   const params = await searchParams;
-  const range = params.range ?? "svi";
-  const statusFilter = params.status ?? "svi";
+  const dateParam =
+    params.date && ISO_DATE_RE.test(params.date) ? params.date : undefined;
+  // date i range su međusobno isključivi — date pobjeđuje ako je zadan.
+  const rangeParam: Range = dateParam
+    ? "svi"
+    : isRange(params.range)
+      ? params.range
+      : "svi";
+  const statusFilter: StatusFilter = isStatus(params.status)
+    ? params.status
+    : "svi";
+  // Default sort: ASC za single-day (date ili range=danas), DESC za multi-day.
+  const isSingleDay = !!dateParam || rangeParam === "danas";
+  const defaultSort: Sort = isSingleDay ? "asc" : "desc";
+  const sort: Sort =
+    params.sort === "asc" || params.sort === "desc" ? params.sort : defaultSort;
 
   const sb = await createClient();
+  const now = new Date();
+  const todayStr = sarajevoTodayDateStr(now);
 
+  // maxDateStr za day picker: 90 dana unaprijed (po BOOKING_RULES) — ali
+  // čitamo iz settings tabele za živo. Settings query je keširan u layout-u
+  // ali ovdje radimo direktan query da uhvatimo svježu vrijednost.
+  const { data: settingsRows } = await sb.from("settings").select("key,value");
+  const bookingSettings = parseBookingSettings(settingsRows ?? []);
+  const maxDateStr = addDaysToDateStr(
+    todayStr,
+    bookingSettings.advanceBookingDays,
+  );
+
+  // Query construction
   let appointmentsQuery = sb
     .from("appointments")
     .select(
       "id,client_name,client_phone,client_email,start_time,end_time,status,notes,services(name)",
     )
-    .order("start_time", { ascending: false });
+    .order("start_time", { ascending: sort === "asc" });
 
-  const now = new Date();
-  if (range === "danas") {
+  if (dateParam) {
+    const bounds = getSarajevoDayBounds(dateParam);
+    appointmentsQuery = appointmentsQuery
+      .gte("start_time", bounds.start)
+      .lt("start_time", bounds.end);
+  } else if (rangeParam === "danas") {
     appointmentsQuery = appointmentsQuery
       .gte("start_time", startOfDay(now).toISOString())
       .lte("start_time", endOfDay(now).toISOString());
-  } else if (range === "sedmica") {
+  } else if (rangeParam === "sedmica") {
     appointmentsQuery = appointmentsQuery
       .gte("start_time", startOfWeek(now, { weekStartsOn: 1 }).toISOString())
       .lte("start_time", endOfWeek(now, { weekStartsOn: 1 }).toISOString());
-  } else if (range === "mjesec") {
+  } else if (rangeParam === "mjesec") {
     appointmentsQuery = appointmentsQuery
       .gte("start_time", startOfMonth(now).toISOString())
       .lte("start_time", endOfMonth(now).toISOString());
@@ -77,8 +140,6 @@ export default async function AdminTerminiPage({
     appointmentsQuery = appointmentsQuery.eq("status", statusFilter);
   }
 
-  // Paraleliziraj: appointments i services nisu međusobno zavisni.
-  // Prije: sekvencijalno ~2 round-trip-a do Supabase-a; sad: 1 round-trip.
   const [{ data: appointments }, { data: servicesData }] = await Promise.all([
     appointmentsQuery,
     sb
@@ -90,6 +151,31 @@ export default async function AdminTerminiPage({
   ]);
   const services = servicesData ?? [];
 
+  const groups = groupAppointmentsByDay(appointments ?? []);
+  const multiDay = groups.length > 1;
+
+  // URL helper za preset chip i status chip — preserve sort, ne date ako se preset klika
+  const buildPresetHref = (r: Range, s: StatusFilter): string => {
+    const sp = new URLSearchParams();
+    sp.set("range", r);
+    if (s !== "svi") sp.set("status", s);
+    if (sort !== defaultSort) sp.set("sort", sort);
+    return `/admin/termini?${sp.toString()}`;
+  };
+
+  // Preserve params za AdminDayPicker (date promjena čuva status + sort)
+  const dayPickerPreserve: Record<string, string | undefined> = {
+    status: statusFilter !== "svi" ? statusFilter : undefined,
+    sort: params.sort === "asc" || params.sort === "desc" ? params.sort : undefined,
+  };
+
+  // Preserve za sort toggle (čuva range/date/status)
+  const sortPreserve: Record<string, string | undefined> = {
+    range: dateParam ? undefined : rangeParam !== "svi" ? rangeParam : undefined,
+    date: dateParam,
+    status: statusFilter !== "svi" ? statusFilter : undefined,
+  };
+
   return (
     <div>
       <AppointmentsRealtime />
@@ -100,29 +186,53 @@ export default async function AdminTerminiPage({
       />
 
       <div className="p-5 md:p-8">
-        {/* Filters */}
+        {/* Day picker — uvijek vidljiv, klik mijenja konkretan datum */}
+        <div className="mb-4 border border-cream bg-white p-3">
+          <AdminDayPicker
+            selectedDateStr={dateParam ?? todayStr}
+            todayDateStr={todayStr}
+            maxDateStr={maxDateStr}
+            basePath="/admin/termini"
+            preserveParams={dayPickerPreserve}
+          />
+        </div>
+
+        {/* Filteri */}
         <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex gap-1.5 overflow-x-auto">
             {(["danas", "sedmica", "mjesec", "svi"] as const).map((r) => (
               <FilterLink
                 key={r}
-                href={`/admin/termini?range=${r}${statusFilter !== "svi" ? `&status=${statusFilter}` : ""}`}
-                active={range === r}
+                href={buildPresetHref(r, statusFilter)}
+                active={!dateParam && rangeParam === r}
                 label={RANGE_LABELS[r]}
               />
             ))}
           </div>
-          <div className="flex gap-1.5 overflow-x-auto">
+          <div className="flex items-center gap-1.5 overflow-x-auto">
             {(
               ["svi", "ceka", "potvrdjen", "otkazan", "zavrsen"] as const
-            ).map((s) => (
-              <FilterLink
-                key={s}
-                href={`/admin/termini?range=${range}${s !== "svi" ? `&status=${s}` : ""}`}
-                active={statusFilter === s}
-                label={STATUS_LABELS[s]}
-              />
-            ))}
+            ).map((s) => {
+              const sp = new URLSearchParams();
+              if (dateParam) sp.set("date", dateParam);
+              else if (rangeParam !== "svi") sp.set("range", rangeParam);
+              if (s !== "svi") sp.set("status", s);
+              if (sort !== defaultSort) sp.set("sort", sort);
+              const href = `/admin/termini${sp.toString() ? `?${sp.toString()}` : ""}`;
+              return (
+                <FilterLink
+                  key={s}
+                  href={href}
+                  active={statusFilter === s}
+                  label={STATUS_LABELS[s]}
+                />
+              );
+            })}
+            <TerminiSortToggle
+              sort={sort}
+              basePath="/admin/termini"
+              preserveParams={sortPreserve}
+            />
           </div>
         </div>
 
@@ -134,19 +244,26 @@ export default async function AdminTerminiPage({
             </p>
           </div>
         ) : (
-          <div className="overflow-hidden border border-cream">
-            {appointments!.map((appt) => (
-              <AppointmentRow
-                key={appt.id}
-                appointment={{
-                  ...appt,
-                  status: appt.status as
-                    | "ceka"
-                    | "potvrdjen"
-                    | "otkazan"
-                    | "zavrsen",
-                }}
-              />
+          <div className="space-y-4">
+            {groups.map((group) => (
+              <div key={group.dateStr}>
+                {multiDay && <DateGroupHeader dateStr={group.dateStr} />}
+                <div className="overflow-hidden border border-cream">
+                  {group.appointments.map((appt) => (
+                    <AppointmentRow
+                      key={appt.id}
+                      appointment={{
+                        ...appt,
+                        status: appt.status as
+                          | "ceka"
+                          | "potvrdjen"
+                          | "otkazan"
+                          | "zavrsen",
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         )}
@@ -176,5 +293,13 @@ function FilterLink({
     >
       {label}
     </Link>
+  );
+}
+
+function DateGroupHeader({ dateStr }: { dateStr: string }) {
+  return (
+    <p className="mb-2 text-[11px] uppercase tracking-[0.2em] text-light first-letter:uppercase">
+      {formatDate(parseDateSarajevo(dateStr))}
+    </p>
   );
 }
