@@ -93,6 +93,31 @@ export function getSarajevoWeekBounds(dateStr: string): {
 }
 
 /**
+ * Vraća Sarajevo mjesečne granice (1. dan u mjesecu 00:00 — 1. sljedećeg 00:00)
+ * kao ISO UTC stringove. End je exclusive.
+ *
+ * Input: bilo koji YYYY-MM-DD dateStr unutar tog mjeseca. Ispravno radi za
+ * sve dužine mjeseci (28/29/30/31) i decembar→januar prelaz. DST-safe.
+ */
+export function getSarajevoMonthBounds(dateStr: string): {
+  start: string;
+  end: string;
+} {
+  assertIsoDate(dateStr);
+  const [y, m] = dateStr.split("-").map(Number);
+  // Prvi dan ovog mjeseca, ponoć u Sarajevu
+  const start = atSarajevo(y, m, 1, 0, 0);
+  // Prvi dan sljedećeg mjeseca: (y, m+1, 1) sa wraparound za decembar
+  const nextY = m === 12 ? y + 1 : y;
+  const nextM = m === 12 ? 1 : m + 1;
+  const end = atSarajevo(nextY, nextM, 1, 0, 0);
+  return {
+    start: start.toISOString(),
+    end: end.toISOString(),
+  };
+}
+
+/**
  * YYYY-MM-DD u Sarajevo TZ za dati `now` (default: trenutno vrijeme).
  * Koristi se kao default kad ?date= query param nije setovan.
  */
