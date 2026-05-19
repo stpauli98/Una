@@ -21,6 +21,8 @@ import { AppointmentRow } from "@/components/admin/AppointmentRow";
 import { TerminiToolbar } from "@/components/admin/TerminiToolbar";
 import { AdminDayPicker } from "@/components/admin/AdminDayPicker";
 import { TerminiSortToggle } from "@/components/admin/TerminiSortToggle";
+import { TerminiStatusFilter } from "@/components/admin/TerminiStatusFilter";
+import { countByStatus } from "@/lib/utils/status-counts";
 import {
   getSarajevoDayBounds,
   sarajevoTodayDateStr,
@@ -48,14 +50,6 @@ const RANGE_LABELS: Record<Range, string> = {
   sedmica: "Sedmica",
   mjesec: "Mjesec",
   svi: "Svi",
-};
-
-const STATUS_LABELS: Record<StatusFilter, string> = {
-  svi: "Svi statusi",
-  ceka: "Čeka",
-  potvrdjen: "Potvrđen",
-  otkazan: "Otkazan",
-  zavrsen: "Završen",
 };
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -160,7 +154,35 @@ export default async function AdminTerminiPage({
     appointmentsQuery = appointmentsQuery.eq("status", statusFilter);
   }
 
-  const [{ data: appointments }, { data: servicesData }] = await Promise.all([
+  // Separate query za counts — ide preko ISTOG date/range filtera ali BEZ
+  // status restrikcije, tako da dropdown vidi broj svih statusa unutar
+  // trenutnog opsega (npr. "Čeka (3)" + "Potvrđen (8)" istovremeno čak
+  // i kad je trenutni filter "ceka").
+  let countsQuery = sb.from("appointments").select("status");
+  if (dateParam) {
+    const bounds = getSarajevoDayBounds(dateParam);
+    countsQuery = countsQuery
+      .gte("start_time", bounds.start)
+      .lt("start_time", bounds.end);
+  } else if (rangeParam === "danas") {
+    countsQuery = countsQuery
+      .gte("start_time", startOfDay(now).toISOString())
+      .lte("start_time", endOfDay(now).toISOString());
+  } else if (rangeParam === "sedmica") {
+    countsQuery = countsQuery
+      .gte("start_time", startOfWeek(now, { weekStartsOn: 1 }).toISOString())
+      .lte("start_time", endOfWeek(now, { weekStartsOn: 1 }).toISOString());
+  } else if (rangeParam === "mjesec") {
+    countsQuery = countsQuery
+      .gte("start_time", startOfMonth(now).toISOString())
+      .lte("start_time", endOfMonth(now).toISOString());
+  }
+
+  const [
+    { data: appointments },
+    { data: servicesData },
+    { data: countsData },
+  ] = await Promise.all([
     appointmentsQuery,
     sb
       .from("services")
@@ -168,8 +190,10 @@ export default async function AdminTerminiPage({
       .eq("bookable", true)
       .eq("active", true)
       .order("order_index"),
+    countsQuery,
   ]);
   const services = servicesData ?? [];
+  const statusCounts = countByStatus(countsData ?? []);
 
   const groups = groupAppointmentsByDay(appointments ?? []);
   const multiDay = groups.length > 1;
@@ -197,6 +221,13 @@ export default async function AdminTerminiPage({
     range: dateParam ? undefined : rangeParam !== "svi" ? rangeParam : undefined,
     date: dateParam,
     status: statusFilter !== "svi" ? statusFilter : undefined,
+  };
+
+  // Preserve za status filter (čuva range/date/sort)
+  const statusPreserve: Record<string, string | undefined> = {
+    range: dateParam ? undefined : rangeParam !== "svi" ? rangeParam : undefined,
+    date: dateParam,
+    sort: sort !== defaultSort ? sort : undefined,
   };
 
   return (
@@ -234,24 +265,12 @@ export default async function AdminTerminiPage({
             ))}
           </div>
           <div className="flex items-center gap-1.5 overflow-x-auto">
-            {(
-              ["svi", "ceka", "potvrdjen", "otkazan", "zavrsen"] as const
-            ).map((s) => {
-              const sp = new URLSearchParams();
-              if (dateParam) sp.set("date", dateParam);
-              else if (rangeParam !== "svi") sp.set("range", rangeParam);
-              if (s !== "svi") sp.set("status", s);
-              if (sort !== defaultSort) sp.set("sort", sort);
-              const href = `/admin/termini${sp.toString() ? `?${sp.toString()}` : ""}`;
-              return (
-                <FilterLink
-                  key={s}
-                  href={href}
-                  active={statusFilter === s}
-                  label={STATUS_LABELS[s]}
-                />
-              );
-            })}
+            <TerminiStatusFilter
+              value={statusFilter}
+              counts={statusCounts}
+              basePath="/admin/termini"
+              preserveParams={statusPreserve}
+            />
             <TerminiSortToggle
               sort={sort}
               basePath="/admin/termini"
