@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import {
   startOfDay,
   endOfDay,
@@ -10,6 +11,11 @@ import {
 } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
 import { AppointmentsRealtime } from "@/components/admin/AppointmentsRealtime";
+import { AdminPrefsPersister } from "@/components/admin/AdminPrefsPersister";
+import {
+  TERMINI_PREFS_COOKIE,
+  parseTerminiPrefs,
+} from "@/lib/utils/admin-prefs";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { AppointmentRow } from "@/components/admin/AppointmentRow";
 import { TerminiToolbar } from "@/components/admin/TerminiToolbar";
@@ -78,22 +84,36 @@ export default async function AdminTerminiPage({
   }>;
 }) {
   const params = await searchParams;
+  // Cookie fallback: ako URL nema nijedan filter param, učitaj zadnje izbore
+  // iz cookie-ja. URL pobjeđuje cookie kad oboje postoje.
+  const cookieStore = await cookies();
+  const cookiePrefs = parseTerminiPrefs(
+    cookieStore.get(TERMINI_PREFS_COOKIE)?.value,
+  );
+  const hasUrlFilter =
+    !!params.date || !!params.range || !!params.status || !!params.sort;
+  const effective = hasUrlFilter ? params : cookiePrefs;
+
   const dateParam =
-    params.date && ISO_DATE_RE.test(params.date) ? params.date : undefined;
+    effective.date && ISO_DATE_RE.test(effective.date)
+      ? effective.date
+      : undefined;
   // date i range su međusobno isključivi — date pobjeđuje ako je zadan.
   const rangeParam: Range = dateParam
     ? "svi"
-    : isRange(params.range)
-      ? params.range
+    : isRange(effective.range)
+      ? effective.range
       : "svi";
-  const statusFilter: StatusFilter = isStatus(params.status)
-    ? params.status
+  const statusFilter: StatusFilter = isStatus(effective.status)
+    ? effective.status
     : "svi";
   // Default sort: ASC za single-day (date ili range=danas), DESC za multi-day.
   const isSingleDay = !!dateParam || rangeParam === "danas";
   const defaultSort: Sort = isSingleDay ? "asc" : "desc";
   const sort: Sort =
-    params.sort === "asc" || params.sort === "desc" ? params.sort : defaultSort;
+    effective.sort === "asc" || effective.sort === "desc"
+      ? effective.sort
+      : defaultSort;
 
   const sb = await createClient();
   const now = new Date();
@@ -163,10 +183,13 @@ export default async function AdminTerminiPage({
     return `/admin/termini?${sp.toString()}`;
   };
 
-  // Preserve params za AdminDayPicker (date promjena čuva status + sort)
+  // Preserve params za AdminDayPicker (date promjena čuva status + sort).
+  // KORISTI derived `sort` i `statusFilter` (uključuju cookie fallback), ne raw
+  // `params.X` — inače kad cookie restore-uje izbore a URL je prazan, day picker
+  // klik bi izgubio non-default sort.
   const dayPickerPreserve: Record<string, string | undefined> = {
     status: statusFilter !== "svi" ? statusFilter : undefined,
-    sort: params.sort === "asc" || params.sort === "desc" ? params.sort : undefined,
+    sort: sort !== defaultSort ? sort : undefined,
   };
 
   // Preserve za sort toggle (čuva range/date/status)
@@ -179,6 +202,7 @@ export default async function AdminTerminiPage({
   return (
     <div>
       <AppointmentsRealtime />
+      <AdminPrefsPersister />
       <PageHeader
         title="Termini"
         subtitle={`${appointments?.length ?? 0} zabilježenih`}

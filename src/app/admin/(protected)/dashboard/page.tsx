@@ -15,6 +15,12 @@ import {
 import { parseBookingSettings } from "@/lib/settings/read";
 import { getCachedSettings } from "@/lib/cache/cached-queries";
 import { DashboardDayPicker } from "@/components/admin/DashboardDayPicker";
+import { cookies } from "next/headers";
+import {
+  DASHBOARD_DATE_COOKIE,
+  parseDashboardDate,
+} from "@/lib/utils/admin-prefs";
+import { AdminPrefsPersister } from "@/components/admin/AdminPrefsPersister";
 
 export const metadata: Metadata = {
   title: "Dashboard — Admin",
@@ -48,13 +54,20 @@ export default async function AdminDashboardPage({
   );
 
   const params = await searchParams;
+  // Cookie fallback: ako URL nema ?date, učitaj zadnji izbor iz cookie-ja.
+  const cookieStore = await cookies();
+  const cookieDate = parseDashboardDate(
+    cookieStore.get(DASHBOARD_DATE_COOKIE)?.value,
+  );
+  const effectiveDate = params.date ?? cookieDate;
+
   // Validacija + fallback na današnji dan
   let selectedDateStr = todayStr;
-  if (params.date) {
+  if (effectiveDate) {
     try {
       // getSarajevoDayBounds baca ako neispravan
-      getSarajevoDayBounds(params.date);
-      selectedDateStr = params.date > maxDateStr ? maxDateStr : params.date;
+      getSarajevoDayBounds(effectiveDate);
+      selectedDateStr = effectiveDate > maxDateStr ? maxDateStr : effectiveDate;
     } catch {
       selectedDateStr = todayStr;
     }
@@ -108,6 +121,7 @@ export default async function AdminDashboardPage({
   return (
     <div>
       <AppointmentsRealtime />
+      <AdminPrefsPersister />
       <PageHeader
         title="Dashboard"
         subtitle="Pregled termina i prometa"
