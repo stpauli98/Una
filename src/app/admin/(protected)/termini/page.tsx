@@ -183,10 +183,13 @@ export default async function AdminTerminiPage({
     return `/admin/termini?${sp.toString()}`;
   };
 
-  // Preserve params za AdminDayPicker (date promjena čuva status + sort)
+  // Preserve params za AdminDayPicker (date promjena čuva status + sort).
+  // KORISTI derived `sort` i `statusFilter` (uključuju cookie fallback), ne raw
+  // `params.X` — inače kad cookie restore-uje izbore a URL je prazan, day picker
+  // klik bi izgubio non-default sort.
   const dayPickerPreserve: Record<string, string | undefined> = {
     status: statusFilter !== "svi" ? statusFilter : undefined,
-    sort: params.sort === "asc" || params.sort === "desc" ? params.sort : undefined,
+    sort: sort !== defaultSort ? sort : undefined,
   };
 
   // Preserve za sort toggle (čuva range/date/status)
