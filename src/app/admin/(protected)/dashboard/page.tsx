@@ -137,6 +137,7 @@ export default async function AdminDashboardPage({
     (sum, a) => sum + Number(a.price_snapshot ?? 0),
     0,
   );
+  const dayList = dayListRes.data ?? [];
 
   return (
     <div>
@@ -207,7 +208,7 @@ export default async function AdminDashboardPage({
             />
           </div>
 
-          {(dayListRes.data?.length ?? 0) === 0 ? (
+          {dayList.length === 0 ? (
             <div className="border border-cream bg-white p-8 text-center">
               <p className="text-sm text-light">
                 {selectedDateStr === todayStr
@@ -217,13 +218,11 @@ export default async function AdminDashboardPage({
             </div>
           ) : (
             <div className="overflow-hidden border border-cream bg-white">
-              {dayListRes.data!.map((appt, i) => (
+              {dayList.map((appt, i) => (
                 <div
                   key={appt.id}
                   className={`flex items-center justify-between gap-4 px-5 py-4 ${
-                    i < dayListRes.data!.length - 1
-                      ? "border-b border-cream"
-                      : ""
+                    i < dayList.length - 1 ? "border-b border-cream" : ""
                   }`}
                 >
                   <div className="flex items-center gap-4">
