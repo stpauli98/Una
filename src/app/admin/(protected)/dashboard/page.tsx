@@ -6,9 +6,10 @@ import { AppointmentsRealtime } from "@/components/admin/AppointmentsRealtime";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { formatTime, formatPrice } from "@/lib/utils/format";
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import {
   getSarajevoDayBounds,
+  getSarajevoWeekBounds,
+  getSarajevoMonthBounds,
   sarajevoTodayDateStr,
   addDaysToDateStr,
 } from "@/lib/utils/day-bounds";
@@ -78,31 +79,49 @@ export default async function AdminDashboardPage({
   // Granice za "Termini danas" stat card (uvijek stvarni današnji dan)
   const todayBounds = getSarajevoDayBounds(todayStr);
 
-  // Stats sedmica/mjesec ostaju vezani za `now` (stvarni datum, ne izabrani)
-  const weekStart = startOfWeek(now, { weekStartsOn: 1 }).toISOString();
-  const weekEnd = endOfWeek(now, { weekStartsOn: 1 }).toISOString();
-  const monthStart = startOfMonth(now).toISOString();
-  const monthEnd = endOfMonth(now).toISOString();
+  // Stats sedmica/mjesec idu kroz TZ-aware helpere (Sarajevo timezone),
+  // vezani za stvarni današnji datum (ne izabrani u day picker-u).
+  const weekBounds = getSarajevoWeekBounds(todayStr);
+  const monthBounds = getSarajevoMonthBounds(todayStr);
 
-  const [todayRes, weekRes, monthRes, dayListRes] = await Promise.all([
+  const [todayRes, weekRes, monthRes, revenueRes, dayListRes] = await Promise.all([
+    // 1. Završeni danas — count
     sb
       .from("appointments")
       .select("id", { count: "exact", head: true })
       .gte("start_time", todayBounds.start)
       .lt("start_time", todayBounds.end)
-      .in("status", ["ceka", "potvrdjen"]),
+      .eq("status", "zavrsen"),
+
+    // 2. Završeno sedmica — count
     sb
       .from("appointments")
       .select("id", { count: "exact", head: true })
-      .gte("start_time", weekStart)
-      .lte("start_time", weekEnd)
-      .in("status", ["ceka", "potvrdjen"]),
+      .gte("start_time", weekBounds.start)
+      .lt("start_time", weekBounds.end)
+      .eq("status", "zavrsen"),
+
+    // 3. Završeno mjesec — count
     sb
       .from("appointments")
-      .select("id,services(price)")
-      .gte("start_time", monthStart)
-      .lte("start_time", monthEnd)
-      .in("status", ["potvrdjen", "zavrsen"]),
+      .select("id", { count: "exact", head: true })
+      .gte("start_time", monthBounds.start)
+      .lt("start_time", monthBounds.end)
+      .eq("status", "zavrsen"),
+
+    // 4. Prihod mjesec — sumiramo price_snapshot iz zavrsen termina.
+    // .not(price_snapshot, is, null) izbacuje termine bez snapshot-a
+    // (rijetki edge case kad je servis obrisan prije zavrsen).
+    sb
+      .from("appointments")
+      .select("price_snapshot")
+      .gte("start_time", monthBounds.start)
+      .lt("start_time", monthBounds.end)
+      .eq("status", "zavrsen")
+      .not("price_snapshot", "is", null)
+      .limit(1000),
+
+    // 5. Lista termina za izabrani dan — NEIZMIJENJENO (sve statuse)
     sb
       .from("appointments")
       .select("id,client_name,client_phone,start_time,status,services(name)")
@@ -113,10 +132,12 @@ export default async function AdminDashboardPage({
 
   const todayCount = todayRes.count ?? 0;
   const weekCount = weekRes.count ?? 0;
-  const monthCount = monthRes.data?.length ?? 0;
-  const monthRevenue = (monthRes.data ?? []).reduce((sum, a) => {
-    return sum + Number(a.services?.price ?? 0);
-  }, 0);
+  const monthCount = monthRes.count ?? 0;
+  const monthRevenue = (revenueRes.data ?? []).reduce(
+    (sum, a) => sum + Number(a.price_snapshot ?? 0),
+    0,
+  );
+  const dayList = dayListRes.data ?? [];
 
   return (
     <div>
@@ -147,17 +168,17 @@ export default async function AdminDashboardPage({
         <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard
             icon={Clock}
-            label="Termini danas"
+            label="Završeni danas"
             value={todayCount}
           />
           <StatCard
             icon={Calendar}
-            label="Ova sedmica"
+            label="Završeno sedmica"
             value={weekCount}
           />
           <StatCard
             icon={CheckCircle2}
-            label="Ovaj mjesec"
+            label="Završeno mjesec"
             value={monthCount}
           />
           <StatCard
@@ -187,7 +208,7 @@ export default async function AdminDashboardPage({
             />
           </div>
 
-          {(dayListRes.data?.length ?? 0) === 0 ? (
+          {dayList.length === 0 ? (
             <div className="border border-cream bg-white p-8 text-center">
               <p className="text-sm text-light">
                 {selectedDateStr === todayStr
@@ -197,13 +218,11 @@ export default async function AdminDashboardPage({
             </div>
           ) : (
             <div className="overflow-hidden border border-cream bg-white">
-              {dayListRes.data!.map((appt, i) => (
+              {dayList.map((appt, i) => (
                 <div
                   key={appt.id}
                   className={`flex items-center justify-between gap-4 px-5 py-4 ${
-                    i < dayListRes.data!.length - 1
-                      ? "border-b border-cream"
-                      : ""
+                    i < dayList.length - 1 ? "border-b border-cream" : ""
                   }`}
                 >
                   <div className="flex items-center gap-4">
