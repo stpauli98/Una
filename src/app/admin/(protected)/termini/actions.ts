@@ -60,11 +60,36 @@ export async function cancelAppointment(id: number): Promise<ActionResult> {
 export async function markCompleted(id: number): Promise<ActionResult> {
   try {
     const sb = await requireAdmin();
-    const { error } = await sb
+
+    // Fetch current service price za snapshot
+    const { data: appt, error: fetchErr } = await sb
       .from("appointments")
-      .update({ status: "zavrsen" })
+      .select("services(price)")
+      .eq("id", id)
+      .single();
+
+    if (fetchErr || !appt) {
+      return {
+        ok: false,
+        error: fetchErr?.message ?? "Termin nije pronađen",
+      };
+    }
+
+    // services može biti null ako je servis obrisan (FK ON DELETE SET NULL).
+    // U tom slučaju snapshot ostaje null — admin može mark zavrsen ali
+    // revenue za taj termin neće biti uračunat. Rijetka edge case.
+    const priceSnapshot = appt.services?.price ?? null;
+
+    const { error: updateErr } = await sb
+      .from("appointments")
+      .update({
+        status: "zavrsen",
+        price_snapshot: priceSnapshot,
+      })
       .eq("id", id);
-    if (error) return { ok: false, error: error.message };
+
+    if (updateErr) return { ok: false, error: updateErr.message };
+
     revalidatePath("/admin/termini");
     revalidatePath("/admin/dashboard");
     return { ok: true };
