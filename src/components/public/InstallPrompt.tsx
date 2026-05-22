@@ -67,7 +67,7 @@ export function InstallPrompt() {
         <Download size={18} strokeWidth={1.5} />
       </div>
       <div className="flex-1 text-[12px] leading-snug text-dark">
-        Instaliraj UP Beauty na početni ekran za brži pristup.
+        Instaliraj UP Makeup na početni ekran za brži pristup.
       </div>
       <button
         type="button"

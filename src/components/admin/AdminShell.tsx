@@ -48,7 +48,7 @@ export function AdminShell({ userEmail, children }: Props) {
               UP
             </span>
             <div>
-              <p className="text-[11px] font-medium text-dark">Beauty Studio</p>
+              <p className="text-[11px] font-medium text-dark">Makeup</p>
               <p className="text-[9px] uppercase tracking-[0.2em] text-light">
                 Admin Panel
               </p>

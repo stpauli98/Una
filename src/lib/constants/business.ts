@@ -3,7 +3,7 @@
  * Izvor istine za ime, adresu, telefon, radno vrijeme i pravila rezervacije.
  */
 export const BUSINESS = {
-  name: "UP Beauty & Makeup Studio",
+  name: "UP Makeup",
   owner: "Una Peranović",
   address: "Majora Milana Tepića 13, Gradiška",
   phone: "+387 65 810 323",

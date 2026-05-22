@@ -38,11 +38,11 @@ export const metadata: Metadata = {
     template: `%s · ${BUSINESS.name}`,
   },
   description:
-    "Profesionalno šminkanje u Gradišci — svadbeno, večernje, maturalno, terensko. Pedikir, trepavice i obuka šminkanja kod Une Peranović u UP Beauty & Makeup Studio. Zakažite termin online.",
-  applicationName: "UP Beauty",
+    "Profesionalno šminkanje u Gradišci — svadbeno, večernje, maturalno, terensko. Pedikir, trepavice i obuka šminkanja kod Une Peranović u UP Makeup. Zakažite termin online.",
+  applicationName: "UP Makeup",
   appleWebApp: {
     capable: true,
-    title: "UP Beauty",
+    title: "UP Makeup",
     statusBarStyle: "black-translucent",
   },
   formatDetection: {
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
     locale: "sr_Latn",
     siteName: BUSINESS.name,
     url: "/",
-    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "UP Beauty & Makeup Studio" }],
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "UP Makeup" }],
   },
   twitter: {
     card: "summary_large_image",

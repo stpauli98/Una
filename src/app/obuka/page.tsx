@@ -10,7 +10,7 @@ import { waLink } from "@/lib/utils/wa";
 export const metadata: Metadata = {
   title: "Obuka za šminkanje",
   description:
-    "Intenzivna obuka za šminkanje u UP Beauty Studio. Pet dana praktičnog rada, tehnike, savjeti i diploma. 800 KM.",
+    "Intenzivna obuka za šminkanje u UP Makeup. Pet dana praktičnog rada, tehnike, savjeti i diploma. 800 KM.",
   alternates: { canonical: "/obuka" },
   openGraph: { url: "/obuka" },
 };

@@ -11,8 +11,7 @@ export function Footer() {
             UP
           </span>
           <span className="text-[8px] uppercase leading-tight tracking-[0.2em] text-white/30">
-            Beauty &<br />
-            Makeup Studio
+            Makeup
           </span>
         </div>
 

@@ -37,7 +37,7 @@ describe("buildServicesJsonLd", () => {
   it("name field references brand + Gradiška", () => {
     const out = buildServicesJsonLd([service()], SITE);
     expect(out.name).toMatch(/Gradišci|Gradiška/);
-    expect(out.name).toMatch(/UP Beauty/);
+    expect(out.name).toMatch(/UP Makeup/);
   });
 
   it("handles empty services array without throwing", () => {

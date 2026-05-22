@@ -5,7 +5,7 @@ import { BUSINESS } from "@/lib/constants/business";
 
 export const metadata: Metadata = {
   title: "Uslovi korišćenja",
-  description: "Uslovi korišćenja sajta i usluga UP Beauty & Makeup Studio.",
+  description: "Uslovi korišćenja sajta i usluga UP Makeup.",
   alternates: { canonical: "/uslovi-koriscenja" },
 };
 

@@ -87,7 +87,7 @@ export function Nav({ overHero = false }: NavProps) {
           <Link
             href="/"
             className="flex items-center gap-2"
-            aria-label="UP Beauty & Makeup Studio — početna"
+            aria-label="UP Makeup — početna"
           >
             <span
               className={cn(
@@ -103,8 +103,7 @@ export function Nav({ overHero = false }: NavProps) {
                 solid ? "text-light" : "text-white/65",
               )}
             >
-              Beauty &<br />
-              Makeup Studio
+              Makeup
             </span>
           </Link>
 

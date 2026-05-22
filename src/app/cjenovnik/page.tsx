@@ -12,7 +12,7 @@ type Service = Database["public"]["Tables"]["services"]["Row"];
 export const metadata: Metadata = {
   title: "Cjenovnik šminkanja Gradiška",
   description:
-    "Cijene šminkanja u Gradišci — svadbeno, večernje, maturalno, terensko. Pedikir, trepavice, obuka. Sve cijene u KM. UP Beauty & Makeup Studio kod Une Peranović.",
+    "Cijene šminkanja u Gradišci — svadbeno, večernje, maturalno, terensko. Pedikir, trepavice, obuka. Sve cijene u KM. UP Makeup kod Une Peranović.",
   alternates: { canonical: "/cjenovnik" },
   openGraph: { url: "/cjenovnik" },
 };

@@ -1,4 +1,4 @@
-# UP Beauty & Makeup Studio
+# UP Makeup
 
 Produkcioni sajt za beauty studio u Gradišci — Una Peranović. Sadrži marketinške stranice, online zakazivanje, admin panel i automatska email obavještenja.
 
@@ -227,4 +227,4 @@ Kad Resend bude podešen, treba kreirati `src/lib/email/` modul i odkomentarisat
 ## Licenca i autorstvo
 
 Izrada: **NextPixel**
-© 2026 UP Beauty & Makeup Studio
+© 2026 UP Makeup

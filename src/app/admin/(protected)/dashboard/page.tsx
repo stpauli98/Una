@@ -249,7 +249,7 @@ export default async function AdminDashboardPage({
 
         {/* Notifications status. Email (Resend) integracija nije završena
             (nema RESEND_API_KEY u env vars, nema send koda), pa je raniji
-            misleading "Email aktivan" indikator uklonjen. Trenutno UP Beauty
+            misleading "Email aktivan" indikator uklonjen. Trenutno UP Makeup
             koristi samo WhatsApp za ručna obavještenja klijentima preko
             dugmeta u Termini tabu. */}
         <div className="border border-cream bg-white p-5">

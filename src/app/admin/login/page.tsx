@@ -24,8 +24,7 @@ export default async function AdminLoginPage({
               UP
             </span>
             <span className="text-[9px] uppercase leading-tight tracking-[0.2em] text-light">
-              Beauty &<br />
-              Makeup Studio
+              Makeup
             </span>
           </div>
           <h1 className="font-display text-2xl font-light text-dark">

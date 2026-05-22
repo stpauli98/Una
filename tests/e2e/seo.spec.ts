@@ -5,7 +5,7 @@ test.describe("SEO — title + description", () => {
     await page.goto("/");
     const title = await page.title();
     expect(title).toMatch(/^Šminkanje Gradiška/);
-    expect(title).toContain("UP Beauty");
+    expect(title).toContain("UP Makeup");
   });
 
   test("homepage <meta description> mentions Gradiška + service types", async ({ page }) => {
