@@ -13,7 +13,9 @@ export const BUSINESS = {
   tiktok: "https://tiktok.com/@upmakeup21",
   instagramHandle: "@_upmakeup._",
   tiktokHandle: "@upmakeup21",
-  geo: { lat: 45.1492, lng: 17.2599 },
+  geo: { lat: 45.1493291, lng: 17.258078 },
+  googleMapsCid: "533147015268556799",
+  googleMapsShareUrl: "https://share.google/PMvWaQNdzmDPKs5qg",
   timezone: "Europe/Sarajevo",
 } as const;
 

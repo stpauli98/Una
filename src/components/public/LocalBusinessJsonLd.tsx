@@ -51,7 +51,11 @@ export function LocalBusinessJsonLd() {
       },
     ],
     priceRange: "40-800 BAM",
-    sameAs: [BUSINESS.instagram, BUSINESS.tiktok],
+    sameAs: [
+      BUSINESS.instagram,
+      BUSINESS.tiktok,
+      `https://maps.google.com/?cid=${BUSINESS.googleMapsCid}`,
+    ],
     areaServed: {
       "@type": "City",
       name: "Gradiška",
