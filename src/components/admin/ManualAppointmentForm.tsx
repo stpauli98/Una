@@ -4,6 +4,7 @@ import { useState, useEffect, useTransition } from "react";
 import { format, addDays } from "date-fns";
 import { createManualAppointment } from "@/app/admin/(protected)/termini/actions";
 import { formatTime } from "@/lib/utils/format";
+import { parseSarajevoDateTime } from "@/lib/utils/tz";
 import { cn } from "@/lib/utils/cn";
 import type { Database } from "@/types/database";
 
@@ -93,7 +94,7 @@ export function ManualAppointmentForm({ services, onClose }: Props) {
               if (customDate && customTime) {
                 fd.set(
                   "start_time",
-                  new Date(`${customDate}T${customTime}:00`).toISOString(),
+                  parseSarajevoDateTime(customDate, customTime).toISOString(),
                 );
               }
             } else if (selectedSlot) {
