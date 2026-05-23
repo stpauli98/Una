@@ -121,7 +121,7 @@ NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...       # iz `supabase status`
 SUPABASE_SERVICE_ROLE_KEY=...           # iz `supabase status`
 RESEND_API_KEY=                         # popuniti prije Phase 8 testova
-RESEND_FROM_EMAIL=rezervacije@upbeauty.ba
+RESEND_FROM_EMAIL=rezervacije@upmakeup.ba
 ADMIN_NOTIFICATION_EMAIL=peranovicuna6@gmail.com
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```

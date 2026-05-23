@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { buildBreadcrumbsJsonLd } from "@/lib/seo/breadcrumbs-jsonld";
 
-const SITE = "https://upbeauty.example";
+const SITE = "https://upmakeup.example";
 
 describe("buildBreadcrumbsJsonLd", () => {
   it("returns BreadcrumbList with @context schema.org", () => {
@@ -33,9 +33,9 @@ describe("buildBreadcrumbsJsonLd", () => {
   it("strips trailing whitespace + slash from siteUrl via normalizeSiteUrl", () => {
     const out = buildBreadcrumbsJsonLd(
       [{ name: "Usluge", path: "/usluge" }],
-      "https://upbeauty.example\n",
+      "https://upmakeup.example\n",
     );
-    expect(out.itemListElement[0].item).toBe("https://upbeauty.example/usluge");
+    expect(out.itemListElement[0].item).toBe("https://upmakeup.example/usluge");
   });
 
   it("handles a single-item trail (just root)", () => {
@@ -61,9 +61,9 @@ describe("buildBreadcrumbsJsonLd", () => {
   it("non-root path does not produce double slash", () => {
     const out = buildBreadcrumbsJsonLd(
       [{ name: "Galerija", path: "/galerija" }],
-      "https://upbeauty.example/",
+      "https://upmakeup.example/",
     );
-    expect(out.itemListElement[0].item).toBe("https://upbeauty.example/galerija");
+    expect(out.itemListElement[0].item).toBe("https://upmakeup.example/galerija");
   });
 
   it("empty items array returns empty itemListElement (does not throw)", () => {

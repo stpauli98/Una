@@ -4,7 +4,7 @@ import type { Database } from "@/types/database";
 
 type Service = Database["public"]["Tables"]["services"]["Row"];
 
-const SITE = "https://upbeauty.example";
+const SITE = "https://upmakeup.example";
 
 // Reusable test factory
 function service(over: Partial<Service> = {}): Service {
@@ -152,9 +152,9 @@ describe("buildServicesJsonLd", () => {
   });
 
   it("strips trailing slash from siteUrl to avoid double slash", () => {
-    const out = buildServicesJsonLd([service({ id: 1 })], "https://upbeauty.example/");
-    expect(out.itemListElement[0].item["@id"]).toBe("https://upbeauty.example/usluge#service-1");
-    expect(out.itemListElement[0].item.provider["@id"]).toBe("https://upbeauty.example/#business");
+    const out = buildServicesJsonLd([service({ id: 1 })], "https://upmakeup.example/");
+    expect(out.itemListElement[0].item["@id"]).toBe("https://upmakeup.example/usluge#service-1");
+    expect(out.itemListElement[0].item.provider["@id"]).toBe("https://upmakeup.example/#business");
   });
 
   it("strips trailing newline from siteUrl (Vercel env var bug)", () => {
@@ -162,9 +162,9 @@ describe("buildServicesJsonLd", () => {
     // sa kraja, što je curilo u sredinu Schema.org @id polja
     // (npr. "...vercel.app\n/usluge#service-1"). Google parser je takve
     // URL-ove odbijao i ruskao rich-result eligibility.
-    const out = buildServicesJsonLd([service({ id: 1 })], "https://upbeauty.example\n");
-    expect(out.itemListElement[0].item["@id"]).toBe("https://upbeauty.example/usluge#service-1");
-    expect(out.itemListElement[0].item.provider["@id"]).toBe("https://upbeauty.example/#business");
-    expect(out.itemListElement[0].item.offers!.url).toBe("https://upbeauty.example/zakazi?service=1");
+    const out = buildServicesJsonLd([service({ id: 1 })], "https://upmakeup.example\n");
+    expect(out.itemListElement[0].item["@id"]).toBe("https://upmakeup.example/usluge#service-1");
+    expect(out.itemListElement[0].item.provider["@id"]).toBe("https://upmakeup.example/#business");
+    expect(out.itemListElement[0].item.offers!.url).toBe("https://upmakeup.example/zakazi?service=1");
   });
 });
