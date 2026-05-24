@@ -7,6 +7,7 @@ import {
   deleteTimeBlock,
 } from "@/app/admin/(protected)/postavke/actions";
 import { formatDate, formatTime } from "@/lib/utils/format";
+import { parseSarajevoDateTime } from "@/lib/utils/tz";
 import type { Database } from "@/types/database";
 
 type TimeBlock = Database["public"]["Tables"]["time_blocks"]["Row"];
@@ -37,10 +38,10 @@ export function TimeBlocksManager({ blocks }: { blocks: TimeBlock[] }) {
           const endTime = String(fd.get("end_time_select") ?? "");
 
           if (date && startTime) {
-            fd.set("start_time", new Date(`${date}T${startTime}:00`).toISOString());
+            fd.set("start_time", parseSarajevoDateTime(date, startTime).toISOString());
           }
           if (date && endTime) {
-            fd.set("end_time", new Date(`${date}T${endTime}:00`).toISOString());
+            fd.set("end_time", parseSarajevoDateTime(date, endTime).toISOString());
           }
 
           startTransition(async () => {

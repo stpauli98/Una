@@ -42,3 +42,18 @@ export function atSarajevo(
   const local = `${year}-${pad(month)}-${pad(day)}T${pad(hour)}:${pad(min)}:00`;
   return fromZonedTime(local, TZ);
 }
+
+/**
+ * Parsira (YYYY-MM-DD, HH:MM) par kao wall-clock vrijeme u Sarajevo TZ.
+ *
+ * Koristi se kad UI komponente (HTML <input type="date"> + time select)
+ * trebaju snimiti Date u bazu. Bare `new Date(`${date}T${time}:00`)`
+ * koristi browser-local TZ što daje pogrešan UTC ako admin nije u
+ * Europe/Sarajevo (vidi `tests/unit/tz.test.ts`).
+ *
+ * "2026-06-15", "18:00" → Date koji predstavlja 18:00 CEST
+ * (interno: 2026-06-15T16:00:00.000Z u junu)
+ */
+export function parseSarajevoDateTime(dateStr: string, timeStr: string): Date {
+  return fromZonedTime(`${dateStr}T${timeStr}:00`, TZ);
+}
