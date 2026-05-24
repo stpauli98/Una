@@ -17,6 +17,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { formatInTimeZone } from "date-fns-tz";
 import { TZ } from "@/lib/utils/tz";
 import { formatShortDate, formatTime } from "@/lib/utils/format";
+import { CollapsibleSection } from "@/components/admin/CollapsibleSection";
 
 const BOOKING_RULE_KEYS = [
   "min_hours_before",
@@ -141,20 +142,18 @@ export default async function AdminPostavkePage() {
       />
 
       <div className="space-y-8 p-5 md:p-8">
-        <section>
-          <h2 className="mb-3 font-display text-xl text-dark">
-            Pravila rezervisanja
-          </h2>
-          <p className="mb-4 text-[12px] text-light">
-            Podesite koliko unaprijed i koliko kasno klijenti mogu zakazivati
-            termine, te pauzu između termina za pripremu.
-          </p>
-          <SectionMeta
-            label="Zadnje izmijenjeno"
-            timestamp={bookingRulesLastUpdated}
-          />
+        <CollapsibleSection
+          title="Pravila rezervisanja"
+          description="Podesite koliko unaprijed i koliko kasno klijenti mogu zakazivati termine, te pauzu između termina za pripremu."
+          meta={
+            <SectionMeta
+              label="Zadnje izmijenjeno"
+              timestamp={bookingRulesLastUpdated}
+            />
+          }
+        >
           <BookingRulesEditor currentSettings={settingsMap} />
-        </section>
+        </CollapsibleSection>
 
         <section>
           <h2 className="mb-3 font-display text-xl text-dark">Radno vrijeme</h2>
