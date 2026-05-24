@@ -6,6 +6,13 @@ import { revalidatePath, updateTag } from "next/cache";
 import { ADMIN_CACHE_TAGS } from "@/lib/cache/admin-cache-tags";
 import { z } from "zod";
 import { isGridAligned } from "@/lib/utils/grid";
+import { formatInTimeZone } from "date-fns-tz";
+import { TZ } from "@/lib/utils/tz";
+import {
+  expandWeeklyTimeBlocks,
+  maxUntilDateStr,
+  MAX_WEEKLY_OCCURRENCES,
+} from "@/lib/utils/recurring-blocks";
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -128,6 +135,12 @@ const timeBlockSchema = z.object({
   start_time: z.string().datetime(),
   end_time: z.string().datetime(),
   reason: z.string().max(200).optional().nullable(),
+  recurring_weekly: z.boolean().optional(),
+  until_date_str: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Format mora biti YYYY-MM-DD")
+    .optional()
+    .nullable(),
 });
 
 export async function createTimeBlock(
@@ -139,6 +152,8 @@ export async function createTimeBlock(
       start_time: String(formData.get("start_time")),
       end_time: String(formData.get("end_time")),
       reason: String(formData.get("reason") ?? "") || null,
+      recurring_weekly: formData.get("recurring_weekly") === "on",
+      until_date_str: String(formData.get("until_date_str") ?? "") || null,
     });
     if (new Date(parsed.end_time) <= new Date(parsed.start_time)) {
       return { ok: false, error: "Kraj mora biti poslije početka" };
@@ -151,7 +166,72 @@ export async function createTimeBlock(
         error: "Vrijeme mora biti na pun sat ili pola (:00 ili :30)",
       };
     }
-    const { error } = await sb.from("time_blocks").insert(parsed);
+
+    // Non-recurring → backward-compatible single insert
+    if (!parsed.recurring_weekly) {
+      const { error } = await sb.from("time_blocks").insert({
+        start_time: parsed.start_time,
+        end_time: parsed.end_time,
+        reason: parsed.reason,
+      });
+      if (error) return { ok: false, error: error.message };
+      updateTag(ADMIN_CACHE_TAGS.timeBlocks);
+      revalidatePath("/admin/postavke");
+      return { ok: true };
+    }
+
+    // Recurring → expand sedmično do until_date_str
+    if (!parsed.until_date_str) {
+      return {
+        ok: false,
+        error: "Recurring blok mora imati 'Do datuma'",
+      };
+    }
+    if (parsed.until_date_str > maxUntilDateStr()) {
+      return {
+        ok: false,
+        error: "Do datuma može biti najviše 12 mjeseci unaprijed",
+      };
+    }
+
+    // Rekonstruiši YYYY-MM-DD + HH:MM iz ISO start/end u Sarajevo TZ
+    const startDateStr = formatInTimeZone(startDate, TZ, "yyyy-MM-dd");
+    const startTimeStr = formatInTimeZone(startDate, TZ, "HH:mm");
+    const endTimeStr = formatInTimeZone(endDate, TZ, "HH:mm");
+
+    if (parsed.until_date_str < startDateStr) {
+      return {
+        ok: false,
+        error: "Do datuma mora biti isti ili poslije datuma početka",
+      };
+    }
+
+    const occurrences = expandWeeklyTimeBlocks({
+      startDateStr,
+      startTimeStr,
+      endTimeStr,
+      untilDateStr: parsed.until_date_str,
+    });
+
+    if (occurrences.length === 0) {
+      return { ok: false, error: "Nema okurenci za generisanje" };
+    }
+    if (occurrences.length > MAX_WEEKLY_OCCURRENCES) {
+      return {
+        ok: false,
+        error: `Preveliki opseg (max ${MAX_WEEKLY_OCCURRENCES} okurenci)`,
+      };
+    }
+
+    const groupId = crypto.randomUUID();
+    const rows = occurrences.map((o) => ({
+      start_time: o.start.toISOString(),
+      end_time: o.end.toISOString(),
+      reason: parsed.reason,
+      recurrence_group_id: groupId,
+    }));
+
+    const { error } = await sb.from("time_blocks").insert(rows);
     if (error) return { ok: false, error: error.message };
     updateTag(ADMIN_CACHE_TAGS.timeBlocks);
     revalidatePath("/admin/postavke");
@@ -165,6 +245,36 @@ export async function deleteTimeBlock(id: number): Promise<ActionResult> {
   try {
     const sb = await requireAdmin();
     const { error } = await sb.from("time_blocks").delete().eq("id", id);
+    if (error) return { ok: false, error: error.message };
+    updateTag(ADMIN_CACHE_TAGS.timeBlocks);
+    revalidatePath("/admin/postavke");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+/**
+ * Briše SVE time blocks koji pripadaju jednoj recurring seriji
+ * (isti recurrence_group_id). Used by "Obriši cijelu seriju" dugmetom
+ * u UI-ju kad admin želi da ukloni svaku okurencu odjednom.
+ */
+export async function deleteTimeBlockSeries(
+  groupId: string,
+): Promise<ActionResult> {
+  try {
+    if (
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        groupId,
+      )
+    ) {
+      return { ok: false, error: "Neispravan group ID" };
+    }
+    const sb = await requireAdmin();
+    const { error } = await sb
+      .from("time_blocks")
+      .delete()
+      .eq("recurrence_group_id", groupId);
     if (error) return { ok: false, error: error.message };
     updateTag(ADMIN_CACHE_TAGS.timeBlocks);
     revalidatePath("/admin/postavke");
