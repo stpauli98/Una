@@ -26,6 +26,27 @@ const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
 ];
 
 /**
+ * Builduje URL za status filter izbor. Uvijek setuje `status=<next>` u URL,
+ * čak i za `svi`. Bez eksplicitnog `status=svi`, server resolveTerminiPrefs
+ * fallback-uje na cookie value (stale status iz prošlog izbora) i filter
+ * silently ostaje aktivan — vidi `tests/unit/termini-status-filter-url.test.ts`.
+ */
+export function buildStatusFilterUrl(
+  next: StatusFilter,
+  basePath: string,
+  preserveParams?: Record<string, string | undefined>,
+): string {
+  const params = new URLSearchParams();
+  params.set("status", next);
+  if (preserveParams) {
+    for (const [k, v] of Object.entries(preserveParams)) {
+      if (v && v.length > 0) params.set(k, v);
+    }
+  }
+  return `${basePath}?${params.toString()}`;
+}
+
+/**
  * Native <select> za filter po statusu termina. Zamjenjuje 5-chip toolbar
  * iz prethodne verzije — kompaktniji + dodaje broj termina pored svakog
  * statusa ("Čeka (3)").
@@ -43,16 +64,9 @@ export function TerminiStatusFilter({
   const [pending, startTransition] = useTransition();
 
   const onChange = (next: StatusFilter) => {
-    const params = new URLSearchParams();
-    if (next !== "svi") params.set("status", next);
-    if (preserveParams) {
-      for (const [k, v] of Object.entries(preserveParams)) {
-        if (v && v.length > 0) params.set(k, v);
-      }
-    }
-    const qs = params.toString();
+    const url = buildStatusFilterUrl(next, basePath, preserveParams);
     startTransition(() => {
-      router.push(qs ? `${basePath}?${qs}` : basePath);
+      router.push(url);
     });
   };
 

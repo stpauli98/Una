@@ -94,7 +94,9 @@ export const getCachedTimeBlocks = unstable_cache(
 export const getCachedSettings = unstable_cache(
   async () => {
     const sb = createAdminClient();
-    const { data } = await sb.from("settings").select("key,value");
+    const { data } = await sb
+      .from("settings")
+      .select("key,value,updated_at");
     return data ?? [];
   },
   ["admin-settings-all"],

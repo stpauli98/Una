@@ -69,7 +69,8 @@ export function AppointmentRow({ appointment }: { appointment: Appointment }) {
 
   return (
     <div
-      className={`border-b border-cream bg-white p-5 last:border-b-0 transition-opacity ${
+      id={`appt-${appointment.id}`}
+      className={`scroll-mt-24 border-b border-cream bg-white p-5 last:border-b-0 transition-opacity ${
         isPast ? "opacity-60" : ""
       }`}
     >
@@ -127,6 +128,7 @@ export function AppointmentRow({ appointment }: { appointment: Appointment }) {
           {appointment.status === "ceka" && (
             <button
               type="button"
+              data-action="confirm"
               disabled={pending}
               onClick={() => handle(() => confirmAppointment(appointment.id))}
               className="inline-flex items-center gap-1 bg-rose px-3 py-2 text-[10px] uppercase tracking-wider text-white transition-colors hover:bg-rose-hover disabled:opacity-60 cursor-pointer"

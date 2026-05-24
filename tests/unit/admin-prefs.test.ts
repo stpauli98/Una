@@ -227,4 +227,16 @@ describe("resolveTerminiPrefs", () => {
     expect(result.sort).toBe("asc");
     expect(result.isDefaultSort).toBe(false);
   });
+
+  it("URL status=svi pobjeđuje stale cookie status — clearing filter na 'Svi'", () => {
+    // Ovaj scenario testira contract koji TerminiStatusFilter eksplicitno
+    // šalje status=svi u URL kad user izabere 'Svi' (umjesto da omiti
+    // parametar). Bez ovog ugovora, cookie sa stale statusom je pobjeđivao
+    // i filter je silently ostajao aktivan — vidi `buildStatusFilterUrl`.
+    const result = resolveTerminiPrefs(
+      { status: "svi" },
+      { status: "ceka" },
+    );
+    expect(result.status).toBe("svi");
+  });
 });
