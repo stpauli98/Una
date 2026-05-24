@@ -126,6 +126,16 @@ export function sarajevoTodayDateStr(now: Date = new Date()): string {
 }
 
 /**
+ * YYYY-MM-DD wall-clock string u Sarajevo TZ za bilo koji Date objekat.
+ * Semantički alias za `sarajevoTodayDateStr` kad input nije "today" —
+ * koristi se npr. za izvlačenje datuma iz `appointment.start_time` ISO
+ * stringa kad se gradi URL ka /admin/termini?date=<X>.
+ */
+export function sarajevoDateStr(date: Date): string {
+  return formatInTimeZone(date, TZ, "yyyy-MM-dd");
+}
+
+/**
  * Dodaje (ili oduzima) `days` na YYYY-MM-DD string. Vraća rezultat kao
  * YYYY-MM-DD. Ispravan preko mjesec/godina granica i DST tranzicija.
  */
