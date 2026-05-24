@@ -4,19 +4,18 @@ import { Calendar, TrendingUp, CheckCircle2, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { AppointmentsRealtime } from "@/components/admin/AppointmentsRealtime";
 import { PageHeader } from "@/components/admin/PageHeader";
-import { StatusBadge } from "@/components/admin/StatusBadge";
-import { formatTime, formatPrice } from "@/lib/utils/format";
+import { formatPrice } from "@/lib/utils/format";
 import {
   getSarajevoDayBounds,
   getSarajevoWeekBounds,
   getSarajevoMonthBounds,
   sarajevoTodayDateStr,
-  sarajevoDateStr,
   addDaysToDateStr,
 } from "@/lib/utils/day-bounds";
 import { parseBookingSettings } from "@/lib/settings/read";
 import { getCachedSettings } from "@/lib/cache/cached-queries";
 import { DashboardDayPicker } from "@/components/admin/DashboardDayPicker";
+import { DashboardAppointmentRow } from "@/components/admin/DashboardAppointmentRow";
 import { cookies } from "next/headers";
 import {
   DASHBOARD_DATE_COOKIE,
@@ -219,37 +218,20 @@ export default async function AdminDashboardPage({
             </div>
           ) : (
             <div className="overflow-hidden border border-cream bg-white">
-              {dayList.map((appt, i) => {
-                const start = new Date(appt.start_time);
-                const terminiHref = `/admin/termini?date=${sarajevoDateStr(start)}&focus=${appt.id}`;
-                return (
-                  <Link
-                    key={appt.id}
-                    href={terminiHref}
-                    aria-label={`Otvori termin ${appt.client_name} u ${formatTime(start)} u Termini tabu`}
-                    className={`flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-warm focus-visible:bg-warm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose ${
-                      i < dayList.length - 1 ? "border-b border-cream" : ""
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-14 shrink-0 text-center">
-                        <p className="font-display text-xl text-dark">
-                          {formatTime(start)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[13px] font-medium text-dark">
-                          {appt.client_name}
-                        </p>
-                        <p className="text-[11px] text-light">
-                          {appt.services?.name} · {appt.client_phone}
-                        </p>
-                      </div>
-                    </div>
-                    <StatusBadge status={appt.status as "ceka" | "potvrdjen" | "otkazan" | "zavrsen"} />
-                  </Link>
-                );
-              })}
+              {dayList.map((appt, i) => (
+                <DashboardAppointmentRow
+                  key={appt.id}
+                  appointment={{
+                    ...appt,
+                    status: appt.status as
+                      | "ceka"
+                      | "potvrdjen"
+                      | "otkazan"
+                      | "zavrsen",
+                  }}
+                  showDivider={i < dayList.length - 1}
+                />
+              ))}
             </div>
           )}
         </div>
