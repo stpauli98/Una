@@ -4,6 +4,7 @@ import {
   getSarajevoWeekBounds,
   getSarajevoMonthBounds,
   sarajevoTodayDateStr,
+  sarajevoDateStr,
   addDaysToDateStr,
 } from "@/lib/utils/day-bounds";
 
@@ -57,6 +58,33 @@ describe("sarajevoTodayDateStr", () => {
     // 2026-05-04 12:00 UTC = 14:00 Sarajevo Maj 4
     const middayUtc = new Date("2026-05-04T12:00:00.000Z");
     expect(sarajevoTodayDateStr(middayUtc)).toBe("2026-05-04");
+  });
+});
+
+describe("sarajevoDateStr", () => {
+  it("vraća YYYY-MM-DD wall-clock u Sarajevo TZ za bilo koji Date", () => {
+    // ISO sa explicit Z (UTC) → konvertuje u Sarajevo wall-clock
+    // 22:30 UTC u maju = 00:30 Sarajevo sljedećeg dana (CEST +02:00)
+    expect(sarajevoDateStr(new Date("2026-05-23T22:30:00.000Z"))).toBe(
+      "2026-05-24",
+    );
+    // 12:00 UTC u januaru = 13:00 Sarajevo isti dan (CET +01:00)
+    expect(sarajevoDateStr(new Date("2026-01-15T12:00:00.000Z"))).toBe(
+      "2026-01-15",
+    );
+  });
+
+  it("DST tranzicija: 00:30 Sarajevo u martu (CEST) i oktobru (CET) — wall-clock je tačan", () => {
+    // 28. mart 2026. — CET → CEST switch je u nedjelju 29.03. Date u subotu je CET.
+    // 23:30 UTC subota = 00:30 Sarajevo nedjelja (CET +01:00, prije DST switch-a u 02:00→03:00)
+    expect(sarajevoDateStr(new Date("2026-03-28T23:30:00.000Z"))).toBe(
+      "2026-03-29",
+    );
+    // 25. oktobar 2026. — CEST → CET switch (dan kad se sat vraća za 1h)
+    // 22:30 UTC = 00:30 Sarajevo sljedećeg dana
+    expect(sarajevoDateStr(new Date("2026-10-24T22:30:00.000Z"))).toBe(
+      "2026-10-25",
+    );
   });
 });
 

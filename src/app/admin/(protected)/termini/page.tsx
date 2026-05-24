@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { AppointmentsRealtime } from "@/components/admin/AppointmentsRealtime";
 import { AdminPrefsPersister } from "@/components/admin/AdminPrefsPersister";
+import { FocusAppointment } from "@/components/admin/FocusAppointment";
 import {
   TERMINI_PREFS_COOKIE,
   parseTerminiPrefs,
@@ -54,9 +55,17 @@ export default async function AdminTerminiPage({
     status?: string;
     date?: string;
     sort?: string;
+    focus?: string;
   }>;
 }) {
   const params = await searchParams;
+  // `?focus=<id>` — opcioni numerički ID. Validira parsiranjem; ne-broj
+  // ili negativna vrijednost → null (no-op u FocusAppointment).
+  const focusId = (() => {
+    if (!params.focus) return null;
+    const n = Number(params.focus);
+    return Number.isInteger(n) && n > 0 ? n : null;
+  })();
   const cookieStore = await cookies();
   const cookiePrefs = parseTerminiPrefs(
     cookieStore.get(TERMINI_PREFS_COOKIE)?.value,
@@ -175,6 +184,7 @@ export default async function AdminTerminiPage({
     <div>
       <AppointmentsRealtime />
       <AdminPrefsPersister />
+      <FocusAppointment focusId={focusId} />
       <PageHeader
         title="Termini"
         subtitle={`${totalMatching ?? appointments?.length ?? 0} zabilježenih`}

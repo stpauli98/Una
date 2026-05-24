@@ -11,6 +11,7 @@ import {
   getSarajevoWeekBounds,
   getSarajevoMonthBounds,
   sarajevoTodayDateStr,
+  sarajevoDateStr,
   addDaysToDateStr,
 } from "@/lib/utils/day-bounds";
 import { parseBookingSettings } from "@/lib/settings/read";
@@ -218,31 +219,37 @@ export default async function AdminDashboardPage({
             </div>
           ) : (
             <div className="overflow-hidden border border-cream bg-white">
-              {dayList.map((appt, i) => (
-                <div
-                  key={appt.id}
-                  className={`flex items-center justify-between gap-4 px-5 py-4 ${
-                    i < dayList.length - 1 ? "border-b border-cream" : ""
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 shrink-0 text-center">
-                      <p className="font-display text-xl text-dark">
-                        {formatTime(new Date(appt.start_time))}
-                      </p>
+              {dayList.map((appt, i) => {
+                const start = new Date(appt.start_time);
+                const terminiHref = `/admin/termini?date=${sarajevoDateStr(start)}&focus=${appt.id}`;
+                return (
+                  <Link
+                    key={appt.id}
+                    href={terminiHref}
+                    aria-label={`Otvori termin ${appt.client_name} u ${formatTime(start)} u Termini tabu`}
+                    className={`flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-warm focus-visible:bg-warm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose ${
+                      i < dayList.length - 1 ? "border-b border-cream" : ""
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 shrink-0 text-center">
+                        <p className="font-display text-xl text-dark">
+                          {formatTime(start)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[13px] font-medium text-dark">
+                          {appt.client_name}
+                        </p>
+                        <p className="text-[11px] text-light">
+                          {appt.services?.name} · {appt.client_phone}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-[13px] font-medium text-dark">
-                        {appt.client_name}
-                      </p>
-                      <p className="text-[11px] text-light">
-                        {appt.services?.name} · {appt.client_phone}
-                      </p>
-                    </div>
-                  </div>
-                  <StatusBadge status={appt.status as "ceka" | "potvrdjen" | "otkazan" | "zavrsen"} />
-                </div>
-              ))}
+                    <StatusBadge status={appt.status as "ceka" | "potvrdjen" | "otkazan" | "zavrsen"} />
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>
