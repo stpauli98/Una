@@ -252,6 +252,7 @@ export type Database = {
           end_time: string
           id: number
           reason: string | null
+          recurrence_group_id: string | null
           start_time: string
         }
         Insert: {
@@ -259,6 +260,7 @@ export type Database = {
           end_time: string
           id?: never
           reason?: string | null
+          recurrence_group_id?: string | null
           start_time: string
         }
         Update: {
@@ -266,6 +268,7 @@ export type Database = {
           end_time?: string
           id?: never
           reason?: string | null
+          recurrence_group_id?: string | null
           start_time?: string
         }
         Relationships: []
@@ -476,4 +479,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-
