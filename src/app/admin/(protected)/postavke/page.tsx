@@ -12,6 +12,47 @@ import {
   getCachedTimeBlocks,
   getCachedSettings,
 } from "@/lib/cache/cached-queries";
+import { formatShortDate, formatTime } from "@/lib/utils/format";
+
+const BOOKING_RULE_KEYS = [
+  "min_hours_before",
+  "advance_booking_days",
+  "cancellation_hours",
+  "break_between_min",
+] as const;
+
+/**
+ * Vraća najveći ISO timestamp iz array-a, ili null ako je prazan.
+ * Koristi se za "Zadnje izmijenjeno" indikator po sekciji.
+ */
+function maxTimestamp(rows: Array<{ updated_at?: string | null; created_at?: string | null }>, field: "updated_at" | "created_at"): string | null {
+  let max: string | null = null;
+  for (const row of rows) {
+    const v = row[field];
+    if (v && (max === null || v > max)) max = v;
+  }
+  return max;
+}
+
+function formatMetaTimestamp(iso: string): string {
+  const d = new Date(iso);
+  return `${formatShortDate(d)} ${formatTime(d)}`;
+}
+
+function SectionMeta({
+  label,
+  timestamp,
+}: {
+  label: string;
+  timestamp: string | null;
+}) {
+  if (!timestamp) return null;
+  return (
+    <p className="mb-3 text-[10px] uppercase tracking-wider text-light">
+      {label}: {formatMetaTimestamp(timestamp)}
+    </p>
+  );
+}
 
 export const metadata: Metadata = {
   title: "Postavke — Admin",
@@ -35,6 +76,21 @@ export default async function AdminPostavkePage() {
     settingsMap[row.key] = row.value;
   }
 
+  // "Zadnje izmijenjeno" timestamps po sekciji.
+  // - Booking rules: MAX(updated_at) samo onih ključeva koje BookingRulesEditor
+  //   stvarno koristi (ignorišemo eventualne druge settings ključeve).
+  // - Blocked dates / Time blocks: MAX(created_at) jer te tabele pretežno
+  //   imaju INSERT-e i DELETE-ove (rijetko UPDATE) — "zadnje dodato" je
+  //   semantički točniji label.
+  const bookingRulesLastUpdated = maxTimestamp(
+    settings.filter((s) =>
+      (BOOKING_RULE_KEYS as readonly string[]).includes(s.key),
+    ),
+    "updated_at",
+  );
+  const blockedDatesLastAdded = maxTimestamp(blocked, "created_at");
+  const timeBlocksLastAdded = maxTimestamp(timeBlocks, "created_at");
+
   return (
     <div>
       <PageHeader
@@ -51,6 +107,10 @@ export default async function AdminPostavkePage() {
             Podesite koliko unaprijed i koliko kasno klijenti mogu zakazivati
             termine, te pauzu između termina za pripremu.
           </p>
+          <SectionMeta
+            label="Zadnje izmijenjeno"
+            timestamp={bookingRulesLastUpdated}
+          />
           <BookingRulesEditor currentSettings={settingsMap} />
         </section>
 
@@ -71,6 +131,10 @@ export default async function AdminPostavkePage() {
             Dani kada ste odsutni, praznici, godišnji odmor. Klijenti ne mogu
             zakazati termine u blokiranim datumima.
           </p>
+          <SectionMeta
+            label="Zadnje dodato"
+            timestamp={blockedDatesLastAdded}
+          />
           <BlockedDatesManager dates={blocked} />
         </section>
 
@@ -83,6 +147,10 @@ export default async function AdminPostavkePage() {
             zubara). Za cijele dane koristite sekciju iznad &quot;Blokirani
             datumi&quot;.
           </p>
+          <SectionMeta
+            label="Zadnje dodato"
+            timestamp={timeBlocksLastAdded}
+          />
           <TimeBlocksManager blocks={timeBlocks} />
         </section>
 
