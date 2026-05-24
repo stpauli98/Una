@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { MessageCircle, Check, X, CheckCircle2 } from "lucide-react";
 import {
   confirmAppointment,
@@ -9,6 +9,7 @@ import {
 } from "@/app/admin/(protected)/termini/actions";
 import { StatusBadge } from "./StatusBadge";
 import { formatDate, formatTime } from "@/lib/utils/format";
+import { useLiveNow } from "@/lib/hooks/use-live-now";
 import { waLink } from "@/lib/utils/wa";
 import {
   buildAppointmentWaMessage,
@@ -37,11 +38,7 @@ export function AppointmentRow({ appointment }: { appointment: Appointment }) {
   // Live "now" tick za past indikator. Re-render svake minute tako da
   // termin koji upravo prelazi iz future u past automatski dobije dim
   // bez čekanja na router.refresh().
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 60_000);
-    return () => clearInterval(id);
-  }, []);
+  const now = useLiveNow();
 
   const isPast = startDate.getTime() < now;
   // "Prošlo" tag samo za one koji čekaju adminovu akciju — past termin sa
