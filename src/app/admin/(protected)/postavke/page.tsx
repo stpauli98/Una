@@ -6,12 +6,16 @@ import { TimeBlocksManager } from "@/components/admin/TimeBlocksManager";
 import { BookingRulesEditor } from "@/components/admin/BookingRulesEditor";
 import { ChangePasswordForm } from "@/components/admin/ChangePasswordForm";
 import { PushNotificationToggle } from "@/components/admin/PushNotificationToggle";
+import { CsvExportButton } from "@/components/admin/CsvExportButton";
 import {
   getCachedWorkingHours,
   getCachedBlockedDates,
   getCachedTimeBlocks,
   getCachedSettings,
 } from "@/lib/cache/cached-queries";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { formatInTimeZone } from "date-fns-tz";
+import { TZ } from "@/lib/utils/tz";
 import { formatShortDate, formatTime } from "@/lib/utils/format";
 
 const BOOKING_RULE_KEYS = [
@@ -22,10 +26,45 @@ const BOOKING_RULE_KEYS = [
 ] as const;
 
 /**
+ * Vraća sortiranu (descending) listu godina za koje IMA bar 1 termin.
+ * Računa preko min/max start_time u Sarajevo TZ.
+ */
+async function getAppointmentYears(): Promise<number[]> {
+  const sb = createAdminClient();
+  const [minRes, maxRes] = await Promise.all([
+    sb
+      .from("appointments")
+      .select("start_time")
+      .order("start_time", { ascending: true })
+      .limit(1)
+      .maybeSingle(),
+    sb
+      .from("appointments")
+      .select("start_time")
+      .order("start_time", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+  if (!minRes.data || !maxRes.data) return [];
+  const minYear = Number(
+    formatInTimeZone(new Date(minRes.data.start_time), TZ, "yyyy"),
+  );
+  const maxYear = Number(
+    formatInTimeZone(new Date(maxRes.data.start_time), TZ, "yyyy"),
+  );
+  const years: number[] = [];
+  for (let y = maxYear; y >= minYear; y--) years.push(y);
+  return years;
+}
+
+/**
  * Vraća najveći ISO timestamp iz array-a, ili null ako je prazan.
  * Koristi se za "Zadnje izmijenjeno" indikator po sekciji.
  */
-function maxTimestamp(rows: Array<{ updated_at?: string | null; created_at?: string | null }>, field: "updated_at" | "created_at"): string | null {
+function maxTimestamp(
+  rows: Array<{ updated_at?: string | null; created_at?: string | null }>,
+  field: "updated_at" | "created_at",
+): string | null {
   let max: string | null = null;
   for (const row of rows) {
     const v = row[field];
@@ -64,12 +103,15 @@ export const metadata: Metadata = {
 // ne settings ili blocked_dates.
 
 export default async function AdminPostavkePage() {
-  const [hours, blocked, timeBlocks, settings] = await Promise.all([
-    getCachedWorkingHours(),
-    getCachedBlockedDates(),
-    getCachedTimeBlocks(),
-    getCachedSettings(),
-  ]);
+  const [hours, blocked, timeBlocks, settings, exportYears] = await Promise.all(
+    [
+      getCachedWorkingHours(),
+      getCachedBlockedDates(),
+      getCachedTimeBlocks(),
+      getCachedSettings(),
+      getAppointmentYears(),
+    ],
+  );
 
   const settingsMap: Record<string, string> = {};
   for (const row of settings) {
@@ -165,6 +207,18 @@ export default async function AdminPostavkePage() {
             telefon.
           </p>
           <PushNotificationToggle />
+        </section>
+
+        <section>
+          <h2 className="mb-3 font-display text-xl text-dark">
+            Export podataka
+          </h2>
+          <p className="mb-4 text-[12px] text-light">
+            Preuzmi sve termine u CSV formatu za backup ili porezni izvještaj.
+            Otvara se u Excel-u i LibreOffice Calc-u (semicolon separator,
+            UTF-8 sa BOM-om).
+          </p>
+          <CsvExportButton availableYears={exportYears} />
         </section>
 
         <section>
