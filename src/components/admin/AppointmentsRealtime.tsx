@@ -13,16 +13,21 @@ import { createClient } from "@/lib/supabase/client";
  * Komponenta ne render-uje ništa vidljivo — UI feedback dolazi iz
  * router.refresh() koji forsira RSC re-fetch.
  *
- * Bitno o auth propagaciji:
- *  - `createBrowserClient` čita session iz cookies za regularne queries,
- *    ALI realtime sub-klijent ima zasebnu auth state.
- *  - Subscribe sa anon JWT-om → server filtrira postgres_changes
- *    event-e jer RLS emit-uje samo za `authenticated` rolu.
- *  - Rešenje: `realtime.setAuth(token)` PRIJE subscribe-a + listen-ovati
- *    na `onAuthStateChange` da update-uje token kad se session refresh-uje.
+ * Auth flow:
+ *  - `createBrowserClient` čita session iz cookies za regularne queries.
+ *  - Realtime sub-klijent ima zasebnu auth state — JWT MORA biti
+ *    eksplicitno propagiran preko `realtime.setAuth(token)`.
+ *  - Bez toga subscribe ide sa anon JWT-om i server filtrira event-e
+ *    (RLS emit-uje samo za `authenticated` rolu).
  *
- * Diagnostic logovi su namjerno tu — ako neko sutra javi "ne radi mi",
- * konzola odmah kaže gdje pada.
+ * Race-condition guard:
+ *  - `onAuthStateChange` može fire-ovati VIŠE PUTA u brzom slijedu
+ *    (npr. SIGNED_IN + INITIAL_SESSION oba na mount-u). Drugi pokušaj
+ *    `sb.channel(name).on(...)` baca "cannot add postgres_changes after
+ *    subscribe()" jer Supabase JS re-koristi channel po imenu i ne
+ *    dozvoljava re-bind callback-a nakon subscribe-a.
+ *  - Mitigacija: `subscribing` flag → samo jedan subscribe in-flight,
+ *    a kad je channel kreiran, dalji auth event-i samo update setAuth.
  */
 export function AppointmentsRealtime() {
   const router = useRouter();
@@ -30,58 +35,56 @@ export function AppointmentsRealtime() {
   useEffect(() => {
     const sb = createClient();
     let channel: RealtimeChannel | null = null;
+    let subscribing = false;
     let cancelled = false;
 
-    const ensureSubscribed = async () => {
-      if (cancelled || channel) return;
+    const handleAuth = async (token: string | undefined) => {
+      if (cancelled) return;
 
-      const { data: sessionData } = await sb.auth.getSession();
-      const token = sessionData.session?.access_token;
-
-      if (!token) {
-        console.warn(
-          "[realtime] no session yet — waiting for onAuthStateChange",
-        );
+      // Token refresh path: kanal već subscribed, samo update auth.
+      if (channel) {
+        if (token) await sb.realtime.setAuth(token);
         return;
       }
 
-      await sb.realtime.setAuth(token);
+      // Spriječi paralelne subscribe pokušaje (SIGNED_IN + INITIAL_SESSION
+      // mogu doći u istom tick-u).
+      if (subscribing || !token) return;
+      subscribing = true;
 
-      channel = sb
-        .channel("admin-appointments")
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "appointments",
-          },
-          (payload) => {
-            console.log("[realtime] appointments event:", payload.eventType);
-            router.refresh();
-          },
-        )
-        .subscribe((status, err) => {
-          console.log("[realtime] subscribe status:", status, err ?? "");
-        });
+      try {
+        await sb.realtime.setAuth(token);
+        if (cancelled) return;
+
+        const newChannel = sb
+          .channel("admin-appointments")
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "appointments",
+            },
+            (payload) => {
+              console.log("[realtime] appointments event:", payload.eventType);
+              router.refresh();
+            },
+          )
+          .subscribe((status, err) => {
+            console.log("[realtime] subscribe status:", status, err ?? "");
+          });
+
+        channel = newChannel;
+      } finally {
+        subscribing = false;
+      }
     };
 
-    // Prvi pokušaj odmah — session bi obično trebao biti dostupan
-    // pošto admin layout već radi sb.auth.getUser() pri SSR-u.
-    void ensureSubscribed();
-
-    // Backup: ako session nije bila tu pri prvom pokušaju (PWA hydration
-    // race), onAuthStateChange će fire-ovati čim je dostupna.
     const {
       data: { subscription: authSub },
     } = sb.auth.onAuthStateChange((event, session) => {
       console.log("[realtime] auth event:", event, !!session);
-      if (session && !channel) {
-        void ensureSubscribed();
-      } else if (session && channel) {
-        // Token refresh — update realtime auth bez re-subscribe-a.
-        void sb.realtime.setAuth(session.access_token);
-      }
+      void handleAuth(session?.access_token);
     });
 
     return () => {
