@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { MessageCircle, Check, X, CheckCircle2 } from "lucide-react";
 import {
   confirmAppointment,
@@ -34,6 +34,23 @@ export function AppointmentRow({ appointment }: { appointment: Appointment }) {
   const startDate = new Date(appointment.start_time);
   const serviceName = appointment.services?.name ?? "—";
 
+  // Live "now" tick za past indikator. Re-render svake minute tako da
+  // termin koji upravo prelazi iz future u past automatski dobije dim
+  // bez čekanja na router.refresh().
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const isPast = startDate.getTime() < now;
+  // "Prošlo" tag samo za one koji čekaju adminovu akciju — past termin sa
+  // status='ceka' ili 'potvrdjen' znači da admin treba da update-uje status
+  // (završen/otkazan). Past 'otkazan'/'zavrsen' su već riješeni, samo dim.
+  const needsStatusUpdate =
+    isPast &&
+    (appointment.status === "ceka" || appointment.status === "potvrdjen");
+
   const waMessage = buildAppointmentWaMessage({
     clientName: appointment.client_name,
     serviceName,
@@ -51,14 +68,24 @@ export function AppointmentRow({ appointment }: { appointment: Appointment }) {
   };
 
   return (
-    <div className="border-b border-cream bg-white p-5 last:border-b-0">
+    <div
+      id={`appt-${appointment.id}`}
+      className={`scroll-mt-24 border-b border-cream bg-white p-5 last:border-b-0 transition-opacity ${
+        isPast ? "opacity-60" : ""
+      }`}
+    >
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex-1">
-          <div className="mb-2 flex items-center gap-3">
+          <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
             <p className="font-display text-lg text-dark">
               {formatDate(startDate)} · {formatTime(startDate)}
             </p>
             <StatusBadge status={appointment.status} />
+            {needsStatusUpdate && (
+              <span className="text-[10px] uppercase tracking-wider text-light">
+                prošlo
+              </span>
+            )}
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-body">
             <span className="font-medium text-dark">
@@ -101,6 +128,7 @@ export function AppointmentRow({ appointment }: { appointment: Appointment }) {
           {appointment.status === "ceka" && (
             <button
               type="button"
+              data-action="confirm"
               disabled={pending}
               onClick={() => handle(() => confirmAppointment(appointment.id))}
               className="inline-flex items-center gap-1 bg-rose px-3 py-2 text-[10px] uppercase tracking-wider text-white transition-colors hover:bg-rose-hover disabled:opacity-60 cursor-pointer"

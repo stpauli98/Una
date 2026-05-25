@@ -14,7 +14,7 @@ type Service = Database["public"]["Tables"]["services"]["Row"];
 export const metadata: Metadata = {
   title: "Usluge šminkanja u Gradišci",
   description:
-    "Sve usluge šminkanja u Gradišci — svadbeno, večernje, maturalno, terensko šminkanje. Pedikir, trepavice i obuka šminkanja. Profesionalni rad Une Peranović u UP Beauty Studio.",
+    "Sve usluge šminkanja u Gradišci — svadbeno, večernje, maturalno, terensko šminkanje. Pedikir, trepavice i obuka šminkanja. Profesionalni rad Une Peranović u UP Makeup.",
   alternates: { canonical: "/usluge" },
   openGraph: { url: "/usluge" },
 };

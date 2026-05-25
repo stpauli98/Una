@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 export const metadata: Metadata = {
   title: "Zakaži termin",
   description:
-    "Zakažite termin online u UP Beauty & Makeup Studio — šminkanje, pedikir, trepavice. Tri koraka, bez čekanja.",
+    "Zakažite termin online u UP Makeup — šminkanje, pedikir, trepavice. Tri koraka, bez čekanja.",
   alternates: { canonical: "/zakazi" },
   openGraph: { url: "/zakazi" },
 };

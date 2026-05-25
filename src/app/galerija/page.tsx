@@ -9,7 +9,7 @@ import { createPublicClient } from "@/lib/supabase/public";
 export const metadata: Metadata = {
   title: "Galerija",
   description:
-    "Portfolio radova UP Beauty & Makeup Studio — šminkanje, svadbeno, pedikir, trepavice.",
+    "Portfolio radova UP Makeup — šminkanje, svadbeno, pedikir, trepavice.",
   alternates: { canonical: "/galerija" },
   openGraph: { url: "/galerija" },
 };
@@ -29,7 +29,7 @@ export default async function GalerijaPage() {
     id: img.id,
     url: `${supabaseUrl}/storage/v1/object/public/gallery/${img.storage_path}`,
     category: img.category,
-    alt: img.alt_text ?? `UP Beauty Studio — ${img.category}`,
+    alt: img.alt_text ?? `UP Makeup — ${img.category}`,
   }));
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";

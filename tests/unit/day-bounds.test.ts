@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { getSarajevoDayBounds, sarajevoTodayDateStr, addDaysToDateStr } from "@/lib/utils/day-bounds";
+import {
+  getSarajevoDayBounds,
+  getSarajevoWeekBounds,
+  getSarajevoMonthBounds,
+  sarajevoTodayDateStr,
+  sarajevoDateStr,
+  addDaysToDateStr,
+} from "@/lib/utils/day-bounds";
 
 describe("getSarajevoDayBounds", () => {
   it("vraća Sarajevo midnight..next-midnight ISO za dati datum", () => {
@@ -54,6 +61,33 @@ describe("sarajevoTodayDateStr", () => {
   });
 });
 
+describe("sarajevoDateStr", () => {
+  it("vraća YYYY-MM-DD wall-clock u Sarajevo TZ za bilo koji Date", () => {
+    // ISO sa explicit Z (UTC) → konvertuje u Sarajevo wall-clock
+    // 22:30 UTC u maju = 00:30 Sarajevo sljedećeg dana (CEST +02:00)
+    expect(sarajevoDateStr(new Date("2026-05-23T22:30:00.000Z"))).toBe(
+      "2026-05-24",
+    );
+    // 12:00 UTC u januaru = 13:00 Sarajevo isti dan (CET +01:00)
+    expect(sarajevoDateStr(new Date("2026-01-15T12:00:00.000Z"))).toBe(
+      "2026-01-15",
+    );
+  });
+
+  it("DST tranzicija: 00:30 Sarajevo u martu (CEST) i oktobru (CET) — wall-clock je tačan", () => {
+    // 28. mart 2026. — CET → CEST switch je u nedjelju 29.03. Date u subotu je CET.
+    // 23:30 UTC subota = 00:30 Sarajevo nedjelja (CET +01:00, prije DST switch-a u 02:00→03:00)
+    expect(sarajevoDateStr(new Date("2026-03-28T23:30:00.000Z"))).toBe(
+      "2026-03-29",
+    );
+    // 25. oktobar 2026. — CEST → CET switch (dan kad se sat vraća za 1h)
+    // 22:30 UTC = 00:30 Sarajevo sljedećeg dana
+    expect(sarajevoDateStr(new Date("2026-10-24T22:30:00.000Z"))).toBe(
+      "2026-10-25",
+    );
+  });
+});
+
 describe("addDaysToDateStr", () => {
   it("dodaje pozitivne dane", () => {
     expect(addDaysToDateStr("2026-05-04", 1)).toBe("2026-05-05");
@@ -86,5 +120,116 @@ describe("addDaysToDateStr", () => {
 
   it("baca grešku za neispravan datum", () => {
     expect(() => addDaysToDateStr("nope", 1)).toThrow();
+  });
+});
+
+describe("getSarajevoWeekBounds", () => {
+  it("vraća ponedjeljak 00:00 — sljedeći ponedjeljak 00:00 za mid-week datum", () => {
+    // 2026-05-20 = srijeda. Ponedjeljak iste sedmice = 2026-05-18.
+    const { start, end } = getSarajevoWeekBounds("2026-05-20");
+    // Maj = CEST (UTC+2), Sarajevo ponoć = 22:00 UTC prethodnog dana
+    expect(start).toBe("2026-05-17T22:00:00.000Z"); // 2026-05-18 00:00 CEST
+    expect(end).toBe("2026-05-24T22:00:00.000Z");   // 2026-05-25 00:00 CEST
+  });
+
+  it("input je sam ponedjeljak — start je taj dan", () => {
+    const { start, end } = getSarajevoWeekBounds("2026-05-18");
+    expect(start).toBe("2026-05-17T22:00:00.000Z");
+    expect(end).toBe("2026-05-24T22:00:00.000Z");
+  });
+
+  it("input je nedjelja — vraća prethodni ponedjeljak", () => {
+    // 2026-05-24 = nedjelja. Ponedjeljak iste sedmice = 2026-05-18.
+    const { start, end } = getSarajevoWeekBounds("2026-05-24");
+    expect(start).toBe("2026-05-17T22:00:00.000Z");
+    expect(end).toBe("2026-05-24T22:00:00.000Z");
+  });
+
+  it("DST proljeće — sedmica koja sadrži spring-forward (29. mart 2026)", () => {
+    // 29. mart 2026 = nedjelja DST start. Sedmica: pon 23. mart → pon 30. mart.
+    const { start, end } = getSarajevoWeekBounds("2026-03-29");
+    // 23. mart 00:00 CET = 23:00 UTC 22. marta
+    expect(start).toBe("2026-03-22T23:00:00.000Z");
+    // 30. mart 00:00 CEST = 22:00 UTC 29. marta
+    expect(end).toBe("2026-03-29T22:00:00.000Z");
+  });
+
+  it("DST jesen — sedmica koja sadrži fall-back (25. okt 2026)", () => {
+    // 25. okt 2026 = nedjelja DST end. Sedmica: pon 19. okt → pon 26. okt.
+    const { start, end } = getSarajevoWeekBounds("2026-10-25");
+    // 19. okt 00:00 CEST = 22:00 UTC 18. okt
+    expect(start).toBe("2026-10-18T22:00:00.000Z");
+    // 26. okt 00:00 CET = 23:00 UTC 25. okt
+    expect(end).toBe("2026-10-25T23:00:00.000Z");
+  });
+
+  it("sedmica preko godine (decembar 2026 → januar 2027)", () => {
+    // 2026-12-30 = srijeda. Sedmica: pon 28. dec 2026 → pon 4. jan 2027.
+    const { start, end } = getSarajevoWeekBounds("2026-12-30");
+    // Decembar = CET (UTC+1)
+    expect(start).toBe("2026-12-27T23:00:00.000Z");
+    expect(end).toBe("2027-01-03T23:00:00.000Z");
+  });
+
+  it("baca grešku za neispravan datum", () => {
+    expect(() => getSarajevoWeekBounds("not-a-date")).toThrow();
+    expect(() => getSarajevoWeekBounds("2026-13-01")).toThrow();
+  });
+});
+
+describe("getSarajevoMonthBounds", () => {
+  it("vraća 1. dan mjeseca 00:00 — 1. sljedećeg mjeseca 00:00 (mid-month input)", () => {
+    // 2026-05-15 unutar maja → start = 2026-05-01, end = 2026-06-01
+    const { start, end } = getSarajevoMonthBounds("2026-05-15");
+    // Maj = CEST (UTC+2), ponoć = 22:00 UTC prethodnog dana
+    expect(start).toBe("2026-04-30T22:00:00.000Z");
+    expect(end).toBe("2026-05-31T22:00:00.000Z");
+  });
+
+  it("input je 1. dan mjeseca — start je taj dan", () => {
+    const { start, end } = getSarajevoMonthBounds("2026-05-01");
+    expect(start).toBe("2026-04-30T22:00:00.000Z");
+    expect(end).toBe("2026-05-31T22:00:00.000Z");
+  });
+
+  it("input je zadnji dan mjeseca — end je 1. sljedećeg", () => {
+    const { start, end } = getSarajevoMonthBounds("2026-05-31");
+    expect(start).toBe("2026-04-30T22:00:00.000Z");
+    expect(end).toBe("2026-05-31T22:00:00.000Z");
+  });
+
+  it("Februar 2028 (prestupna godina, 29 dana)", () => {
+    const { start, end } = getSarajevoMonthBounds("2028-02-15");
+    // Februar = CET (UTC+1)
+    expect(start).toBe("2028-01-31T23:00:00.000Z");
+    expect(end).toBe("2028-02-29T23:00:00.000Z");
+  });
+
+  it("Decembar → januar prelaz (godina granica)", () => {
+    const { start, end } = getSarajevoMonthBounds("2026-12-15");
+    // Decembar = CET
+    expect(start).toBe("2026-11-30T23:00:00.000Z");
+    expect(end).toBe("2026-12-31T23:00:00.000Z");
+  });
+
+  it("Mart 2026 (mjesec sa DST proljeće tranzicijom)", () => {
+    const { start, end } = getSarajevoMonthBounds("2026-03-15");
+    // 1. mart 00:00 CET = 23:00 UTC 28. februara
+    expect(start).toBe("2026-02-28T23:00:00.000Z");
+    // 1. april 00:00 CEST = 22:00 UTC 31. marta
+    expect(end).toBe("2026-03-31T22:00:00.000Z");
+  });
+
+  it("Oktobar 2026 (mjesec sa DST jesen tranzicijom)", () => {
+    const { start, end } = getSarajevoMonthBounds("2026-10-15");
+    // 1. okt 00:00 CEST = 22:00 UTC 30. septembra
+    expect(start).toBe("2026-09-30T22:00:00.000Z");
+    // 1. nov 00:00 CET = 23:00 UTC 31. oktobra
+    expect(end).toBe("2026-10-31T23:00:00.000Z");
+  });
+
+  it("baca grešku za neispravan datum", () => {
+    expect(() => getSarajevoMonthBounds("not-a-date")).toThrow();
+    expect(() => getSarajevoMonthBounds("2026-13-01")).toThrow();
   });
 });

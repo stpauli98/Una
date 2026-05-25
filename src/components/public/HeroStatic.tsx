@@ -47,7 +47,7 @@ export function HeroStatic() {
         <div className="mb-8 flex items-center justify-center gap-3">
           <div className="h-px w-10 bg-gold-light" />
           <p className="font-display text-[13px] italic uppercase tracking-[0.35em] text-gold-light md:text-[14px]">
-            Beauty Studio · Gradiška
+            Makeup · Gradiška
           </p>
           <div className="h-px w-10 bg-gold-light" />
         </div>

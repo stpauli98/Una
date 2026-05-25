@@ -2,7 +2,7 @@
  * Normalizuje `NEXT_PUBLIC_SITE_URL` (ili bilo koji URL string) tako da:
  *  - skida svaki trailing whitespace (newline, space, tab) — defensive protiv
  *    Vercel env var-ova kojima se nepažljivo paste-uje vrijednost sa newline-om
- *    (poznati bug u UP Beauty Vercel projektu).
+ *    (poznati bug u UP Makeup Vercel projektu).
  *  - skida trailing slash da konkatenacija sa path-om ne proizvede `//`.
  *
  * Whitespace stripping je KRITIČNO za Schema.org JSON-LD `@id`/`url` fields:

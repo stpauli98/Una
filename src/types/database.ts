@@ -7,10 +7,30 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -25,6 +45,7 @@ export type Database = {
           end_time: string
           id: number
           notes: string | null
+          price_snapshot: number | null
           service_id: number
           start_time: string
           status: string
@@ -40,6 +61,7 @@ export type Database = {
           end_time: string
           id?: never
           notes?: string | null
+          price_snapshot?: number | null
           service_id: number
           start_time: string
           status?: string
@@ -55,6 +77,7 @@ export type Database = {
           end_time?: string
           id?: never
           notes?: string | null
+          price_snapshot?: number | null
           service_id?: number
           start_time?: string
           status?: string
@@ -229,6 +252,7 @@ export type Database = {
           end_time: string
           id: number
           reason: string | null
+          recurrence_group_id: string | null
           start_time: string
         }
         Insert: {
@@ -236,6 +260,7 @@ export type Database = {
           end_time: string
           id?: never
           reason?: string | null
+          recurrence_group_id?: string | null
           start_time: string
         }
         Update: {
@@ -243,6 +268,7 @@ export type Database = {
           end_time?: string
           id?: never
           reason?: string | null
+          recurrence_group_id?: string | null
           start_time?: string
         }
         Relationships: []
@@ -446,6 +472,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },

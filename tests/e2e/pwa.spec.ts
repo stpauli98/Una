@@ -6,8 +6,8 @@ test.describe("PWA manifest", () => {
     expect(res.status()).toBe(200);
     expect(res.headers()["content-type"]).toContain("application/manifest+json");
     const m = await res.json();
-    expect(m.name).toBe("UP Beauty & Makeup Studio — Gradiška");
-    expect(m.short_name).toBe("UP Beauty");
+    expect(m.name).toBe("UP Makeup — Gradiška");
+    expect(m.short_name).toBe("UP Makeup");
     expect(m.start_url).toBe("/");
     expect(m.display).toBe("standalone");
     expect(m.theme_color).toBe("#3d2b2b");
@@ -66,7 +66,7 @@ test.describe("iOS PWA meta", () => {
       .locator('meta[name="apple-mobile-web-app-title"]')
       .first()
       .getAttribute("content");
-    expect(title).toBe("UP Beauty");
+    expect(title).toBe("UP Makeup");
 
     const status = await page
       .locator('meta[name="apple-mobile-web-app-status-bar-style"]')
@@ -128,7 +128,7 @@ test.describe("Admin PWA scope", () => {
     expect(res.headers()["content-type"]).toContain("application/manifest+json");
     const m = await res.json();
     expect(m.id).toBe("/admin");
-    expect(m.name).toBe("UP Beauty Admin");
+    expect(m.name).toBe("UP Makeup Admin");
     expect(m.short_name).toBe("UP Admin");
     expect(m.start_url).toBe("/admin/dashboard");
     expect(m.scope).toBe("/admin");
@@ -178,7 +178,7 @@ test.describe("Admin PWA scope", () => {
       .locator('meta[name="application-name"]')
       .first()
       .getAttribute("content");
-    expect(appName).toBe("UP Beauty Admin");
+    expect(appName).toBe("UP Makeup Admin");
   });
 
   test("public page still links the root manifest", async ({ page }) => {

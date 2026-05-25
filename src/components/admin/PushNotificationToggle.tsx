@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import {
   subscribeAdminToPush,
   unsubscribeAdminFromPush,
+  sendTestPushToCurrentAdmin,
 } from "@/app/admin/(protected)/postavke/push-actions";
 
 type State = "loading" | "unsupported" | "denied" | "subscribed" | "unsubscribed";
@@ -26,6 +27,7 @@ type State = "loading" | "unsupported" | "denied" | "subscribed" | "unsubscribed
 export function PushNotificationToggle() {
   const [state, setState] = useState<State>("loading");
   const [error, setError] = useState<string | null>(null);
+  const [testSuccess, setTestSuccess] = useState(false);
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -96,6 +98,20 @@ export function PushNotificationToggle() {
     });
   };
 
+  const onTest = () => {
+    setError(null);
+    setTestSuccess(false);
+    startTransition(async () => {
+      const res = await sendTestPushToCurrentAdmin();
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      setTestSuccess(true);
+      setTimeout(() => setTestSuccess(false), 4000);
+    });
+  };
+
   const onUnsubscribe = () => {
     setError(null);
     startTransition(async () => {
@@ -145,23 +161,39 @@ export function PushNotificationToggle() {
   return (
     <div className="space-y-2">
       {state === "subscribed" ? (
-        <button
-          type="button"
-          onClick={onUnsubscribe}
-          disabled={pending}
-          className="border border-rose bg-white px-4 py-2 text-[12px] text-rose hover:bg-warm disabled:opacity-50"
-        >
-          {pending ? "..." : "Isključi obavještenja"}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={onUnsubscribe}
+            disabled={pending}
+            className="border border-rose bg-white px-4 py-2 text-[12px] text-rose hover:bg-warm disabled:opacity-50 cursor-pointer"
+          >
+            {pending ? "..." : "Isključi obavještenja"}
+          </button>
+          <button
+            type="button"
+            onClick={onTest}
+            disabled={pending}
+            className="border border-cream bg-white px-4 py-2 text-[12px] text-dark hover:border-rose hover:text-rose disabled:opacity-50 cursor-pointer"
+          >
+            {pending ? "..." : "Pošalji test"}
+          </button>
+        </div>
       ) : (
         <button
           type="button"
           onClick={onSubscribe}
           disabled={pending}
-          className="border border-rose bg-rose px-4 py-2 text-[12px] text-white hover:opacity-90 disabled:opacity-50"
+          className="border border-rose bg-rose px-4 py-2 text-[12px] text-white hover:opacity-90 disabled:opacity-50 cursor-pointer"
         >
           {pending ? "..." : "Uključi obavještenja"}
         </button>
+      )}
+      {testSuccess && (
+        <p className="text-[12px] text-green-700">
+          ✓ Test poslat — provjeri uređaj. Ako ne vidiš notifikaciju u par
+          sekundi, provjeri da li je &quot;Do Not Disturb&quot; isključen.
+        </p>
       )}
       {error && <p className="text-[12px] text-rose">{error}</p>}
     </div>

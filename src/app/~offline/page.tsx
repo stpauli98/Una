@@ -11,7 +11,7 @@ export default function OfflinePage() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-marble px-6 text-center">
       <div className="max-w-md">
         <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-light">
-          UP Beauty
+          UP Makeup
         </p>
         <h1 className="mb-4 font-display text-3xl text-dark md:text-4xl">
           Trenutno ste bez konekcije

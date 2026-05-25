@@ -116,7 +116,7 @@ export function buildServicesJsonLd(services: Service[], siteUrl: string): Servi
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name: "Usluge UP Beauty & Makeup Studio u Gradišci",
+    name: "Usluge UP Makeup u Gradišci",
     itemListElement: services.map((s, i) => ({
       "@type": "ListItem",
       position: i + 1,

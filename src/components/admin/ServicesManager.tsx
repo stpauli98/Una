@@ -121,14 +121,38 @@ export function ServicesManager({
                     <div
                       key={service.id}
                       className={cn(
-                        "border bg-white p-5 transition-all duration-300",
+                        "relative overflow-hidden border bg-white p-5 transition-all duration-300",
                         service.active
                           ? "border-cream"
-                          : "border-stone-200 opacity-50",
+                          : "border-amber-200 bg-stone-50",
                         justMoved && "card-just-moved",
                       )}
                     >
-                      <div className="mb-3 flex items-start justify-between gap-2">
+                      {!service.active && (
+                        <>
+                          {/* Top banner — primarni eksplicitni signal */}
+                          <div className="-mx-5 -mt-5 mb-3 border-b border-amber-200 bg-amber-50 px-5 py-2 text-[10px] uppercase tracking-wider text-amber-800">
+                            <span className="font-semibold">Nevidljiva</span>
+                            <span className="opacity-80">
+                              {" "}
+                              — klijenti ne vide, ne može se rezervisati
+                            </span>
+                          </div>
+                          {/* Watermark EyeOff — centriran, ispod content-a,
+                              pointer-events-none da admin dugmad rade. */}
+                          <div
+                            aria-hidden="true"
+                            className="pointer-events-none absolute inset-0 flex items-center justify-center"
+                          >
+                            <EyeOff
+                              size={96}
+                              strokeWidth={1.25}
+                              className="text-stone-300 opacity-60"
+                            />
+                          </div>
+                        </>
+                      )}
+                      <div className="relative mb-3 flex items-start justify-between gap-2">
                         <div className="flex-1">
                           <h4 className="font-display text-lg text-dark">
                             {service.name}
@@ -173,12 +197,12 @@ export function ServicesManager({
                       </div>
 
                       {service.description && (
-                        <p className="mb-3 line-clamp-2 text-[12px] text-light">
+                        <p className="relative mb-3 line-clamp-2 text-[12px] text-light">
                           {service.description}
                         </p>
                       )}
 
-                      <div className="mb-4 flex items-baseline justify-between">
+                      <div className="relative mb-4 flex items-baseline justify-between">
                         <span className="font-display text-xl text-rose">
                           {priceDisplay}
                         </span>
@@ -187,7 +211,7 @@ export function ServicesManager({
                         </span>
                       </div>
 
-                      <div className="flex gap-1.5">
+                      <div className="relative flex gap-1.5">
                         <button
                           type="button"
                           onClick={() => setEditingId(service.id)}
@@ -208,12 +232,23 @@ export function ServicesManager({
                               router.refresh();
                             })
                           }
+                          aria-label={
+                            service.active
+                              ? `Sakrij ${service.name} sa javnih usluga`
+                              : `Pokaži ${service.name} na javnim uslugama`
+                          }
                           className="inline-flex items-center justify-center gap-1 border border-cream bg-white px-3 py-2 text-[10px] uppercase tracking-wider text-dark hover:border-rose hover:text-rose cursor-pointer"
                         >
                           {service.active ? (
-                            <EyeOff size={11} />
+                            <>
+                              <EyeOff size={11} />
+                              Sakrij
+                            </>
                           ) : (
-                            <Eye size={11} />
+                            <>
+                              <Eye size={11} />
+                              Pokaži
+                            </>
                           )}
                         </button>
                         <button

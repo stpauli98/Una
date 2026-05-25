@@ -8,7 +8,7 @@ import { BUSINESS } from "@/lib/constants/business";
 
 export const metadata: Metadata = {
   title: "Kontakt",
-  description: `Kontakt podaci UP Beauty & Makeup Studio — ${BUSINESS.address}. Telefon, email, Instagram, TikTok.`,
+  description: `Kontakt podaci UP Makeup — ${BUSINESS.address}. Telefon, email, Instagram, TikTok.`,
   alternates: { canonical: "/kontakt" },
   openGraph: { url: "/kontakt" },
 };
@@ -100,8 +100,8 @@ export default function KontaktPage() {
 
           <div className="mx-auto mt-16 max-w-[1100px] overflow-hidden rounded-sm border border-cream bg-cream">
             <iframe
-              title="Lokacija UP Beauty Studio"
-              src={`https://maps.google.com/maps?q=${BUSINESS.geo.lat},${BUSINESS.geo.lng}&z=17&t=m&output=embed`}
+              title="UP Makeup na Google Maps"
+              src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d11255.460379226697!2d17.258078!3d45.1493291!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47675f0a0a76d331%3A0x767936a8063a1fe!2sUP%20Makeup!5e0!3m2!1sen!2sba!4v1779481178927!5m2!1sen!2sba"
               width="100%"
               height="380"
               loading="lazy"

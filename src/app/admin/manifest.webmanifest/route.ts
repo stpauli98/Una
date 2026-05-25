@@ -8,7 +8,7 @@ import { BRAND_COLORS } from "@/lib/constants/theme";
  *  - start_url: "/admin/dashboard" → instalirana app uvijek otvara admin
  *  - scope: "/admin" → standalone mode samo unutar admin namespace-a
  *  - id: "/admin" → browser-i tretiraju ovo kao zasebnu PWA (Una može imati i public i admin install paralelno)
- *  - name/short_name: "UP Beauty Admin" / "UP Admin" → distinkcija na home screen-u
+ *  - name/short_name: "UP Makeup Admin" / "UP Admin" → distinkcija na home screen-u
  *  - icons: referenciraju admin-specific routes (src/app/admin/icon.tsx, icon1.tsx)
  *
  * Override <link rel="manifest"> dolazi iz src/app/admin/layout.tsx
@@ -17,10 +17,10 @@ import { BRAND_COLORS } from "@/lib/constants/theme";
 export function GET() {
   const manifest: MetadataRoute.Manifest = {
     id: "/admin",
-    name: "UP Beauty Admin",
+    name: "UP Makeup Admin",
     short_name: "UP Admin",
     description:
-      "Admin panel za UP Beauty & Makeup Studio — upravljanje terminima, uslugama i galerijom.",
+      "Admin panel za UP Makeup — upravljanje terminima, uslugama i galerijom.",
     start_url: "/admin/dashboard",
     scope: "/admin",
     display: "standalone",

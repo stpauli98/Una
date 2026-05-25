@@ -19,7 +19,7 @@ export default async function AdminGalerijaPage() {
     id: img.id,
     url: `${supabaseUrl}/storage/v1/object/public/gallery/${img.storage_path}`,
     category: img.category,
-    alt: img.alt_text ?? `UP Beauty — ${img.category}`,
+    alt: img.alt_text ?? `UP Makeup — ${img.category}`,
   }));
 
   return (

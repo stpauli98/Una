@@ -8,7 +8,7 @@ import type { Metadata } from "next";
  *
  * Single purpose: override metadata fields tako da svaka admin stranica
  * linka admin-specific manifest, ima "UP Admin" kao iOS home-screen title,
- * i "UP Beauty Admin" kao application-name. Next 16 metadata-merge logika
+ * i "UP Makeup Admin" kao application-name. Next 16 metadata-merge logika
  * uzima nested vrijednosti i prebriše field-by-field — sve OSTALO iz
  * root layout-a (viewport, themeColor, openGraph itd.) ostaje netaknuto.
  *
@@ -17,14 +17,14 @@ import type { Metadata } from "next";
  */
 export const metadata: Metadata = {
   manifest: "/admin/manifest.webmanifest",
-  applicationName: "UP Beauty Admin",
+  applicationName: "UP Makeup Admin",
   appleWebApp: {
     capable: true,
     title: "UP Admin",
     statusBarStyle: "black-translucent",
   },
   title: {
-    default: "Admin · UP Beauty",
+    default: "Admin · UP Makeup",
     template: "%s · UP Admin",
   },
   robots: { index: false, follow: false },

@@ -22,13 +22,13 @@ export function buildAppointmentWaMessage(input: WaMessageInput): string {
 
   switch (status) {
     case "otkazan":
-      return `Zdravo ${firstName}, Una iz UP Beauty Studio ovdje. Nažalost moram otkazati vaš termin za ${serviceName} (${dateTimeLabel}). Izvinjavam se na neprijatnosti 🙏 Slobodno se javite da dogovorimo novi termin.`;
+      return `Zdravo ${firstName}, Una iz UP Makeup ovdje. Nažalost moram otkazati vaš termin za ${serviceName} (${dateTimeLabel}). Izvinjavam se na neprijatnosti 🙏 Slobodno se javite da dogovorimo novi termin.`;
     case "zavrsen":
       return `Zdravo ${firstName}, hvala vam što ste me posjetili! Nadam se da ste zadovoljni tretmanom. Vidimo se uskoro 💕 — Una`;
     case "ceka":
     case "potvrdjen":
     default:
-      return `Zdravo ${firstName}, Una iz UP Beauty Studio ovdje. Potvrđujem vaš termin za ${serviceName} u ${dateTimeLabel}. Vidimo se! 💕`;
+      return `Zdravo ${firstName}, Una iz UP Makeup ovdje. Potvrđujem vaš termin za ${serviceName} u ${dateTimeLabel}. Vidimo se! 💕`;
   }
 }
 

@@ -19,9 +19,9 @@ import { BUSINESS } from "@/lib/constants/business";
 export function GET() {
   const manifest: MetadataRoute.Manifest = {
     name: `${BUSINESS.name} — Gradiška`,
-    short_name: "UP Beauty",
+    short_name: "UP Makeup",
     description:
-      "Profesionalno šminkanje, pedikir i trepavice u Gradišci. Una Peranović — UP Beauty & Makeup Studio.",
+      "Profesionalno šminkanje, pedikir i trepavice u Gradišci. Una Peranović — UP Makeup.",
     start_url: "/",
     scope: "/",
     display: "standalone",

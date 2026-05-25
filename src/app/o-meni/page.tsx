@@ -10,7 +10,7 @@ import { BUSINESS } from "@/lib/constants/business";
 export const metadata: Metadata = {
   title: "O meni",
   description:
-    "Una Peranović — vlasnica UP Beauty & Makeup Studio u Gradišci. Priča o strasti prema šminkanju i prirodnoj ljepoti.",
+    "Una Peranović — vlasnica UP Makeup u Gradišci. Priča o strasti prema šminkanju i prirodnoj ljepoti.",
   alternates: { canonical: "/o-meni" },
   openGraph: { url: "/o-meni" },
 };
