@@ -17,6 +17,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { formatInTimeZone } from "date-fns-tz";
 import { TZ } from "@/lib/utils/tz";
 import { formatShortDate, formatTime } from "@/lib/utils/format";
+import { CollapsibleSection } from "@/components/admin/CollapsibleSection";
 
 const BOOKING_RULE_KEYS = [
   "min_hours_before",
@@ -141,95 +142,72 @@ export default async function AdminPostavkePage() {
       />
 
       <div className="space-y-8 p-5 md:p-8">
-        <section>
-          <h2 className="mb-3 font-display text-xl text-dark">
-            Pravila rezervisanja
-          </h2>
-          <p className="mb-4 text-[12px] text-light">
-            Podesite koliko unaprijed i koliko kasno klijenti mogu zakazivati
-            termine, te pauzu između termina za pripremu.
-          </p>
-          <SectionMeta
-            label="Zadnje izmijenjeno"
-            timestamp={bookingRulesLastUpdated}
-          />
+        <CollapsibleSection
+          title="Pravila rezervisanja"
+          description="Podesite koliko unaprijed i koliko kasno klijenti mogu zakazivati termine, te pauzu između termina za pripremu."
+          meta={
+            <SectionMeta
+              label="Zadnje izmijenjeno"
+              timestamp={bookingRulesLastUpdated}
+            />
+          }
+        >
           <BookingRulesEditor currentSettings={settingsMap} />
-        </section>
+        </CollapsibleSection>
 
-        <section>
-          <h2 className="mb-3 font-display text-xl text-dark">Radno vrijeme</h2>
-          <p className="mb-4 text-[12px] text-light">
-            Podesite radno vrijeme po danima. Ovo se koristi kao fallback
-            kada nema postavljenog specifičnog override-a za datum.
-          </p>
+        <CollapsibleSection
+          title="Radno vrijeme"
+          description="Podesite radno vrijeme po danima. Ovo se koristi kao fallback kada nema postavljenog specifičnog override-a za datum."
+        >
           <WorkingHoursEditor hours={hours} />
-        </section>
+        </CollapsibleSection>
 
-        <section>
-          <h2 className="mb-3 font-display text-xl text-dark">
-            Blokirani datumi
-          </h2>
-          <p className="mb-4 text-[12px] text-light">
-            Dani kada ste odsutni, praznici, godišnji odmor. Klijenti ne mogu
-            zakazati termine u blokiranim datumima.
-          </p>
-          <SectionMeta
-            label="Zadnje dodato"
-            timestamp={blockedDatesLastAdded}
-          />
+        <CollapsibleSection
+          title="Blokirani datumi"
+          description="Dani kada ste odsutni, praznici, godišnji odmor. Klijenti ne mogu zakazati termine u blokiranim datumima."
+          meta={
+            <SectionMeta
+              label="Zadnje dodato"
+              timestamp={blockedDatesLastAdded}
+            />
+          }
+        >
           <BlockedDatesManager dates={blocked} />
-        </section>
+        </CollapsibleSection>
 
-        <section>
-          <h2 className="mb-3 font-display text-xl text-dark">
-            Blokirani intervali (sub-day)
-          </h2>
-          <p className="mb-4 text-[12px] text-light">
-            Blokirajte konkretno vrijeme (npr. 18:00–20:00 u srijedu za
-            zubara). Za cijele dane koristite sekciju iznad &quot;Blokirani
-            datumi&quot;.
-          </p>
-          <SectionMeta
-            label="Zadnje dodato"
-            timestamp={timeBlocksLastAdded}
-          />
+        <CollapsibleSection
+          title="Blokirani intervali (sub-day)"
+          description='Blokirajte konkretno vrijeme (npr. 18:00–20:00 u srijedu za zubara). Za cijele dane koristite sekciju iznad "Blokirani datumi".'
+          meta={
+            <SectionMeta
+              label="Zadnje dodato"
+              timestamp={timeBlocksLastAdded}
+            />
+          }
+        >
           <TimeBlocksManager blocks={timeBlocks} />
-        </section>
+        </CollapsibleSection>
 
-        <section>
-          <h2 className="mb-3 font-display text-xl text-dark">
-            Obavještenja na uređaju
-          </h2>
-          <p className="mb-4 text-[12px] text-light">
-            Uključi push notifikacije da dobiješ obavještenje čim
-            klijent zakaže termin — čak i kad admin panel nije
-            otvoren. Najbolje radi kao instalirana PWA (UP Admin) na
-            telefon.
-          </p>
+        <CollapsibleSection
+          title="Obavještenja na uređaju"
+          description="Uključi push notifikacije da dobiješ obavještenje čim klijent zakaže termin — čak i kad admin panel nije otvoren. Najbolje radi kao instalirana PWA (UP Admin) na telefon."
+        >
           <PushNotificationToggle />
-        </section>
+        </CollapsibleSection>
 
-        <section>
-          <h2 className="mb-3 font-display text-xl text-dark">
-            Export podataka
-          </h2>
-          <p className="mb-4 text-[12px] text-light">
-            Preuzmi sve termine u CSV formatu za backup ili porezni izvještaj.
-            Otvara se u Excel-u i LibreOffice Calc-u (semicolon separator,
-            UTF-8 sa BOM-om).
-          </p>
+        <CollapsibleSection
+          title="Export podataka"
+          description="Preuzmi sve termine u CSV formatu za backup ili porezni izvještaj. Otvara se u Excel-u i LibreOffice Calc-u (semicolon separator, UTF-8 sa BOM-om)."
+        >
           <CsvExportButton availableYears={exportYears} />
-        </section>
+        </CollapsibleSection>
 
-        <section>
-          <h2 className="mb-3 font-display text-xl text-dark">
-            Promjena lozinke
-          </h2>
-          <p className="mb-4 text-[12px] text-light">
-            Preporučuje se jaka lozinka od najmanje 8 karaktera.
-          </p>
+        <CollapsibleSection
+          title="Promjena lozinke"
+          description="Preporučuje se jaka lozinka od najmanje 8 karaktera."
+        >
           <ChangePasswordForm />
-        </section>
+        </CollapsibleSection>
       </div>
     </div>
   );
