@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { bookingFormSchema } from "@/lib/booking/schemas";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createPublicClient } from "@/lib/supabase/public";
 import { normalizePhone } from "@/lib/utils/phone";
 import { isGridAligned } from "@/lib/utils/grid";
 import { parseBookingSettings } from "@/lib/settings/read";
@@ -123,7 +124,9 @@ export async function createAppointment(
   const clientEmail = parsed.data.client_email || null;
   const notes = parsed.data.notes || null;
 
-  const { data: inserted, error: insErr } = await sb
+  const anonSb = createPublicClient();
+
+  const { data: inserted, error: insErr } = await anonSb
     .from("appointments")
     .insert({
       service_id: parsed.data.service_id,
