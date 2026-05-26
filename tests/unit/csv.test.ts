@@ -31,6 +31,20 @@ describe("csvEscape", () => {
     expect(csvEscape(undefined)).toBe("");
     expect(csvEscape(null)).toBe("");
   });
+
+  it("prefixes formula characters with apostrophe to prevent injection", () => {
+    expect(csvEscape("=1+1")).toBe("\"'=1+1\"");
+    expect(csvEscape("+1+1")).toBe("\"'+1+1\"");
+    expect(csvEscape("-1+1")).toBe("\"'-1+1\"");
+    expect(csvEscape("@SUM(A1:A10)")).toBe("\"'@SUM(A1:A10)\"");
+    expect(csvEscape("\tcmd")).toBe("\"'\tcmd\"");
+    expect(csvEscape("\rcmd")).toBe("\"'\rcmd\"");
+  });
+
+  it("does not prefix normal strings that happen to contain formula chars mid-string", () => {
+    expect(csvEscape("termin za +387")).toBe("termin za +387");
+    expect(csvEscape("email@test.com")).toBe("email@test.com");
+  });
 });
 
 describe("buildCsvRow", () => {

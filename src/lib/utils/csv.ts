@@ -28,6 +28,9 @@ export function csvEscape(value: CsvCell): string {
   if (value == null) return "";
   const s = String(value);
   if (s === "") return "";
+  if (/^[=+\-@\t\r]/.test(s)) {
+    return `"'${s.replace(/"/g, '""')}"`;
+  }
   if (/[";\n\r]/.test(s)) {
     return `"${s.replace(/"/g, '""')}"`;
   }
