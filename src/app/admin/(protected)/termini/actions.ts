@@ -10,6 +10,7 @@ import { isGridAligned } from "@/lib/utils/grid";
 import { sendClientConfirmationEmail } from "@/lib/notifications/send-client-email";
 import { sendCancellationEmail } from "@/lib/notifications/send-cancellation-email";
 import { normalizeSiteUrl } from "@/lib/utils/site-url";
+import { sarajevoDateStr } from "@/lib/utils/day-bounds";
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -46,7 +47,8 @@ export async function confirmAppointment(id: number): Promise<ActionResult> {
       .single();
 
     if (appt?.client_email) {
-      const adminPanelUrl = `${normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL)}/admin/termini`;
+      const base = normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL);
+      const adminPanelUrl = `${base}/admin/termini?date=${sarajevoDateStr(new Date(appt.start_time))}&focus=${id}`;
       after(() =>
         sendClientConfirmationEmail({
           appointmentId: id,
@@ -88,7 +90,8 @@ export async function cancelAppointment(id: number): Promise<ActionResult> {
     revalidatePath("/admin/dashboard");
 
     if (appt?.client_email && (appt.status === "ceka" || appt.status === "potvrdjen")) {
-      const adminPanelUrl = `${normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL)}/admin/termini`;
+      const base = normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL);
+      const adminPanelUrl = `${base}/admin/termini?date=${sarajevoDateStr(new Date(appt.start_time))}&focus=${id}`;
       after(() =>
         sendCancellationEmail({
           appointmentId: id,
@@ -241,7 +244,8 @@ export async function createManualAppointment(
 
     // Manual appointment = odmah potvrđen, šalje confirmation + .ics
     if (parsed.data.client_email) {
-      const adminPanelUrl = `${normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL)}/admin/termini`;
+      const base = normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL);
+      const adminPanelUrl = `${base}/admin/termini?date=${sarajevoDateStr(start)}&focus=${inserted.id}`;
       after(() =>
         sendClientConfirmationEmail({
           appointmentId: inserted.id,
