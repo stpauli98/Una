@@ -70,7 +70,7 @@ export function renderNewAppointmentEmail(
     <tr><td align="center">
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:540px;background:#ffffff;border:1px solid #f0e6dd;">
         <tr><td style="padding:32px 32px 16px 32px;border-bottom:1px solid #f0e6dd;">
-          <div style="font-size:14px;letter-spacing:0.25em;text-transform:uppercase;color:#b8965a;font-weight:600;">UP Beauty Studio</div>
+          <div style="font-size:14px;letter-spacing:0.25em;text-transform:uppercase;color:#b8965a;font-weight:600;">UP Makeup</div>
         </td></tr>
         <tr><td style="padding:32px;">
           <h1 style="margin:0 0 8px 0;font-size:28px;font-style:italic;font-weight:normal;color:#3d2b2b;">Nova rezervacija</h1>
@@ -93,7 +93,7 @@ export function renderNewAppointmentEmail(
           </div>
         </td></tr>
         <tr><td style="padding:24px 32px;border-top:1px solid #f0e6dd;font-size:12px;color:#887070;">
-          UP Beauty &amp; Makeup Studio<br>
+          UP Makeup Studio<br>
           Majora Milana Tepića 13, Gradiška
         </td></tr>
       </table>
@@ -102,7 +102,7 @@ export function renderNewAppointmentEmail(
 </body>
 </html>`;
 
-  const text = `NOVA REZERVACIJA — UP Beauty Studio
+  const text = `NOVA REZERVACIJA — UP Makeup
 
 Klijent: ${clientName}
 Telefon: ${clientPhone}${clientEmail ? `\nEmail: ${clientEmail}` : ""}
@@ -115,7 +115,7 @@ Otvori u admin panelu:
 ${adminPanelUrl}
 
 --
-UP Beauty & Makeup Studio
+UP Makeup Studio
 Majora Milana Tepića 13, Gradiška
 `;
 

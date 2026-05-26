@@ -3,17 +3,11 @@ import {
   renderNewAppointmentEmail,
   type NewAppointmentEmailInput,
 } from "./templates";
+import { buildIcsContent } from "./ics";
 import { sanitizeError } from "@/lib/utils/log";
 
-/**
- * Šalje email Uni o novoj rezervaciji.
- *
- * Fire-and-log: NIKAD ne throw-uje. Ako Resend nije konfigurisan ili
- * pukne, samo loguje — appointment kod koji nas zove ne fail-uje.
- *
- * Provjerava sve potrebne env vars i graceful-skip-uje ako bilo koja
- * nedostaje (npr. lokalni dev bez Resend account-a).
- */
+const APPOINTMENT_DURATION_MIN_DEFAULT = 60;
+
 export async function sendNewAppointmentEmail(
   input: NewAppointmentEmailInput,
 ): Promise<void> {
@@ -36,12 +30,34 @@ export async function sendNewAppointmentEmail(
 
   try {
     const { subject, html, text } = renderNewAppointmentEmail(input);
+
+    // ICS attachment — admin može dodati event direktno u svoj kalendar
+    const endTime = new Date(
+      input.startTime.getTime() + APPOINTMENT_DURATION_MIN_DEFAULT * 60_000,
+    );
+    const icsContent = buildIcsContent({
+      uid: `appt-${input.startTime.getTime()}@upmakeup.ba`,
+      start: input.startTime,
+      end: endTime,
+      summary: `${input.serviceName} — ${input.clientName}`,
+      location: "Majora Milana Tepića 13, Gradiška",
+      description: `Klijent: ${input.clientName}\nTelefon: ${input.clientPhone}${input.notes ? `\nNapomena: ${input.notes}` : ""}`,
+      organizerName: "UP Makeup",
+      organizerEmail: fromEmail,
+    });
+
     const result = await resend.emails.send({
       from: fromEmail,
       to: [adminEmail],
       subject,
       html,
       text,
+      attachments: [
+        {
+          filename: "rezervacija.ics",
+          content: Buffer.from(icsContent, "utf-8").toString("base64"),
+        },
+      ],
     });
 
     if (result.error) {
