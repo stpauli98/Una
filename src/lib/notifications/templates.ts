@@ -139,7 +139,7 @@ export function renderClientConfirmationEmail(
   const dateStr = formatDateSr(input.startTime);
   const timeStr = formatInTimeZone(input.startTime, TZ, "HH:mm");
 
-  const subject = `Vaša rezervacija — ${input.serviceName}, ${dateStr} u ${timeStr}`;
+  const subject = `Una je potvrdila — ${input.serviceName}, ${dateStr} u ${timeStr}`;
 
   const html = `<!DOCTYPE html>
 <html lang="sr">
@@ -191,6 +191,109 @@ U prilogu je .ics fajl — otvorite ga da dodate termin u svoj kalendar.
 Ako trebate otkazati ili pomjeriti, javite na +387 65 810 323.
 
 UP Makeup`;
+
+  return { subject, html, text };
+}
+
+export function renderBookingReceivedEmail(
+  input: NewAppointmentEmailInput,
+): RenderedEmail {
+  const dateStr = formatDateSr(input.startTime);
+  const timeStr = formatInTimeZone(input.startTime, TZ, "HH:mm");
+
+  const subject = `Primili smo vašu rezervaciju — ${input.serviceName}, ${dateStr}`;
+
+  const html = `<!DOCTYPE html>
+<html lang="sr"><head><meta charset="UTF-8"><title>${subject}</title></head>
+<body style="margin:0;padding:0;background:#FAF7F2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#2A2A2A;">
+<div style="max-width:560px;margin:0 auto;padding:32px 24px;">
+  <h1 style="font-size:14px;text-transform:uppercase;letter-spacing:0.15em;color:#C4787A;margin:0 0 8px 0;">UP MAKEUP</h1>
+  <h2 style="font-size:24px;font-weight:400;margin:0 0 24px 0;">Primili smo vašu rezervaciju</h2>
+  <p style="font-size:15px;line-height:1.6;margin:0 0 16px 0;">Hvala vam, <strong>${escapeHtml(input.clientName)}</strong>.</p>
+  <div style="background:#fff;border:1px solid #EDE7DF;padding:20px;margin:24px 0;">
+    <p style="margin:0 0 4px 0;font-size:18px;font-weight:500;">${escapeHtml(input.serviceName)}</p>
+    <p style="margin:0 0 4px 0;font-size:15px;">${dateStr} u ${timeStr}</p>
+  </div>
+  <p style="font-size:13px;line-height:1.6;color:#5A5550;margin:0 0 32px 0;">Una će potvrditi i javiti se u najkraćem roku. Kad potvrdi, dobićete email sa detaljima i mogućnošću dodavanja u kalendar.</p>
+  <hr style="border:none;border-top:1px solid #EDE7DF;margin:24px 0;">
+  <p style="font-size:11px;color:#8A8580;text-align:center;margin:0;">UP Makeup · Majora Milana Tepića 13, Gradiška</p>
+</div></body></html>`;
+
+  const text = `UP MAKEUP — Primili smo vašu rezervaciju
+
+Hvala vam, ${input.clientName}.
+
+${input.serviceName}
+${dateStr} u ${timeStr}
+
+Una će potvrditi i javiti se u najkraćem roku. Kad potvrdi, dobićete email sa detaljima i mogućnošću dodavanja u kalendar.
+
+UP Makeup · Majora Milana Tepića 13, Gradiška`;
+
+  return { subject, html, text };
+}
+
+export function renderBookingNotConfirmedEmail(
+  input: NewAppointmentEmailInput,
+): RenderedEmail {
+  const dateStr = formatDateSr(input.startTime);
+  const timeStr = formatInTimeZone(input.startTime, TZ, "HH:mm");
+
+  const subject = `Termin nije potvrđen — ${input.serviceName}, ${dateStr}`;
+
+  const html = `<!DOCTYPE html>
+<html lang="sr"><head><meta charset="UTF-8"><title>${subject}</title></head>
+<body style="margin:0;padding:0;background:#FAF7F2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#2A2A2A;">
+<div style="max-width:560px;margin:0 auto;padding:32px 24px;">
+  <h1 style="font-size:14px;text-transform:uppercase;letter-spacing:0.15em;color:#C4787A;margin:0 0 8px 0;">UP MAKEUP</h1>
+  <h2 style="font-size:24px;font-weight:400;margin:0 0 24px 0;">Termin nije potvrđen</h2>
+  <p style="font-size:15px;line-height:1.6;margin:0 0 16px 0;">Nažalost, vaš termin za <strong>${escapeHtml(input.serviceName)}</strong> ${dateStr} u ${timeStr} nije potvrđen.</p>
+  <p style="font-size:13px;line-height:1.6;color:#5A5550;margin:0 0 32px 0;">Za novi termin rezervišite na <a href="${escapeHtmlAttr(input.adminPanelUrl.replace('/admin/termini', '/zakazi'))}" style="color:#C4787A;">upmakeup.ba/zakazi</a> ili javite na <a href="tel:+38765810323" style="color:#C4787A;">+387 65 810 323</a>.</p>
+  <hr style="border:none;border-top:1px solid #EDE7DF;margin:24px 0;">
+  <p style="font-size:11px;color:#8A8580;text-align:center;margin:0;">UP Makeup · Majora Milana Tepića 13, Gradiška</p>
+</div></body></html>`;
+
+  const text = `UP MAKEUP — Termin nije potvrđen
+
+Nažalost, vaš termin za ${input.serviceName} ${dateStr} u ${timeStr} nije potvrđen.
+
+Za novi termin rezervišite na upmakeup.ba/zakazi ili javite na +387 65 810 323.
+
+UP Makeup · Majora Milana Tepića 13, Gradiška`;
+
+  return { subject, html, text };
+}
+
+export function renderBookingCancelledEmail(
+  input: NewAppointmentEmailInput,
+): RenderedEmail {
+  const dateStr = formatDateSr(input.startTime);
+  const timeStr = formatInTimeZone(input.startTime, TZ, "HH:mm");
+
+  const subject = `Termin otkazan — ${input.serviceName}, ${dateStr} u ${timeStr}`;
+
+  const html = `<!DOCTYPE html>
+<html lang="sr"><head><meta charset="UTF-8"><title>${subject}</title></head>
+<body style="margin:0;padding:0;background:#FAF7F2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#2A2A2A;">
+<div style="max-width:560px;margin:0 auto;padding:32px 24px;">
+  <h1 style="font-size:14px;text-transform:uppercase;letter-spacing:0.15em;color:#C4787A;margin:0 0 8px 0;">UP MAKEUP</h1>
+  <h2 style="font-size:24px;font-weight:400;margin:0 0 24px 0;">Termin je otkazan</h2>
+  <p style="font-size:15px;line-height:1.6;margin:0 0 16px 0;">Vaš prethodno potvrđeni termin za <strong>${escapeHtml(input.serviceName)}</strong> ${dateStr} u ${timeStr} je otkazan.</p>
+  <p style="font-size:13px;line-height:1.6;color:#5A5550;margin:0 0 16px 0;">U prilogu je ažurirani .ics fajl koji briše događaj iz vašeg kalendara.</p>
+  <p style="font-size:13px;line-height:1.6;color:#5A5550;margin:0 0 32px 0;">Za novi termin javite na <a href="tel:+38765810323" style="color:#C4787A;">+387 65 810 323</a>.</p>
+  <hr style="border:none;border-top:1px solid #EDE7DF;margin:24px 0;">
+  <p style="font-size:11px;color:#8A8580;text-align:center;margin:0;">UP Makeup · Majora Milana Tepića 13, Gradiška</p>
+</div></body></html>`;
+
+  const text = `UP MAKEUP — Termin je otkazan
+
+Vaš prethodno potvrđeni termin za ${input.serviceName} ${dateStr} u ${timeStr} je otkazan.
+
+U prilogu je ažurirani .ics fajl koji briše događaj iz vašeg kalendara.
+
+Za novi termin javite na +387 65 810 323.
+
+UP Makeup · Majora Milana Tepića 13, Gradiška`;
 
   return { subject, html, text };
 }
