@@ -4,8 +4,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { computeAvailableSlots } from "@/lib/booking/availability";
 import { hoursMapFromRows } from "@/lib/booking/rules";
 import { parseBookingSettings } from "@/lib/settings/read";
-import { checkRateLimit } from "@/lib/utils/rate-limit";
+import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
 import { parseDateSarajevo } from "@/lib/utils/tz";
+import { isAdminEmail } from "@/lib/auth/admin-emails";
 
 // Ova ruta mora uvijek čitati svježe podatke — baza se mijenja u realnom
 // vremenu kada klijenti rezervišu termine. Keš bi prikazao zastarjele slotove.
@@ -22,7 +23,7 @@ export const revalidate = 0;
  */
 export async function GET(req: NextRequest) {
   // Rate limit: 30 requests per minute per IP
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown";
+  const ip = getClientIp(req.headers);
   if (!(await checkRateLimit(ip, 30, 60_000))) {
     return NextResponse.json(
       { error: "Previše zahtjeva. Pokušajte ponovo za minutu." },
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
     const {
       data: { user },
     } = await sb.auth.getUser();
-    isAdmin = !!user;
+    isAdmin = !!user && isAdminEmail(user.email);
   }
 
   if (!dateStr || !serviceIdStr) {

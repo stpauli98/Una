@@ -4,7 +4,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getMonthAvailability } from "@/lib/booking/month-availability";
 import { hoursMapFromRows } from "@/lib/booking/rules";
 import { parseBookingSettings } from "@/lib/settings/read";
-import { checkRateLimit } from "@/lib/utils/rate-limit";
+import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
+import { isAdminEmail } from "@/lib/auth/admin-emails";
 
 // Mora čitati svježe podatke — slotovi se mijenjaju kako klijenti rezervišu.
 export const dynamic = "force-dynamic";
@@ -23,7 +24,7 @@ export const revalidate = 0;
  */
 export async function GET(req: NextRequest) {
   // Rate limit: 30 requests per minute per IP (isti kao single-day)
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown";
+  const ip = getClientIp(req.headers);
   if (!(await checkRateLimit(ip, 30, 60_000))) {
     return NextResponse.json(
       { error: "Previše zahtjeva. Pokušajte ponovo za minutu." },
@@ -42,7 +43,7 @@ export async function GET(req: NextRequest) {
     const {
       data: { user },
     } = await sb.auth.getUser();
-    isAdmin = !!user;
+    isAdmin = !!user && isAdminEmail(user.email);
   }
 
   if (!monthStr || !serviceIdStr) {

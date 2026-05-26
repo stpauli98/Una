@@ -8,7 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhone } from "@/lib/utils/phone";
 import { isGridAligned } from "@/lib/utils/grid";
 import { parseBookingSettings } from "@/lib/settings/read";
-import { checkRateLimit } from "@/lib/utils/rate-limit";
+import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
 import { sanitizeError } from "@/lib/utils/log";
 import { headers } from "next/headers";
 import {
@@ -28,8 +28,8 @@ export async function createAppointment(
 ): Promise<CreateAppointmentResult> {
   // Rate limit: 5 booking attempts per minute per IP
   const hdrs = await headers();
-  const ip = hdrs.get("x-forwarded-for")?.split(",")[0] ?? "unknown";
-  if (!(await checkRateLimit(ip, 5, 60_000))) {
+  const ip = getClientIp(hdrs);
+  if (!(await checkRateLimit(ip, 5, 60_000, { failClosed: true }))) {
     return { ok: false, error: "Previše zahtjeva. Pokušajte ponovo za minutu." };
   }
 
