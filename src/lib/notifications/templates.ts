@@ -150,9 +150,9 @@ export function renderClientConfirmationEmail(
 <body style="margin:0;padding:0;background:#FAF7F2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#2A2A2A;">
 <div style="max-width:560px;margin:0 auto;padding:32px 24px;">
   <h1 style="font-size:14px;text-transform:uppercase;letter-spacing:0.15em;color:#C4787A;margin:0 0 8px 0;">UP MAKEUP</h1>
-  <h2 style="font-size:24px;font-weight:400;color:#2A2A2A;margin:0 0 24px 0;">Vaša rezervacija je primljena</h2>
+  <h2 style="font-size:24px;font-weight:400;color:#2A2A2A;margin:0 0 24px 0;">Vaš termin je potvrđen!</h2>
 
-  <p style="font-size:15px;line-height:1.6;margin:0 0 16px 0;">Hvala vam, <strong>${escapeHtml(input.clientName)}</strong>. Una će potvrditi vašu rezervaciju u najkraćem roku.</p>
+  <p style="font-size:15px;line-height:1.6;margin:0 0 16px 0;"><strong>${escapeHtml(input.clientName)}</strong>, Una je potvrdila vaš termin. Vidimo se!</p>
 
   <div style="background:#fff;border:1px solid #EDE7DF;padding:20px;margin:24px 0;">
     <p style="margin:0 0 8px 0;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:#8A8580;">Termin</p>
@@ -174,9 +174,9 @@ export function renderClientConfirmationEmail(
 </body>
 </html>`;
 
-  const text = `UP MAKEUP — Vaša rezervacija je primljena
+  const text = `UP MAKEUP — Vaš termin je potvrđen!
 
-Hvala vam, ${input.clientName}. Una će potvrditi vašu rezervaciju u najkraćem roku.
+${input.clientName}, Una je potvrdila vaš termin. Vidimo se!
 
 TERMIN
 ${input.serviceName}
