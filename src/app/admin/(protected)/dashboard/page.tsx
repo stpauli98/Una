@@ -125,7 +125,7 @@ export default async function AdminDashboardPage({
     // 5. Lista termina za izabrani dan — NEIZMIJENJENO (sve statuse)
     sb
       .from("appointments")
-      .select("id,client_name,client_phone,start_time,status,services(name)")
+      .select("id,client_name,client_phone,client_email,start_time,status,email_received_sent_at,email_confirmed_sent_at,email_cancelled_sent_at,services(name)")
       .gte("start_time", selectedDayBounds.start)
       .lt("start_time", selectedDayBounds.end)
       .order("start_time"),
@@ -244,6 +244,12 @@ export default async function AdminDashboardPage({
                         <p className="text-[11px] text-light">
                           {appt.services?.name} · {appt.client_phone}
                         </p>
+                        {appt.client_email && (
+                          <span className="text-[9px] text-light">
+                            📧{appt.email_received_sent_at && <span className="text-green-600"> ✓</span>}
+                            {appt.email_confirmed_sent_at && <span className="text-green-600"> ✓✓</span>}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <StatusBadge status={appt.status as "ceka" | "potvrdjen" | "otkazan" | "zavrsen"} />

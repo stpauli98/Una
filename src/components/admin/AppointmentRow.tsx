@@ -25,6 +25,9 @@ type Appointment = {
   status: AppointmentStatus;
   notes: string | null;
   services: { name: string } | null;
+  email_received_sent_at: string | null;
+  email_confirmed_sent_at: string | null;
+  email_cancelled_sent_at: string | null;
 };
 
 export function AppointmentRow({ appointment }: { appointment: Appointment }) {
@@ -101,6 +104,17 @@ export function AppointmentRow({ appointment }: { appointment: Appointment }) {
               {appointment.client_phone}
             </a>
           </div>
+          {appointment.client_email && (
+            <span className="inline-flex items-center gap-1 text-[10px] text-light">
+              <span>📧</span>
+              {appointment.email_received_sent_at && <span className="text-green-600">Primljeno ✓</span>}
+              {appointment.email_confirmed_sent_at && <span className="text-green-600">· Potvrda ✓</span>}
+              {appointment.email_cancelled_sent_at && <span className="text-red-500">· Otkazano ✓</span>}
+              {!appointment.email_received_sent_at && !appointment.email_confirmed_sent_at && (
+                <span className="text-amber-600">Šalje se…</span>
+              )}
+            </span>
+          )}
           {appointment.notes && (
             <p className="mt-2 text-[12px] italic text-light">
               “{appointment.notes}”

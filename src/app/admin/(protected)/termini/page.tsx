@@ -90,7 +90,7 @@ export default async function AdminTerminiPage({
   let appointmentsQuery = sb
     .from("appointments")
     .select(
-      "id,client_name,client_phone,client_email,start_time,end_time,status,notes,services(name)",
+      "id,client_name,client_phone,client_email,start_time,end_time,status,notes,email_received_sent_at,email_confirmed_sent_at,email_cancelled_sent_at,services(name)",
     )
     .order("start_time", { ascending: resolved.sort === "asc" })
     .limit(APPOINTMENTS_LIMIT);
