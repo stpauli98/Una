@@ -18,6 +18,7 @@ import {
 import { sendNewAppointmentEmail } from "@/lib/notifications/send-admin-email";
 import { sendBookingReceivedEmail } from "@/lib/notifications/send-booking-received-email";
 import { sarajevoDateStr } from "@/lib/utils/day-bounds";
+import { validateSlotServerSide } from "@/lib/booking/validate-slot";
 
 export type CreateAppointmentResult =
   | { ok: true }
@@ -89,6 +90,11 @@ export async function createAppointment(
       ok: false,
       error: `Rezervacija mora biti najmanje ${bookingSettings.minHoursBefore}h unaprijed`,
     };
+  }
+
+  const slotCheck = await validateSlotServerSide(sb, start, end);
+  if (!slotCheck.valid) {
+    return { ok: false, error: slotCheck.reason ?? "Slot nije dostupan" };
   }
 
   // Race guard: provjeri da se slot nije upravo zauzeo
