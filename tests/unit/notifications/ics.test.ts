@@ -66,4 +66,22 @@ describe("buildIcsContent", () => {
     });
     expect(ics).not.toContain("ORGANIZER");
   });
+
+  it("podržava METHOD:CANCEL i STATUS:CANCELLED za otkazivanje", () => {
+    const ics = buildIcsContent({
+      ...baseInput,
+      method: "CANCEL",
+      status: "CANCELLED",
+    });
+    expect(ics).toContain("METHOD:CANCEL");
+    expect(ics).toContain("STATUS:CANCELLED");
+    expect(ics).not.toContain("METHOD:REQUEST");
+    expect(ics).not.toContain("STATUS:CONFIRMED");
+  });
+
+  it("default method=REQUEST i status=CONFIRMED kad nisu prosljeđeni", () => {
+    const ics = buildIcsContent(baseInput);
+    expect(ics).toContain("METHOD:REQUEST");
+    expect(ics).toContain("STATUS:CONFIRMED");
+  });
 });
