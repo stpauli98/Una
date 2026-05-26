@@ -6,6 +6,7 @@ import { hoursMapFromRows } from "@/lib/booking/rules";
 import { parseBookingSettings } from "@/lib/settings/read";
 import { checkRateLimit, getClientIp } from "@/lib/utils/rate-limit";
 import { isAdminEmail } from "@/lib/auth/admin-emails";
+import { sanitizeError } from "@/lib/utils/log";
 
 // Mora čitati svježe podatke — slotovi se mijenjaju kako klijenti rezervišu.
 export const dynamic = "force-dynamic";
@@ -91,7 +92,8 @@ export async function GET(req: NextRequest) {
     .maybeSingle();
 
   if (serviceError) {
-    return NextResponse.json({ error: serviceError.message }, { status: 500 });
+    console.error("query failed:", sanitizeError(serviceError));
+    return NextResponse.json({ error: "Greška pri učitavanju podataka" }, { status: 500 });
   }
   if (!service || !service.bookable || !service.active || !service.duration_min) {
     // Service ne postoji ili nije bookable — vrati prazan map
@@ -125,31 +127,24 @@ export async function GET(req: NextRequest) {
     ]);
 
   if (apptRes.error) {
-    return NextResponse.json({ error: apptRes.error.message }, { status: 500 });
+    console.error("query failed:", sanitizeError(apptRes.error));
+    return NextResponse.json({ error: "Greška pri učitavanju podataka" }, { status: 500 });
   }
   if (blockedRes.error) {
-    return NextResponse.json(
-      { error: blockedRes.error.message },
-      { status: 500 },
-    );
+    console.error("query failed:", sanitizeError(blockedRes.error));
+    return NextResponse.json({ error: "Greška pri učitavanju podataka" }, { status: 500 });
   }
   if (hoursRes.error) {
-    return NextResponse.json(
-      { error: hoursRes.error.message },
-      { status: 500 },
-    );
+    console.error("query failed:", sanitizeError(hoursRes.error));
+    return NextResponse.json({ error: "Greška pri učitavanju podataka" }, { status: 500 });
   }
   if (timeBlocksRes.error) {
-    return NextResponse.json(
-      { error: timeBlocksRes.error.message },
-      { status: 500 },
-    );
+    console.error("query failed:", sanitizeError(timeBlocksRes.error));
+    return NextResponse.json({ error: "Greška pri učitavanju podataka" }, { status: 500 });
   }
   if (settingsRes.error) {
-    return NextResponse.json(
-      { error: settingsRes.error.message },
-      { status: 500 },
-    );
+    console.error("query failed:", sanitizeError(settingsRes.error));
+    return NextResponse.json({ error: "Greška pri učitavanju podataka" }, { status: 500 });
   }
 
   const bookingSettings = parseBookingSettings(settingsRes.data ?? []);
