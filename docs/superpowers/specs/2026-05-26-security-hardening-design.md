@@ -74,7 +74,33 @@ DROP POLICY IF EXISTS "working_hours: public read" ON public.working_hours;
 DROP POLICY IF EXISTS "working_hours: authenticated full access" ON public.working_hours;
 ```
 
-Također drop za `time_blocks`, `settings`, `push_subscriptions`, i sve storage politike.
+Također:
+```sql
+-- time_blocks
+DROP POLICY IF EXISTS "time_blocks: public read" ON public.time_blocks;
+DROP POLICY IF EXISTS "time_blocks: authenticated full access" ON public.time_blocks;
+
+-- settings
+DROP POLICY IF EXISTS "settings: public read" ON public.settings;
+DROP POLICY IF EXISTS "settings: authenticated full access" ON public.settings;
+
+-- push_subscriptions
+DROP POLICY IF EXISTS "push_subscriptions: user can read own" ON public.push_subscriptions;
+DROP POLICY IF EXISTS "push_subscriptions: user can insert own" ON public.push_subscriptions;
+DROP POLICY IF EXISTS "push_subscriptions: user can delete own" ON public.push_subscriptions;
+
+-- storage: gallery bucket
+DROP POLICY IF EXISTS "gallery: public read" ON storage.objects;
+DROP POLICY IF EXISTS "gallery: authenticated insert" ON storage.objects;
+DROP POLICY IF EXISTS "gallery: authenticated update" ON storage.objects;
+DROP POLICY IF EXISTS "gallery: authenticated delete" ON storage.objects;
+
+-- storage: services bucket
+DROP POLICY IF EXISTS "services: public read" ON storage.objects;
+DROP POLICY IF EXISTS "services: authenticated insert" ON storage.objects;
+DROP POLICY IF EXISTS "services: authenticated update" ON storage.objects;
+DROP POLICY IF EXISTS "services: authenticated delete" ON storage.objects;
+```
 
 ### 1.3 Nove RLS politike (K2)
 
@@ -268,7 +294,7 @@ Promjena:
 - `createAdminClient()` za SELECT operacije (race guard, settings, service lookup, slot validation) — jer anon nema SELECT na appointments
 - Novi `createPublicClient()` (bez cookies, anon ključ) za INSERT — tako da RLS constraint `status = 'ceka'` vrijedi kao defense-in-depth
 
-**Novi fajl:** `src/lib/supabase/public.ts` (ako ne postoji) ili koristiti postojeći
+**Postojeći fajl:** `src/lib/supabase/public.ts` — već sadrži `createPublicClient()` (anon ključ, bez cookie-a). Koristi ovaj za INSERT u booking flow-u.
 
 ---
 
@@ -441,7 +467,7 @@ Svaka faza treba:
 | `src/app/api/availability/month/route.ts` | 2,3,5 | IP fix, isAdmin fix, error sanitization |
 | `src/app/zakazi/actions.ts` | 2,3 | IP fix, slot validation, client separation |
 | `src/lib/booking/validate-slot.ts` | 3 | NOVI — server-side slot validation |
-| `src/lib/supabase/public.ts` | 3 | Možda novi/izmjena za anon INSERT |
+| `src/lib/supabase/public.ts` | 3,5 | Dodati .trim(), koristiti za booking INSERT |
 | `next.config.ts` | 4,5 | CSP enforced, HSTS, body size |
 | `src/lib/utils/csv.ts` | 5 | Formula injection zaštita |
 | `package.json` | 5 | Ukloniti `-H 0.0.0.0` iz dev |
