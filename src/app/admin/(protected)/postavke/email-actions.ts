@@ -49,12 +49,15 @@ export async function sendTestAdminEmail(): Promise<EmailTestResult> {
 
     // Dummy podaci — koristi isti template kao real rezervacija da admin
     // vidi tačno kako će email izgledati za prave rezervacije.
+    const testStart = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const testEnd = new Date(testStart.getTime() + 60 * 60_000);
     const { subject, html, text } = renderNewAppointmentEmail({
       clientName: "Test Klijent",
       clientPhone: "+387 65 000 000",
       clientEmail: null,
       serviceName: "Šminkanje",
-      startTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      startTime: testStart,
+      endTime: testEnd,
       notes:
         "Ovo je TEST email iz admin panela — nije prava rezervacija. Možete ignorisati.",
       adminPanelUrl: `${normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL)}/admin/termini`,
