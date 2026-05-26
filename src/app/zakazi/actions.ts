@@ -2,6 +2,7 @@
 
 import { addMinutes, differenceInHours } from "date-fns";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { bookingFormSchema } from "@/lib/booking/schemas";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhone } from "@/lib/utils/phone";
@@ -14,6 +15,7 @@ import {
   buildNewAppointmentPayload,
   sendAdminPushNotification,
 } from "@/lib/push/send";
+import { sendNewAppointmentEmail } from "@/lib/notifications/send-admin-email";
 
 export type CreateAppointmentResult =
   | { ok: true }
@@ -109,17 +111,20 @@ export async function createAppointment(
   }
 
   const confirmationToken = crypto.randomUUID();
+  const normalizedPhone = normalizePhone(parsed.data.client_phone);
+  const clientEmail = parsed.data.client_email || null;
+  const notes = parsed.data.notes || null;
 
   const { data: inserted, error: insErr } = await sb
     .from("appointments")
     .insert({
       service_id: parsed.data.service_id,
       client_name: parsed.data.client_name,
-      client_phone: normalizePhone(parsed.data.client_phone),
-      client_email: parsed.data.client_email || null,
+      client_phone: normalizedPhone,
+      client_email: clientEmail,
       start_time: start.toISOString(),
       end_time: end.toISOString(),
-      notes: parsed.data.notes || null,
+      notes,
       status: "ceka",
       confirmation_token: confirmationToken,
     })
@@ -134,7 +139,24 @@ export async function createAppointment(
     };
   }
 
-  // TODO(Phase 8): sendNewAppointmentEmail(inserted, service, parsed.data)
+  // Fire-and-log email obavještenje Uni — NE blokira redirect.
+  // `after()` (Next 16) garantuje da se email izvrši nakon response-a,
+  // čak i kad redirect() prekine handler. `void` + redirect na Vercel
+  // serverless može orphanovati promise prije nego Resend fetch završi.
+  const siteUrl = (
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://upbeauty.ba"
+  ).replace(/\/$/, "");
+  after(() =>
+    sendNewAppointmentEmail({
+      clientName: parsed.data.client_name,
+      clientPhone: normalizedPhone,
+      clientEmail,
+      serviceName: service.name,
+      startTime: start,
+      notes,
+      adminPanelUrl: `${siteUrl}/admin/termini`,
+    }),
+  );
 
   // Push notification adminima — best-effort, ne čekaj i ne baci.
   // Ako Una uskoro otvori admin, AppointmentsRealtime (Phase B) već
