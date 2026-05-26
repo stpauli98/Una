@@ -5,6 +5,7 @@ import {
   type NewAppointmentEmailInput,
 } from "./templates";
 import { buildIcsContent } from "./ics";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { sanitizeError } from "@/lib/utils/log";
 
 export type CancellationEmailInput = NewAppointmentEmailInput & {
@@ -65,6 +66,14 @@ export async function sendCancellationEmail(
 
     if (result.error) {
       console.error("Resend cancellation error:", sanitizeError(result.error));
+    }
+
+    if (!result.error) {
+      const sb = createAdminClient();
+      void sb
+        .from("appointments")
+        .update({ email_cancelled_sent_at: new Date().toISOString() })
+        .eq("id", input.appointmentId);
     }
   } catch (e) {
     console.error("sendCancellationEmail error:", sanitizeError(e));

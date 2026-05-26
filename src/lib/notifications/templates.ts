@@ -15,6 +15,8 @@ export type NewAppointmentEmailInput = {
   endTime: Date;
   notes: string | null;
   adminPanelUrl: string;
+  /** ID appointment-a u DB. Koristi se za write-back email tracking kolona. */
+  appointmentId: number;
 };
 
 export type RenderedEmail = {

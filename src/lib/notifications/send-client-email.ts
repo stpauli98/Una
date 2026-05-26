@@ -4,6 +4,7 @@ import {
   type NewAppointmentEmailInput,
 } from "./templates";
 import { buildIcsContent } from "./ics";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { sanitizeError } from "@/lib/utils/log";
 
 /**
@@ -74,6 +75,14 @@ export async function sendClientConfirmationEmail(
 
     if (result.error) {
       console.error("Resend client email API error:", sanitizeError(result.error));
+    }
+
+    if (!result.error) {
+      const sb = createAdminClient();
+      void sb
+        .from("appointments")
+        .update({ email_confirmed_sent_at: new Date().toISOString() })
+        .eq("id", input.appointmentId);
     }
   } catch (e) {
     console.error(

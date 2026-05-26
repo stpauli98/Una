@@ -23,6 +23,7 @@ describe("sendNewAppointmentEmail", () => {
     endTime: new Date("2026-05-15T17:00:00.000Z"),
     notes: null,
     adminPanelUrl: "https://upbeauty.ba/admin/termini",
+    appointmentId: 42,
   };
 
   beforeEach(() => {
