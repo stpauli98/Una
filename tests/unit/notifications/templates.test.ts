@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { renderNewAppointmentEmail } from "@/lib/notifications/templates";
+import {
+  renderNewAppointmentEmail,
+  renderClientConfirmationEmail,
+  type NewAppointmentEmailInput,
+} from "@/lib/notifications/templates";
 
 describe("renderNewAppointmentEmail", () => {
   const baseInput = {
@@ -58,5 +62,42 @@ describe("renderNewAppointmentEmail", () => {
     expect(html).not.toContain("Alergija na lateks");
     expect(html).not.toMatch(/Napomena/i);
     expect(text).not.toMatch(/Napomena/i);
+  });
+});
+
+describe("renderClientConfirmationEmail", () => {
+  const clientInput: NewAppointmentEmailInput = {
+    clientName: "Marko Marković",
+    clientPhone: "+387 65 000 000",
+    clientEmail: "marko@example.com",
+    serviceName: "Šminkanje",
+    startTime: new Date("2026-05-28T16:00:00.000Z"), // 18:00 Sarajevo CEST
+    endTime: new Date("2026-05-28T17:00:00.000Z"),
+    notes: null,
+    adminPanelUrl: "https://www.upmakeup.ba/admin/termini",
+  };
+
+  it("subject sadrži uslugu, datum i vrijeme u Sarajevo TZ", () => {
+    const { subject } = renderClientConfirmationEmail(clientInput);
+    expect(subject).toContain("Šminkanje");
+    expect(subject).toContain("18:00");
+    expect(subject).toMatch(/maj 2026/);
+  });
+
+  it("HTML escape-uje korisničke karaktere", () => {
+    const { html } = renderClientConfirmationEmail({
+      ...clientInput,
+      clientName: 'Marko "&" Petrović',
+    });
+    expect(html).toContain("&quot;");
+    expect(html).toContain("&amp;");
+    expect(html).not.toContain('"&"');
+  });
+
+  it("text body je friendly acknowledgment ton (ne 'Nova rezervacija')", () => {
+    const { text } = renderClientConfirmationEmail(clientInput);
+    expect(text).toContain("Vaša rezervacija");
+    expect(text).toContain("Hvala vam");
+    expect(text).not.toContain("Nova rezervacija");
   });
 });

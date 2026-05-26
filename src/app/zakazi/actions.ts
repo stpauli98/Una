@@ -16,6 +16,7 @@ import {
   sendAdminPushNotification,
 } from "@/lib/push/send";
 import { sendNewAppointmentEmail } from "@/lib/notifications/send-admin-email";
+import { sendClientConfirmationEmail } from "@/lib/notifications/send-client-email";
 
 export type CreateAppointmentResult =
   | { ok: true }
@@ -148,6 +149,21 @@ export async function createAppointment(
   ).replace(/\/$/, "");
   after(() =>
     sendNewAppointmentEmail({
+      clientName: parsed.data.client_name,
+      clientPhone: normalizedPhone,
+      clientEmail,
+      serviceName: service.name,
+      startTime: start,
+      endTime: end,
+      notes,
+      adminPanelUrl: `${siteUrl}/admin/termini`,
+    }),
+  );
+
+  // Fire-and-log confirmation email klijentu — `after()` zato što redirect
+  // prekida handler. Skip-uje silently ako klijent nije ostavio email.
+  after(() =>
+    sendClientConfirmationEmail({
       clientName: parsed.data.client_name,
       clientPhone: normalizedPhone,
       clientEmail,
