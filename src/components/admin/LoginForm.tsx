@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { loginAction, type LoginResult } from "@/app/admin/login/actions";
 
 type Props = { redirectTo: string };
 
@@ -16,19 +16,12 @@ export function LoginForm({ redirectTo }: Props) {
       onSubmit={(e) => {
         e.preventDefault();
         setError(null);
-        const form = e.currentTarget;
-        const fd = new FormData(form);
-        const email = String(fd.get("email"));
-        const password = String(fd.get("password"));
+        const fd = new FormData(e.currentTarget);
 
         startTransition(async () => {
-          const sb = createClient();
-          const { error: loginError } = await sb.auth.signInWithPassword({
-            email,
-            password,
-          });
-          if (loginError) {
-            setError("Neispravan email ili lozinka");
+          const result: LoginResult = await loginAction(fd);
+          if (!result.ok) {
+            setError(result.error);
             return;
           }
           router.push(redirectTo);
