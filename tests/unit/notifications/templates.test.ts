@@ -2,6 +2,9 @@ import { describe, it, expect } from "vitest";
 import {
   renderNewAppointmentEmail,
   renderClientConfirmationEmail,
+  renderBookingReceivedEmail,
+  renderBookingNotConfirmedEmail,
+  renderBookingCancelledEmail,
   type NewAppointmentEmailInput,
 } from "@/lib/notifications/templates";
 
@@ -99,5 +102,96 @@ describe("renderClientConfirmationEmail", () => {
     expect(text).toContain("Vaša rezervacija");
     expect(text).toContain("Hvala vam");
     expect(text).not.toContain("Nova rezervacija");
+  });
+});
+
+describe("renderBookingReceivedEmail", () => {
+  const clientInput: NewAppointmentEmailInput = {
+    clientName: "Marko Marković",
+    clientPhone: "+387 65 000 000",
+    clientEmail: "marko@example.com",
+    serviceName: "Šminkanje",
+    startTime: new Date("2026-05-28T16:00:00.000Z"),
+    endTime: new Date("2026-05-28T17:00:00.000Z"),
+    notes: null,
+    adminPanelUrl: "https://www.upmakeup.ba/admin/termini",
+  };
+
+  it("subject sadrži uslugu i datum bez vremena", () => {
+    const { subject } = renderBookingReceivedEmail(clientInput);
+    expect(subject).toContain("Primili smo");
+    expect(subject).toContain("Šminkanje");
+  });
+
+  it("body ne sadrži .ics referencu", () => {
+    const { text } = renderBookingReceivedEmail(clientInput);
+    expect(text).not.toContain(".ics");
+    expect(text).toContain("Kad potvrdi");
+  });
+});
+
+describe("renderBookingNotConfirmedEmail", () => {
+  const clientInput: NewAppointmentEmailInput = {
+    clientName: "Marko Marković",
+    clientPhone: "+387 65 000 000",
+    clientEmail: "marko@example.com",
+    serviceName: "Šminkanje",
+    startTime: new Date("2026-05-28T16:00:00.000Z"),
+    endTime: new Date("2026-05-28T17:00:00.000Z"),
+    notes: null,
+    adminPanelUrl: "https://www.upmakeup.ba/admin/termini",
+  };
+
+  it("subject sadrži 'nije potvrđen'", () => {
+    const { subject } = renderBookingNotConfirmedEmail(clientInput);
+    expect(subject).toContain("nije potvrđen");
+  });
+
+  it("body sadrži rebook CTA", () => {
+    const { text } = renderBookingNotConfirmedEmail(clientInput);
+    expect(text).toContain("upmakeup.ba/zakazi");
+    expect(text).toContain("+387 65 810 323");
+  });
+});
+
+describe("renderBookingCancelledEmail", () => {
+  const clientInput: NewAppointmentEmailInput = {
+    clientName: "Marko Marković",
+    clientPhone: "+387 65 000 000",
+    clientEmail: "marko@example.com",
+    serviceName: "Šminkanje",
+    startTime: new Date("2026-05-28T16:00:00.000Z"),
+    endTime: new Date("2026-05-28T17:00:00.000Z"),
+    notes: null,
+    adminPanelUrl: "https://www.upmakeup.ba/admin/termini",
+  };
+
+  it("subject sadrži 'otkazan'", () => {
+    const { subject } = renderBookingCancelledEmail(clientInput);
+    expect(subject).toContain("otkazan");
+  });
+
+  it("body pominje .ics za brisanje iz kalendara", () => {
+    const { text } = renderBookingCancelledEmail(clientInput);
+    expect(text).toContain(".ics");
+    expect(text).toContain("briše događaj");
+  });
+});
+
+describe("renderClientConfirmationEmail — updated subject", () => {
+  const clientInput: NewAppointmentEmailInput = {
+    clientName: "Marko Marković",
+    clientPhone: "+387 65 000 000",
+    clientEmail: "marko@example.com",
+    serviceName: "Šminkanje",
+    startTime: new Date("2026-05-28T16:00:00.000Z"),
+    endTime: new Date("2026-05-28T17:00:00.000Z"),
+    notes: null,
+    adminPanelUrl: "https://www.upmakeup.ba/admin/termini",
+  };
+
+  it("subject počinje sa 'Una je potvrdila'", () => {
+    const { subject } = renderClientConfirmationEmail(clientInput);
+    expect(subject).toMatch(/^Una je potvrdila/);
   });
 });

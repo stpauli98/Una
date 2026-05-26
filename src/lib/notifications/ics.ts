@@ -29,6 +29,10 @@ export type IcsInput = {
   organizerName?: string;
   /** Opciono — organizer email (mailto: target). */
   organizerEmail?: string;
+  /** ICS method — REQUEST za novi event, CANCEL za brisanje. Default: REQUEST. */
+  method?: "REQUEST" | "CANCEL";
+  /** ICS event status. Default: CONFIRMED. */
+  status?: "CONFIRMED" | "CANCELLED";
 };
 
 /**
@@ -63,7 +67,7 @@ export function buildIcsContent(input: IcsInput): string {
   lines.push("VERSION:2.0");
   lines.push("PRODID:-//UP Makeup//Booking//SR");
   lines.push("CALSCALE:GREGORIAN");
-  lines.push("METHOD:REQUEST");
+  lines.push(`METHOD:${input.method ?? "REQUEST"}`);
   lines.push("BEGIN:VEVENT");
   lines.push(`UID:${input.uid}`);
   lines.push(`DTSTAMP:${formatIcsUtc(new Date())}`);
@@ -77,7 +81,7 @@ export function buildIcsContent(input: IcsInput): string {
       `ORGANIZER;CN=${input.organizerName}:mailto:${input.organizerEmail}`,
     );
   }
-  lines.push("STATUS:CONFIRMED");
+  lines.push(`STATUS:${input.status ?? "CONFIRMED"}`);
   lines.push("END:VEVENT");
   lines.push("END:VCALENDAR");
   return lines.join("\r\n");

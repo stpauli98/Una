@@ -3,9 +3,13 @@
 import { requireAdmin } from "@/lib/supabase/require-admin";
 import { addMinutes } from "date-fns";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { manualAppointmentSchema } from "@/lib/booking/schemas";
 import { normalizePhone } from "@/lib/utils/phone";
 import { isGridAligned } from "@/lib/utils/grid";
+import { sendClientConfirmationEmail } from "@/lib/notifications/send-client-email";
+import { sendCancellationEmail } from "@/lib/notifications/send-cancellation-email";
+import { normalizeSiteUrl } from "@/lib/utils/site-url";
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -31,10 +35,32 @@ export async function confirmAppointment(id: number): Promise<ActionResult> {
       .eq("id", id);
     if (error) return { ok: false, error: error.message };
 
-    // TODO(Phase 8): sendConfirmationEmail(id) — sa fallbackom ako nema email-a
-
     revalidatePath("/admin/termini");
     revalidatePath("/admin/dashboard");
+
+    // Dohvati appointment + service za confirmation email payload
+    const { data: appt } = await sb
+      .from("appointments")
+      .select("client_name, client_phone, client_email, start_time, end_time, notes, services(name)")
+      .eq("id", id)
+      .single();
+
+    if (appt?.client_email) {
+      const adminPanelUrl = `${normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL)}/admin/termini`;
+      after(() =>
+        sendClientConfirmationEmail({
+          clientName: appt.client_name,
+          clientPhone: appt.client_phone,
+          clientEmail: appt.client_email,
+          serviceName: appt.services?.name ?? "",
+          startTime: new Date(appt.start_time),
+          endTime: new Date(appt.end_time),
+          notes: appt.notes,
+          adminPanelUrl,
+        }),
+      );
+    }
+
     return { ok: true };
   } catch (e) {
     return { ok: false, error: (e as Error).message };
@@ -44,6 +70,14 @@ export async function confirmAppointment(id: number): Promise<ActionResult> {
 export async function cancelAppointment(id: number): Promise<ActionResult> {
   try {
     const sb = await requireAdmin();
+
+    // Dohvati appointment + service PRIJE update-a za cancel email
+    const { data: appt } = await sb
+      .from("appointments")
+      .select("client_name, client_phone, client_email, start_time, end_time, notes, status, services(name)")
+      .eq("id", id)
+      .single();
+
     const { error } = await sb
       .from("appointments")
       .update({ status: "otkazan" })
@@ -51,6 +85,24 @@ export async function cancelAppointment(id: number): Promise<ActionResult> {
     if (error) return { ok: false, error: error.message };
     revalidatePath("/admin/termini");
     revalidatePath("/admin/dashboard");
+
+    if (appt?.client_email && (appt.status === "ceka" || appt.status === "potvrdjen")) {
+      const adminPanelUrl = `${normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL)}/admin/termini`;
+      after(() =>
+        sendCancellationEmail({
+          clientName: appt.client_name,
+          clientPhone: appt.client_phone,
+          clientEmail: appt.client_email,
+          serviceName: appt.services?.name ?? "",
+          startTime: new Date(appt.start_time),
+          endTime: new Date(appt.end_time),
+          notes: appt.notes,
+          adminPanelUrl,
+          previousStatus: appt.status as "ceka" | "potvrdjen",
+        }),
+      );
+    }
+
     return { ok: true };
   } catch (e) {
     return { ok: false, error: (e as Error).message };
@@ -128,7 +180,7 @@ export async function createManualAppointment(
 
     const { data: service } = await sb
       .from("services")
-      .select("id,duration_min")
+      .select("id,duration_min,name")
       .eq("id", parsed.data.service_id)
       .maybeSingle();
 
@@ -184,6 +236,24 @@ export async function createManualAppointment(
 
     revalidatePath("/admin/termini");
     revalidatePath("/admin/dashboard");
+
+    // Manual appointment = odmah potvrđen, šalje confirmation + .ics
+    if (parsed.data.client_email) {
+      const adminPanelUrl = `${normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL)}/admin/termini`;
+      after(() =>
+        sendClientConfirmationEmail({
+          clientName: parsed.data.client_name,
+          clientPhone: normalizePhone(parsed.data.client_phone),
+          clientEmail: parsed.data.client_email || null,
+          serviceName: service.name,
+          startTime: start,
+          endTime: end,
+          notes: parsed.data.notes || null,
+          adminPanelUrl,
+        }),
+      );
+    }
+
     return { ok: true, id: inserted.id };
   } catch (e) {
     return { ok: false, error: (e as Error).message };
