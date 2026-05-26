@@ -136,6 +136,9 @@ export function StepDetails({ service, startTimeIso, onBack }: Props) {
             className="w-full border border-cream bg-marble px-3.5 py-2.5 text-sm text-dark placeholder:text-light focus:border-rose focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose disabled:opacity-60"
             placeholder="vas@email.com"
           />
+          <p className="mt-1 text-[11px] text-light">
+            Ostavite email za automatsku potvrdu termina i mogućnost dodavanja u kalendar.
+          </p>
           {fieldErrors.client_email && (
             <p className="mt-1 text-xs text-red-600">
               {fieldErrors.client_email[0]}

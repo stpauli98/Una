@@ -8,6 +8,7 @@ const baseInput = {
   startTime: new Date("2026-05-28T16:00:00.000Z"),
   endTime: new Date("2026-05-28T17:00:00.000Z"),
   notes: null, adminPanelUrl: "https://www.upmakeup.ba/admin/termini",
+  appointmentId: 42,
 };
 
 describe("sendCancellationEmail", () => {

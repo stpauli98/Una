@@ -42,6 +42,9 @@ export type Database = {
           confirmation_sent_at: string | null
           confirmation_token: string | null
           created_at: string
+          email_cancelled_sent_at: string | null
+          email_confirmed_sent_at: string | null
+          email_received_sent_at: string | null
           end_time: string
           id: number
           notes: string | null
@@ -58,6 +61,9 @@ export type Database = {
           confirmation_sent_at?: string | null
           confirmation_token?: string | null
           created_at?: string
+          email_cancelled_sent_at?: string | null
+          email_confirmed_sent_at?: string | null
+          email_received_sent_at?: string | null
           end_time: string
           id?: never
           notes?: string | null
@@ -74,6 +80,9 @@ export type Database = {
           confirmation_sent_at?: string | null
           confirmation_token?: string | null
           created_at?: string
+          email_cancelled_sent_at?: string | null
+          email_confirmed_sent_at?: string | null
+          email_received_sent_at?: string | null
           end_time?: string
           id?: never
           notes?: string | null
@@ -479,3 +488,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

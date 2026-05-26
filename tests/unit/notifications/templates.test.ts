@@ -18,6 +18,7 @@ describe("renderNewAppointmentEmail", () => {
     endTime: new Date("2026-05-15T17:00:00.000Z"), // 19:00 Sarajevo, 60min Šminkanje
     notes: "Alergija na lateks",
     adminPanelUrl: "https://upbeauty.ba/admin/termini",
+    appointmentId: 42,
   };
 
   it("subject sadrži ime klijenta, ime usluge i datum", () => {
@@ -78,6 +79,7 @@ describe("renderClientConfirmationEmail", () => {
     endTime: new Date("2026-05-28T17:00:00.000Z"),
     notes: null,
     adminPanelUrl: "https://www.upmakeup.ba/admin/termini",
+    appointmentId: 42,
   };
 
   it("subject sadrži uslugu, datum i vrijeme u Sarajevo TZ", () => {
@@ -116,6 +118,7 @@ describe("renderBookingReceivedEmail", () => {
     endTime: new Date("2026-05-28T17:00:00.000Z"),
     notes: null,
     adminPanelUrl: "https://www.upmakeup.ba/admin/termini",
+    appointmentId: 42,
   };
 
   it("subject sadrži uslugu i datum bez vremena", () => {
@@ -141,6 +144,7 @@ describe("renderBookingNotConfirmedEmail", () => {
     endTime: new Date("2026-05-28T17:00:00.000Z"),
     notes: null,
     adminPanelUrl: "https://www.upmakeup.ba/admin/termini",
+    appointmentId: 42,
   };
 
   it("subject sadrži 'nije potvrđen'", () => {
@@ -165,6 +169,7 @@ describe("renderBookingCancelledEmail", () => {
     endTime: new Date("2026-05-28T17:00:00.000Z"),
     notes: null,
     adminPanelUrl: "https://www.upmakeup.ba/admin/termini",
+    appointmentId: 42,
   };
 
   it("subject sadrži 'otkazan'", () => {
@@ -189,6 +194,7 @@ describe("renderClientConfirmationEmail — updated subject", () => {
     endTime: new Date("2026-05-28T17:00:00.000Z"),
     notes: null,
     adminPanelUrl: "https://www.upmakeup.ba/admin/termini",
+    appointmentId: 42,
   };
 
   it("subject počinje sa 'Una je potvrdila'", () => {

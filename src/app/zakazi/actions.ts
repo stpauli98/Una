@@ -149,6 +149,7 @@ export async function createAppointment(
   ).replace(/\/$/, "");
   after(() =>
     sendNewAppointmentEmail({
+      appointmentId: inserted.id,
       clientName: parsed.data.client_name,
       clientPhone: normalizedPhone,
       clientEmail,
@@ -164,6 +165,7 @@ export async function createAppointment(
   // Potvrda + .ics stiže tek kad Una potvrdi termin (confirmAppointment).
   after(() =>
     sendBookingReceivedEmail({
+      appointmentId: inserted.id,
       clientName: parsed.data.client_name,
       clientPhone: normalizedPhone,
       clientEmail,

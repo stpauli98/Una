@@ -49,6 +49,7 @@ export async function confirmAppointment(id: number): Promise<ActionResult> {
       const adminPanelUrl = `${normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL)}/admin/termini`;
       after(() =>
         sendClientConfirmationEmail({
+          appointmentId: id,
           clientName: appt.client_name,
           clientPhone: appt.client_phone,
           clientEmail: appt.client_email,
@@ -90,6 +91,7 @@ export async function cancelAppointment(id: number): Promise<ActionResult> {
       const adminPanelUrl = `${normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL)}/admin/termini`;
       after(() =>
         sendCancellationEmail({
+          appointmentId: id,
           clientName: appt.client_name,
           clientPhone: appt.client_phone,
           clientEmail: appt.client_email,
@@ -242,6 +244,7 @@ export async function createManualAppointment(
       const adminPanelUrl = `${normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL)}/admin/termini`;
       after(() =>
         sendClientConfirmationEmail({
+          appointmentId: inserted.id,
           clientName: parsed.data.client_name,
           clientPhone: normalizePhone(parsed.data.client_phone),
           clientEmail: parsed.data.client_email || null,

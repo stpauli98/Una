@@ -61,6 +61,7 @@ export async function sendTestAdminEmail(): Promise<EmailTestResult> {
       notes:
         "Ovo je TEST email iz admin panela — nije prava rezervacija. Možete ignorisati.",
       adminPanelUrl: `${normalizeSiteUrl(process.env.NEXT_PUBLIC_SITE_URL)}/admin/termini`,
+      appointmentId: 0,
     });
 
     const result = await resend.emails.send({

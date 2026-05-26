@@ -3,6 +3,7 @@ import {
   renderBookingReceivedEmail,
   type NewAppointmentEmailInput,
 } from "./templates";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { sanitizeError } from "@/lib/utils/log";
 
 export async function sendBookingReceivedEmail(
@@ -33,6 +34,14 @@ export async function sendBookingReceivedEmail(
     });
     if (result.error) {
       console.error("Resend booking-received error:", sanitizeError(result.error));
+    }
+
+    if (!result.error) {
+      const sb = createAdminClient();
+      void sb
+        .from("appointments")
+        .update({ email_received_sent_at: new Date().toISOString() })
+        .eq("id", input.appointmentId);
     }
   } catch (e) {
     console.error("sendBookingReceivedEmail error:", sanitizeError(e));
