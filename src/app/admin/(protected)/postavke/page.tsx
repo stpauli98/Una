@@ -7,6 +7,8 @@ import { BookingRulesEditor } from "@/components/admin/BookingRulesEditor";
 import { ChangePasswordForm } from "@/components/admin/ChangePasswordForm";
 import { PushNotificationToggle } from "@/components/admin/PushNotificationToggle";
 import { CsvExportButton } from "@/components/admin/CsvExportButton";
+import { EmailNotificationStatus } from "@/components/admin/EmailNotificationStatus";
+import { getEmailNotificationConfig } from "@/app/admin/(protected)/postavke/email-actions";
 import {
   getCachedWorkingHours,
   getCachedBlockedDates,
@@ -104,15 +106,15 @@ export const metadata: Metadata = {
 // ne settings ili blocked_dates.
 
 export default async function AdminPostavkePage() {
-  const [hours, blocked, timeBlocks, settings, exportYears] = await Promise.all(
-    [
+  const [hours, blocked, timeBlocks, settings, exportYears, emailConfig] =
+    await Promise.all([
       getCachedWorkingHours(),
       getCachedBlockedDates(),
       getCachedTimeBlocks(),
       getCachedSettings(),
       getAppointmentYears(),
-    ],
-  );
+      getEmailNotificationConfig(),
+    ]);
 
   const settingsMap: Record<string, string> = {};
   for (const row of settings) {
@@ -193,6 +195,16 @@ export default async function AdminPostavkePage() {
           description="Uključi push notifikacije da dobiješ obavještenje čim klijent zakaže termin — čak i kad admin panel nije otvoren. Najbolje radi kao instalirana PWA (UP Admin) na telefon."
         >
           <PushNotificationToggle />
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Email obavještenja"
+          description="Pri svakoj novoj rezervaciji šalje email Uni preko Resend servisa. Konfiguracija ide kroz Vercel environment variables. Dugme 'Pošalji test' šalje primjer email-a sa istim formatom kao prave rezervacije."
+        >
+          <EmailNotificationStatus
+            configured={emailConfig.configured}
+            recipientPreview={emailConfig.recipientPreview}
+          />
         </CollapsibleSection>
 
         <CollapsibleSection
