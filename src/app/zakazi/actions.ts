@@ -17,6 +17,7 @@ import {
 } from "@/lib/push/send";
 import { sendNewAppointmentEmail } from "@/lib/notifications/send-admin-email";
 import { sendBookingReceivedEmail } from "@/lib/notifications/send-booking-received-email";
+import { sarajevoDateStr } from "@/lib/utils/day-bounds";
 
 export type CreateAppointmentResult =
   | { ok: true }
@@ -157,7 +158,7 @@ export async function createAppointment(
       startTime: start,
       endTime: end,
       notes,
-      adminPanelUrl: `${siteUrl}/admin/termini`,
+      adminPanelUrl: `${siteUrl}/admin/termini?date=${sarajevoDateStr(start)}&focus=${inserted.id}`,
     }),
   );
 
@@ -173,7 +174,7 @@ export async function createAppointment(
       startTime: start,
       endTime: end,
       notes,
-      adminPanelUrl: `${siteUrl}/admin/termini`,
+      adminPanelUrl: `${siteUrl}/admin/termini?date=${sarajevoDateStr(start)}&focus=${inserted.id}`,
     }),
   );
 
