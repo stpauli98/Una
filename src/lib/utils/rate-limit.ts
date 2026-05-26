@@ -9,6 +9,20 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
+/**
+ * Extract client IP from request headers.
+ * Prefers `x-real-ip` (set by Vercel/nginx, not spoofable by the client)
+ * over `x-forwarded-for` (uses last entry — the one appended by the
+ * trusted edge, not the first which the client can forge).
+ */
+export function getClientIp(hdrs: Headers): string {
+  return (
+    hdrs.get("x-real-ip") ??
+    hdrs.get("x-forwarded-for")?.split(",").pop()?.trim() ??
+    "unknown"
+  );
+}
+
 const upstashUrl = process.env.UPSTASH_REDIS_REST_URL;
 const upstashToken = process.env.UPSTASH_REDIS_REST_TOKEN;
 
@@ -70,6 +84,7 @@ export async function checkRateLimit(
   ip: string,
   limit = 10,
   windowMs = 60_000,
+  opts?: { failClosed?: boolean },
 ): Promise<boolean> {
   const limiter = getUpstashLimiter(limit, windowMs);
   if (limiter) {
@@ -77,8 +92,7 @@ export async function checkRateLimit(
       const { success } = await limiter.limit(ip);
       return success;
     } catch {
-      // Fail-open na fallback ako Upstash padne (ne fail-closed da ne
-      // blokiramo legitimni saobraćaj na grešci infrastrukture).
+      if (opts?.failClosed) return false;
       return memCheck(ip, limit, windowMs);
     }
   }
