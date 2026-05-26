@@ -6,8 +6,6 @@ import {
 import { buildIcsContent } from "./ics";
 import { sanitizeError } from "@/lib/utils/log";
 
-const APPOINTMENT_DURATION_MIN_DEFAULT = 60;
-
 export async function sendNewAppointmentEmail(
   input: NewAppointmentEmailInput,
 ): Promise<void> {
@@ -32,13 +30,10 @@ export async function sendNewAppointmentEmail(
     const { subject, html, text } = renderNewAppointmentEmail(input);
 
     // ICS attachment — admin može dodati event direktno u svoj kalendar
-    const endTime = new Date(
-      input.startTime.getTime() + APPOINTMENT_DURATION_MIN_DEFAULT * 60_000,
-    );
     const icsContent = buildIcsContent({
       uid: `appt-${input.startTime.getTime()}@upmakeup.ba`,
       start: input.startTime,
-      end: endTime,
+      end: input.endTime,
       summary: `${input.serviceName} — ${input.clientName}`,
       location: "Majora Milana Tepića 13, Gradiška",
       description: `Klijent: ${input.clientName}\nTelefon: ${input.clientPhone}${input.notes ? `\nNapomena: ${input.notes}` : ""}`,

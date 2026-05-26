@@ -17,6 +17,10 @@ describe("sendNewAppointmentEmail", () => {
     clientEmail: null,
     serviceName: "Šminkanje",
     startTime: new Date("2026-05-15T16:00:00.000Z"),
+    // 60 min kasnije — caller proslijedi addMinutes(start, service.duration_min);
+    // za Šminkanje (60min) to je 17:00 UTC. Real-world Trepavice 1:1 bi imao
+    // 180min duration → 19:00 UTC (vidi posebni test ispod).
+    endTime: new Date("2026-05-15T17:00:00.000Z"),
     notes: null,
     adminPanelUrl: "https://upbeauty.ba/admin/termini",
   };
@@ -66,5 +70,29 @@ describe("sendNewAppointmentEmail", () => {
 
     await expect(sendNewAppointmentEmail(baseInput)).resolves.toBeUndefined();
     expect(mockSend).toHaveBeenCalledOnce();
+  });
+
+  it("uključuje .ics attachment u Resend payload sa realnim trajanjem usluge", async () => {
+    mockSend.mockResolvedValue({ data: { id: "email_456" }, error: null });
+
+    // Trepavice 1:1 = 180min → start 18:00 Sarajevo (16:00 UTC), end 21:00 (19:00 UTC).
+    // Ovo je glavni regression case za bug "fixed 60min duration".
+    await sendNewAppointmentEmail({
+      ...baseInput,
+      serviceName: "Trepavice 1:1",
+      startTime: new Date("2026-05-28T16:00:00.000Z"),
+      endTime: new Date("2026-05-28T19:00:00.000Z"),
+    });
+
+    const args = mockSend.mock.calls[0][0];
+    expect(args.attachments).toHaveLength(1);
+    expect(args.attachments[0].filename).toBe("rezervacija.ics");
+
+    // Base64 → utf-8 → mora sadržati VCALENDAR header + real DTSTART/DTEND
+    const decoded = Buffer.from(args.attachments[0].content, "base64").toString("utf-8");
+    expect(decoded).toContain("BEGIN:VCALENDAR");
+    expect(decoded).toContain("DTSTART:20260528T160000Z");
+    // Bug check: DTEND mora biti +180min (19:00 UTC), NE +60min (17:00 UTC)
+    expect(decoded).toContain("DTEND:20260528T190000Z");
   });
 });

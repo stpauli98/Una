@@ -8,6 +8,7 @@ describe("renderNewAppointmentEmail", () => {
     clientEmail: "marija@example.com",
     serviceName: "Šminkanje",
     startTime: new Date("2026-05-15T16:00:00.000Z"), // 18:00 Sarajevo (CEST UTC+2)
+    endTime: new Date("2026-05-15T17:00:00.000Z"), // 19:00 Sarajevo, 60min Šminkanje
     notes: "Alergija na lateks",
     adminPanelUrl: "https://upbeauty.ba/admin/termini",
   };

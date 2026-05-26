@@ -9,6 +9,10 @@ export type NewAppointmentEmailInput = {
   clientEmail: string | null;
   serviceName: string;
   startTime: Date;
+  /** End time — proslijedi izračunato sa addMinutes(start, service.duration_min)
+   *  iz caller-a. Koristi se za .ics calendar attachment dueTo da bi event
+   *  reflektovao stvarno trajanje usluge (60/120/180 min), ne fixed 60min. */
+  endTime: Date;
   notes: string | null;
   adminPanelUrl: string;
 };

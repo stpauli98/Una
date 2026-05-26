@@ -153,6 +153,7 @@ export async function createAppointment(
       clientEmail,
       serviceName: service.name,
       startTime: start,
+      endTime: end,
       notes,
       adminPanelUrl: `${siteUrl}/admin/termini`,
     }),
