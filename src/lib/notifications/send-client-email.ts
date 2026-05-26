@@ -79,10 +79,11 @@ export async function sendClientConfirmationEmail(
 
     if (!result.error) {
       const sb = createAdminClient();
-      void sb
+      sb
         .from("appointments")
         .update({ email_confirmed_sent_at: new Date().toISOString() })
-        .eq("id", input.appointmentId);
+        .eq("id", input.appointmentId)
+        .then(null, () => {});
     }
   } catch (e) {
     console.error(
