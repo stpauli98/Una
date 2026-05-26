@@ -97,11 +97,12 @@ describe("renderClientConfirmationEmail", () => {
     expect(html).not.toContain('"&"');
   });
 
-  it("text body je friendly acknowledgment ton (ne 'Nova rezervacija')", () => {
+  it("text body je confirmation ton (potvrđen, ne 'Nova rezervacija')", () => {
     const { text } = renderClientConfirmationEmail(clientInput);
-    expect(text).toContain("Vaša rezervacija");
-    expect(text).toContain("Hvala vam");
+    expect(text).toContain("potvrđen");
+    expect(text).toContain("potvrdila");
     expect(text).not.toContain("Nova rezervacija");
+    expect(text).not.toContain("Una će potvrditi");
   });
 });
 
