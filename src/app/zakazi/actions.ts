@@ -16,7 +16,7 @@ import {
   sendAdminPushNotification,
 } from "@/lib/push/send";
 import { sendNewAppointmentEmail } from "@/lib/notifications/send-admin-email";
-import { sendClientConfirmationEmail } from "@/lib/notifications/send-client-email";
+import { sendBookingReceivedEmail } from "@/lib/notifications/send-booking-received-email";
 
 export type CreateAppointmentResult =
   | { ok: true }
@@ -160,10 +160,10 @@ export async function createAppointment(
     }),
   );
 
-  // Fire-and-log confirmation email klijentu — `after()` zato što redirect
-  // prekida handler. Skip-uje silently ako klijent nije ostavio email.
+  // Fire-and-log "primljeno" email klijentu — bez .ics, šalje odmah.
+  // Potvrda + .ics stiže tek kad Una potvrdi termin (confirmAppointment).
   after(() =>
-    sendClientConfirmationEmail({
+    sendBookingReceivedEmail({
       clientName: parsed.data.client_name,
       clientPhone: normalizedPhone,
       clientEmail,
