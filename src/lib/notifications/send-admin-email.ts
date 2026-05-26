@@ -31,7 +31,7 @@ export async function sendNewAppointmentEmail(
 
     // ICS attachment — admin može dodati event direktno u svoj kalendar
     const icsContent = buildIcsContent({
-      uid: `appt-${input.startTime.getTime()}@upmakeup.ba`,
+      uid: `appt-${input.appointmentId}@upmakeup.ba`,
       start: input.startTime,
       end: input.endTime,
       summary: `${input.serviceName} — ${input.clientName}`,

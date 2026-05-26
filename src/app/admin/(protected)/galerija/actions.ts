@@ -88,7 +88,7 @@ export async function uploadSingleGalleryImage(
     const nextOrder = (maxRow?.order_index ?? 0) + 1;
 
     const timestamp = Date.now();
-    const random = Math.random().toString(36).slice(2, 8);
+    const random = crypto.randomUUID().slice(0, 8);
     const filename = `${category}/${timestamp}-${random}.webp`;
 
     const { error: uploadErr } = await admin.storage
