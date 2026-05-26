@@ -38,10 +38,11 @@ export async function sendBookingReceivedEmail(
 
     if (!result.error) {
       const sb = createAdminClient();
-      void sb
+      sb
         .from("appointments")
         .update({ email_received_sent_at: new Date().toISOString() })
-        .eq("id", input.appointmentId);
+        .eq("id", input.appointmentId)
+        .then(null, () => {});
     }
   } catch (e) {
     console.error("sendBookingReceivedEmail error:", sanitizeError(e));
