@@ -48,6 +48,9 @@ export const metadata: Metadata = {
   formatDetection: {
     telephone: false,
   },
+  verification: {
+    google: "3zYUT37EJby4Ra75VsA5bY5sbXQjqE5KroP73c9wTPg",
+  },
   openGraph: {
     type: "website",
     locale: "sr_Latn",
