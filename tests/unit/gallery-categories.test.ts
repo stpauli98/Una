@@ -3,6 +3,7 @@ import {
   GALLERY_CATEGORIES,
   GALLERY_CATEGORY_KEYS,
   isValidGalleryCategory,
+  slugifyCategory,
   type GalleryCategory,
 } from "@/lib/gallery/categories";
 
@@ -68,5 +69,28 @@ describe("GALLERY_CATEGORY_KEYS", () => {
     expect(GALLERY_CATEGORY_KEYS).toEqual(
       GALLERY_CATEGORIES.map((c) => c.key),
     );
+  });
+});
+
+describe("slugifyCategory", () => {
+  it("lowercases ASCII", () => {
+    expect(slugifyCategory("Pedikir")).toBe("pedikir");
+  });
+  it("strips Serbian diacritics", () => {
+    expect(slugifyCategory("Šminkanje")).toBe("sminkanje");
+    expect(slugifyCategory("Đođ")).toBe("djodj");
+    expect(slugifyCategory("Čačać")).toBe("cacac");
+    expect(slugifyCategory("Žaba")).toBe("zaba");
+  });
+  it("replaces spaces and non-alphanumerics with hyphen", () => {
+    expect(slugifyCategory("Spa pedikir")).toBe("spa-pedikir");
+    expect(slugifyCategory("Nokti & gel")).toBe("nokti-gel");
+  });
+  it("trims leading/trailing hyphens and collapses repeats", () => {
+    expect(slugifyCategory("  Mladenke!  ")).toBe("mladenke");
+    expect(slugifyCategory("a---b")).toBe("a-b");
+  });
+  it("returns empty string for input with no usable chars", () => {
+    expect(slugifyCategory("!!!")).toBe("");
   });
 });
