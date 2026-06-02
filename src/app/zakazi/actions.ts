@@ -183,6 +183,7 @@ export async function createAppointment(
   // pokazuje novi termin. Push je dodatni signal kad admin nije otvoren.
   void sendAdminPushNotification(
     buildNewAppointmentPayload({
+      id: inserted.id,
       clientName: parsed.data.client_name,
       serviceName: service.name,
       startTime: start,
