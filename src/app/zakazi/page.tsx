@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Nav } from "@/components/public/Nav";
 import { BookingFlow } from "@/components/booking/BookingFlow";
 import { BreadcrumbsJsonLd } from "@/components/public/BreadcrumbsJsonLd";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 
 export const metadata: Metadata = {
   title: "Zakaži termin",
@@ -23,7 +23,7 @@ type PageProps = {
 export default async function ZakaziPage({ searchParams }: PageProps) {
   const { service: serviceParam } = await searchParams;
 
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data: services } = await supabase
     .from("services")
     .select("*")
@@ -53,6 +53,7 @@ export default async function ZakaziPage({ searchParams }: PageProps) {
       <Nav />
       <main className="pt-28">
         <section className="bg-warm px-6 py-16 md:py-24">
+          <h1 className="sr-only">Zakaži termin online — UP Makeup Gradiška</h1>
           <BookingFlow
             services={services ?? []}
             initialServiceId={validInitialId}

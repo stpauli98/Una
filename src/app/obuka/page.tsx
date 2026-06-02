@@ -56,7 +56,8 @@ export default function ObukaPage() {
           <div className="mx-auto max-w-[900px]">
             <SectionHeader
               eyebrow="Edukacija"
-              title="Obuka za šminkanje"
+              title="Obuka za šminkanje u Gradišci"
+              as="h1"
               className="mb-10"
             />
 

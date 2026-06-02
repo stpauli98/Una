@@ -34,6 +34,7 @@ export default function OMeniPage() {
             <SectionHeader
               eyebrow="Upoznajte me"
               title="Una Peranović"
+              as="h1"
               className="mb-12"
             />
 

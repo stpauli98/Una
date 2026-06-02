@@ -65,7 +65,8 @@ export default async function UslugePage() {
         <section className="bg-warm px-6 py-16 md:py-24">
           <SectionHeader
             eyebrow="Naša ponuda"
-            title="Sve usluge"
+            title="Usluge šminkanja u Gradišci"
+            as="h1"
             className="mb-14"
           />
 
@@ -75,9 +76,9 @@ export default async function UslugePage() {
               if (!items?.length) return null;
               return (
                 <div key={cat}>
-                  <h3 className="mb-6 text-center font-display text-2xl text-dark md:text-3xl">
+                  <h2 className="mb-6 text-center font-display text-2xl text-dark md:text-3xl">
                     {CATEGORY_LABELS[cat]}
-                  </h3>
+                  </h2>
                   <div className="mx-auto grid max-w-[480px] grid-cols-1 gap-4 md:max-w-[760px] md:grid-cols-2 md:gap-5 lg:max-w-[1100px] lg:grid-cols-4">
                     {items.map((service) => (
                       <ServiceCard
@@ -89,7 +90,7 @@ export default async function UslugePage() {
                             : undefined
                         }
                         featured={service.bookable}
-                        headingLevel="h4"
+                        headingLevel="h3"
                       />
                     ))}
                   </div>

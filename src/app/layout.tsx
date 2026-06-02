@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   ),
   manifest: "/manifest.webmanifest",
   title: {
-    default: `Šminkanje Gradiška — ${BUSINESS.name}`,
+    default: `Šminkanje Gradiška · ${BUSINESS.name}`,
     template: `%s · ${BUSINESS.name}`,
   },
   description:
