@@ -126,6 +126,27 @@ export type Database = {
         }
         Relationships: []
       }
+      gallery_categories: {
+        Row: {
+          created_at: string
+          key: string
+          label: string
+          order_index: number
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          label: string
+          order_index?: number
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          label?: string
+          order_index?: number
+        }
+        Relationships: []
+      }
       gallery_images: {
         Row: {
           alt_text: string | null
@@ -151,7 +172,15 @@ export type Database = {
           order_index?: number
           storage_path?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "gallery_images_category_fkey"
+            columns: ["category"]
+            isOneToOne: false
+            referencedRelation: "gallery_categories"
+            referencedColumns: ["key"]
+          },
+        ]
       }
       push_subscriptions: {
         Row: {
