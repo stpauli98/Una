@@ -1,6 +1,7 @@
 import "server-only";
 import { getConfiguredWebPush } from "@/lib/push/vapid";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sarajevoDateStr } from "@/lib/utils/day-bounds";
 
 export type PushPayload = {
   title: string;
@@ -9,6 +10,8 @@ export type PushPayload = {
 };
 
 export type NewAppointmentInput = {
+  /** ID termina — za deep-link koji fokusira tačan termin u admin panelu. */
+  id: number;
   clientName: string;
   serviceName: string;
   startTime: Date;
@@ -18,8 +21,9 @@ export type NewAppointmentInput = {
  * Formatira push payload za novu rezervaciju.
  *
  * Vrijeme prikazujemo u Sarajevo timezoni jer je sve poslovanje lokalno.
- * URL pokazuje na admin termini — notificationclick handler u SW koristi
- * to za window navigaciju.
+ * URL je deep-link `/admin/termini?date=&focus=<id>` (isti kao u admin
+ * email-u) — notificationclick handler u SW navigira na njega, pa klik na
+ * notifikaciju vodi na tačan termin te osobe, a ne samo na listu.
  */
 export function buildNewAppointmentPayload(
   input: NewAppointmentInput,
@@ -33,7 +37,7 @@ export function buildNewAppointmentPayload(
   return {
     title: "Nova rezervacija",
     body: `${input.clientName} — ${input.serviceName} u ${time}`,
-    url: "/admin/termini",
+    url: `/admin/termini?date=${sarajevoDateStr(input.startTime)}&focus=${input.id}`,
   };
 }
 
