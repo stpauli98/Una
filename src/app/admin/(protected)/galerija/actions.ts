@@ -8,6 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sanitizeError } from "@/lib/utils/log";
 import {
   isValidGalleryCategory,
+  slugifyCategory,
   type GalleryCategory,
 } from "@/lib/gallery/categories";
 
@@ -36,10 +37,14 @@ const GALLERY_ALT: Record<string, string> = {
   obuka: "Obuka za šminkanje — UP Makeup Gradiška",
 };
 
-function deriveAltText(fileName: string, category: string): string {
+function deriveAltText(
+  fileName: string,
+  category: string,
+  label?: string,
+): string {
   const base = fileName.replace(/\.[^.]+$/, "").trim();
   if (!base || base.toLowerCase() === "blob") {
-    return GALLERY_ALT[category] ?? `UP Makeup — ${category}`;
+    return GALLERY_ALT[category] ?? `UP Makeup — ${label ?? category} Gradiška`;
   }
   return base;
 }
@@ -59,11 +64,17 @@ export async function uploadSingleGalleryImage(
 ): Promise<ActionResult<{ id: number }>> {
   try {
     await requireAdmin();
+    const admin = createAdminClient();
     const categoryRaw = String(formData.get("category") ?? "");
-    if (!isValidGalleryCategory(categoryRaw)) {
+    const { data: cats } = await admin
+      .from("gallery_categories")
+      .select("key, label");
+    const validKeys = (cats ?? []).map((c) => c.key);
+    if (!isValidGalleryCategory(categoryRaw, validKeys)) {
       return { ok: false, error: "Neispravna kategorija" };
     }
     const category: GalleryCategory = categoryRaw;
+    const catLabel = (cats ?? []).find((c) => c.key === categoryRaw)?.label;
 
     const file = formData.get("file") as File | null;
     if (!file || !(file instanceof File) || file.size === 0) {
@@ -97,8 +108,6 @@ export async function uploadSingleGalleryImage(
       return { ok: false, error: "Ne mogu obraditi sliku" };
     }
 
-    const admin = createAdminClient();
-
     // Nađi max order_index
     const { data: maxRow } = await admin
       .from("gallery_images")
@@ -128,7 +137,7 @@ export async function uploadSingleGalleryImage(
       .insert({
         storage_path: filename,
         category,
-        alt_text: deriveAltText(file.name, category),
+        alt_text: deriveAltText(file.name, category, catLabel),
         order_index: nextOrder,
       })
       .select("id")
@@ -212,6 +221,144 @@ export async function deleteGalleryImages(
     revalidatePath("/galerija");
     revalidatePath("/");
     return { ok: true, data: { deleted: rows.length } };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+// ── Kategorije (admin-managed) ──────────────────────────────────────────────
+
+function revalidateCategories() {
+  updateTag(ADMIN_CACHE_TAGS.galleryCategories);
+  revalidatePath("/admin/galerija");
+  revalidatePath("/galerija");
+}
+
+export async function createGalleryCategory(
+  label: string,
+): Promise<ActionResult<{ key: string }>> {
+  try {
+    await requireAdmin();
+    const clean = label.trim();
+    if (clean.length < 1 || clean.length > 40) {
+      return { ok: false, error: "Naziv mora imati 1–40 znakova" };
+    }
+    let key = slugifyCategory(clean);
+    if (!key) return { ok: false, error: "Naziv mora sadržati slovo ili broj" };
+
+    const admin = createAdminClient();
+    const { data: existing } = await admin
+      .from("gallery_categories")
+      .select("key, label, order_index");
+    const rows = existing ?? [];
+    if (rows.some((r) => r.label.toLowerCase() === clean.toLowerCase())) {
+      return { ok: false, error: "Kategorija s tim nazivom već postoji" };
+    }
+    const keys = new Set(rows.map((r) => r.key));
+    if (keys.has(key)) {
+      let n = 2;
+      while (keys.has(`${key}-${n}`)) n++;
+      key = `${key}-${n}`;
+    }
+    const maxOrder = rows.reduce((m, r) => Math.max(m, r.order_index ?? 0), 0);
+
+    const { error } = await admin
+      .from("gallery_categories")
+      .insert({ key, label: clean, order_index: maxOrder + 1 });
+    if (error) return { ok: false, error: error.message };
+
+    revalidateCategories();
+    return { ok: true, data: { key } };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+export async function renameGalleryCategory(
+  key: string,
+  label: string,
+): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    const clean = label.trim();
+    if (clean.length < 1 || clean.length > 40) {
+      return { ok: false, error: "Naziv mora imati 1–40 znakova" };
+    }
+    const admin = createAdminClient();
+    const { data: existing } = await admin
+      .from("gallery_categories")
+      .select("key, label");
+    const rows = existing ?? [];
+    if (!rows.some((r) => r.key === key)) {
+      return { ok: false, error: "Kategorija ne postoji" };
+    }
+    if (
+      rows.some(
+        (r) => r.key !== key && r.label.toLowerCase() === clean.toLowerCase(),
+      )
+    ) {
+      return { ok: false, error: "Kategorija s tim nazivom već postoji" };
+    }
+
+    const { error } = await admin
+      .from("gallery_categories")
+      .update({ label: clean })
+      .eq("key", key);
+    if (error) return { ok: false, error: error.message };
+
+    revalidateCategories();
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+export async function reorderGalleryCategories(
+  orderedKeys: string[],
+): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    if (!Array.isArray(orderedKeys) || orderedKeys.length === 0) {
+      return { ok: false, error: "Prazan redoslijed" };
+    }
+    const admin = createAdminClient();
+    for (let i = 0; i < orderedKeys.length; i++) {
+      const { error } = await admin
+        .from("gallery_categories")
+        .update({ order_index: i + 1 })
+        .eq("key", orderedKeys[i]);
+      if (error) return { ok: false, error: error.message };
+    }
+    revalidateCategories();
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+export async function deleteGalleryCategory(
+  key: string,
+): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+    const admin = createAdminClient();
+    const { error } = await admin
+      .from("gallery_categories")
+      .delete()
+      .eq("key", key);
+    if (error) {
+      // 23503 = foreign_key_violation → kategorija ima slike
+      if ((error as { code?: string }).code === "23503") {
+        return {
+          ok: false,
+          error:
+            "Kategorija ima slike — premjesti ili obriši ih prije brisanja kategorije.",
+        };
+      }
+      return { ok: false, error: error.message };
+    }
+    revalidateCategories();
+    return { ok: true };
   } catch (e) {
     return { ok: false, error: (e as Error).message };
   }

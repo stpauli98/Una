@@ -24,6 +24,11 @@ export default async function GalerijaPage() {
     .select("id, storage_path, category, alt_text")
     .order("order_index");
 
+  const { data: categories } = await supabase
+    .from("gallery_categories")
+    .select("key, label, order_index")
+    .order("order_index");
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const mapped = (images ?? []).map((img) => ({
     id: img.id,
@@ -55,7 +60,13 @@ export default async function GalerijaPage() {
             as="h1"
             className="mb-10"
           />
-          <GalleryGrid images={mapped} />
+          <GalleryGrid
+            images={mapped}
+            categories={(categories ?? []).map((c) => ({
+              key: c.key,
+              label: c.label,
+            }))}
+          />
         </section>
       </main>
       <Footer />

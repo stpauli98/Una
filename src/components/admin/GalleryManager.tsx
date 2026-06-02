@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
-import { Trash2, Upload, X, ImagePlus, Loader2, CheckSquare, Square, Check } from "lucide-react";
+import { Trash2, Upload, X, ImagePlus, Loader2, CheckSquare, Check } from "lucide-react";
 import {
   uploadSingleGalleryImage,
   revalidateGallery,
@@ -11,7 +11,6 @@ import {
 } from "@/app/admin/(protected)/galerija/actions";
 import { cn } from "@/lib/utils/cn";
 import imageCompression from "browser-image-compression";
-import { GALLERY_CATEGORIES } from "@/lib/gallery/categories";
 
 type GalleryItem = {
   id: number;
@@ -26,8 +25,6 @@ type PreviewFile = {
   name: string;
   sizeLabel: string;
 };
-
-const CATEGORIES = GALLERY_CATEGORIES;
 
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_IMAGES = 20;
@@ -60,8 +57,17 @@ function truncateName(name: string, max = 18): string {
   return `${name.slice(0, max - 3)}...`;
 }
 
-export function GalleryManager({ items }: { items: GalleryItem[] }) {
-  const [activeCategory, setActiveCategory] = useState<string>("sminkanje");
+export function GalleryManager({
+  items,
+  categories,
+}: {
+  items: GalleryItem[];
+  categories: { key: string; label: string; count: number }[];
+}) {
+  const CATEGORIES = categories;
+  const [activeCategory, setActiveCategory] = useState<string>(
+    categories[0]?.key ?? "",
+  );
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -303,6 +309,11 @@ export function GalleryManager({ items }: { items: GalleryItem[] }) {
       )}
 
     <div>
+      {categories.length === 0 && (
+        <div className="mb-5 border border-cream bg-warm p-4 text-center text-[12px] text-light">
+          Nema kategorija. Dodajte prvu u sekciji „Kategorije“ iznad.
+        </div>
+      )}
       <div className="mb-5 flex gap-1.5 overflow-x-auto">
         {CATEGORIES.map((cat) => (
           <button
