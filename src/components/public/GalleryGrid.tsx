@@ -5,7 +5,6 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { X, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
-import { GALLERY_CATEGORIES, type GalleryCategoryDef } from "@/lib/gallery/categories";
 
 type GalleryImage = {
   id: number;
@@ -14,16 +13,20 @@ type GalleryImage = {
   alt: string;
 };
 
-const FILTERS: readonly GalleryCategoryDef[] = [
-  { key: "sve", label: "Sve" },
-  ...GALLERY_CATEGORIES,
-];
+type GalleryCategoryDef = { key: string; label: string };
 
 type Props = {
   images: GalleryImage[];
+  categories: GalleryCategoryDef[];
 };
 
-export function GalleryGrid({ images }: Props) {
+export function GalleryGrid({ images, categories }: Props) {
+  // Samo kategorije koje stvarno imaju ≥1 sliku (bez praznih dugmadi).
+  const presentKeys = new Set(images.map((img) => img.category));
+  const FILTERS: readonly GalleryCategoryDef[] = [
+    { key: "sve", label: "Sve" },
+    ...categories.filter((c) => presentKeys.has(c.key)),
+  ];
   const [activeFilter, setActiveFilter] = useState<string>("sve");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [lightboxLoaded, setLightboxLoaded] = useState(false);

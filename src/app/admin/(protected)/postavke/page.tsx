@@ -8,12 +8,15 @@ import { ChangePasswordForm } from "@/components/admin/ChangePasswordForm";
 import { PushNotificationToggle } from "@/components/admin/PushNotificationToggle";
 import { CsvExportButton } from "@/components/admin/CsvExportButton";
 import { EmailNotificationStatus } from "@/components/admin/EmailNotificationStatus";
+import { GalleryCategoryManager } from "@/components/admin/GalleryCategoryManager";
 import { getEmailNotificationConfig } from "@/app/admin/(protected)/postavke/email-actions";
 import {
   getCachedWorkingHours,
   getCachedBlockedDates,
   getCachedTimeBlocks,
   getCachedSettings,
+  getCachedGalleryCategories,
+  getCachedGalleryImages,
 } from "@/lib/cache/cached-queries";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatInTimeZone } from "date-fns-tz";
@@ -106,15 +109,38 @@ export const metadata: Metadata = {
 // ne settings ili blocked_dates.
 
 export default async function AdminPostavkePage() {
-  const [hours, blocked, timeBlocks, settings, exportYears, emailConfig] =
-    await Promise.all([
-      getCachedWorkingHours(),
-      getCachedBlockedDates(),
-      getCachedTimeBlocks(),
-      getCachedSettings(),
-      getAppointmentYears(),
-      getEmailNotificationConfig(),
-    ]);
+  const [
+    hours,
+    blocked,
+    timeBlocks,
+    settings,
+    exportYears,
+    emailConfig,
+    galleryCategories,
+    galleryImages,
+  ] = await Promise.all([
+    getCachedWorkingHours(),
+    getCachedBlockedDates(),
+    getCachedTimeBlocks(),
+    getCachedSettings(),
+    getAppointmentYears(),
+    getEmailNotificationConfig(),
+    getCachedGalleryCategories(),
+    getCachedGalleryImages(),
+  ]);
+
+  const galleryCountByKey = galleryImages.reduce<Record<string, number>>(
+    (acc, img) => {
+      acc[img.category] = (acc[img.category] ?? 0) + 1;
+      return acc;
+    },
+    {},
+  );
+  const galleryCats = galleryCategories.map((c) => ({
+    key: c.key,
+    label: c.label,
+    count: galleryCountByKey[c.key] ?? 0,
+  }));
 
   const settingsMap: Record<string, string> = {};
   for (const row of settings) {
@@ -205,6 +231,13 @@ export default async function AdminPostavkePage() {
             configured={emailConfig.configured}
             recipientPreview={emailConfig.recipientPreview}
           />
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Kategorije galerije"
+          description="Dodajte, preimenujte, presložite ili obrišite kategorije za razvrstavanje slika u galeriji. Brisanje kategorije briše i SVE slike u njoj."
+        >
+          <GalleryCategoryManager categories={galleryCats} />
         </CollapsibleSection>
 
         <CollapsibleSection
