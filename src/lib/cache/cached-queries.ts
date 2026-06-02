@@ -55,6 +55,19 @@ export const getCachedGalleryImages = unstable_cache(
   { tags: [ADMIN_CACHE_TAGS.gallery] },
 );
 
+export const getCachedGalleryCategories = unstable_cache(
+  async () => {
+    const sb = createAdminClient();
+    const { data } = await sb
+      .from("gallery_categories")
+      .select("key, label, order_index")
+      .order("order_index");
+    return data ?? [];
+  },
+  ["admin-gallery-categories-all"],
+  { tags: [ADMIN_CACHE_TAGS.galleryCategories] },
+);
+
 export const getCachedWorkingHours = unstable_cache(
   async () => {
     const sb = createAdminClient();
