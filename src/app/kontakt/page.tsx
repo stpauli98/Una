@@ -69,6 +69,7 @@ export default function KontaktPage() {
           <SectionHeader
             eyebrow="Kontakt"
             title="Stupite u kontakt"
+            as="h1"
             className="mb-12"
           />
 

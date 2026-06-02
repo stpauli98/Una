@@ -61,7 +61,8 @@ export default async function CjenovnikPage() {
         <section className="bg-marble px-6 py-16 md:py-24">
           <SectionHeader
             eyebrow="Cijene"
-            title="Cjenovnik"
+            title="Cjenovnik šminkanja u Gradišci"
+            as="h1"
             className="mb-14"
           />
 
@@ -75,9 +76,9 @@ export default async function CjenovnikPage() {
                   className="overflow-hidden border border-cream bg-white"
                 >
                   <div className="border-b border-cream bg-warm px-5 py-4 text-center">
-                    <h3 className="font-display text-xl font-medium text-dark">
+                    <h2 className="font-display text-xl font-medium text-dark">
                       {CATEGORY_LABELS[cat]}
-                    </h3>
+                    </h2>
                   </div>
                   <ul className="px-5 pb-4 pt-1">
                     {items.map((service, i) => (

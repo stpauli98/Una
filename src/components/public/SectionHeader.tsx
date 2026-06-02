@@ -6,6 +6,8 @@ type Props = {
   /** Ako true, koristi tamnu/cream paletu za hero-over sekcije. */
   light?: boolean;
   className?: string;
+  /** Semantički nivo naslova (vizuelno identično). Default h2. */
+  as?: "h1" | "h2";
 };
 
 /**
@@ -14,7 +16,13 @@ type Props = {
  *   · veliki Cormorant naslov
  *   · zlatni razdjelnik ispod
  */
-export function SectionHeader({ eyebrow, title, light, className }: Props) {
+export function SectionHeader({
+  eyebrow,
+  title,
+  light,
+  className,
+  as: Heading = "h2",
+}: Props) {
   return (
     <div className={cn("text-center", className)}>
       <p
@@ -25,14 +33,14 @@ export function SectionHeader({ eyebrow, title, light, className }: Props) {
       >
         {eyebrow}
       </p>
-      <h2
+      <Heading
         className={cn(
           "font-display text-[clamp(30px,4.5vw,42px)] font-light tracking-wide",
           light ? "text-marble" : "text-dark",
         )}
       >
         {title}
-      </h2>
+      </Heading>
       <div
         className={cn(
           "mx-auto mt-3.5 h-px w-12",

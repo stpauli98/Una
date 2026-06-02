@@ -23,6 +23,27 @@ type ActionResult<T = void> =
   | { ok: true; data?: T }
   | { ok: false; error: string };
 
+/**
+ * Kratak, opisan alt tekst za galerijsku sliku. Klijent šalje kompresovani
+ * Blob čije je `file.name` često "blob" — u tom slučaju (ili prazno ime)
+ * koristimo keyword-bogat fallback po kategoriji umjesto bezvrijednog "blob".
+ */
+const GALLERY_ALT: Record<string, string> = {
+  sminkanje: "Profesionalno šminkanje — UP Makeup Gradiška",
+  svadbeno: "Svadbeno šminkanje — UP Makeup Gradiška",
+  pedikir: "Spa pedikir — UP Makeup Gradiška",
+  trepavice: "Nadogradnja trepavica — UP Makeup Gradiška",
+  obuka: "Obuka za šminkanje — UP Makeup Gradiška",
+};
+
+function deriveAltText(fileName: string, category: string): string {
+  const base = fileName.replace(/\.[^.]+$/, "").trim();
+  if (!base || base.toLowerCase() === "blob") {
+    return GALLERY_ALT[category] ?? `UP Makeup — ${category}`;
+  }
+  return base;
+}
+
 
 
 /**
@@ -107,7 +128,7 @@ export async function uploadSingleGalleryImage(
       .insert({
         storage_path: filename,
         category,
-        alt_text: file.name.replace(/\.[^.]+$/, ""),
+        alt_text: deriveAltText(file.name, category),
         order_index: nextOrder,
       })
       .select("id")
