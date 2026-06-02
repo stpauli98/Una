@@ -342,22 +342,31 @@ export async function deleteGalleryCategory(
   try {
     await requireAdmin();
     const admin = createAdminClient();
+
+    // Kaskadno: prvo obriši sve slike te kategorije (storage + DB), pa kategoriju.
+    // FK je ON DELETE RESTRICT, pa redoslijed (slike → kategorija) je obavezan.
+    const { data: imgs } = await admin
+      .from("gallery_images")
+      .select("storage_path")
+      .eq("category", key);
+    const paths = (imgs ?? []).map((r) => r.storage_path);
+    if (paths.length > 0) {
+      await admin.storage.from("gallery").remove(paths);
+      const { error: delImgErr } = await admin
+        .from("gallery_images")
+        .delete()
+        .eq("category", key);
+      if (delImgErr) return { ok: false, error: delImgErr.message };
+    }
+
     const { error } = await admin
       .from("gallery_categories")
       .delete()
       .eq("key", key);
-    if (error) {
-      // 23503 = foreign_key_violation → kategorija ima slike
-      if ((error as { code?: string }).code === "23503") {
-        return {
-          ok: false,
-          error:
-            "Kategorija ima slike — premjesti ili obriši ih prije brisanja kategorije.",
-        };
-      }
-      return { ok: false, error: error.message };
-    }
+    if (error) return { ok: false, error: error.message };
+
     revalidateCategories();
+    updateTag(ADMIN_CACHE_TAGS.gallery); // slike obrisane → osvježi i galeriju
     return { ok: true };
   } catch (e) {
     return { ok: false, error: (e as Error).message };

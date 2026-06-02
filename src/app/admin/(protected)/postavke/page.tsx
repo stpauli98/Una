@@ -235,7 +235,7 @@ export default async function AdminPostavkePage() {
 
         <CollapsibleSection
           title="Kategorije galerije"
-          description="Dodajte, preimenujte, presložite ili obrišite kategorije za razvrstavanje slika u galeriji. Kategorija se ne može obrisati dok ima slika."
+          description="Dodajte, preimenujte, presložite ili obrišite kategorije za razvrstavanje slika u galeriji. Brisanje kategorije briše i SVE slike u njoj."
         >
           <GalleryCategoryManager categories={galleryCats} />
         </CollapsibleSection>

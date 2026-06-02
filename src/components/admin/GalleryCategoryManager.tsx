@@ -81,8 +81,12 @@ export function GalleryCategoryManager({ categories }: { categories: Cat[] }) {
   };
 
   const remove = () => {
-    if (!selected || selected.count > 0) return;
-    if (!confirm(`Obrisati kategoriju "${selected.label}"?`)) return;
+    if (!selected) return;
+    const msg =
+      selected.count > 0
+        ? `Obrisati kategoriju "${selected.label}" i SVE njene slike (${selected.count})? Ovo se NE može vratiti.`
+        : `Obrisati kategoriju "${selected.label}"?`;
+    if (!confirm(msg)) return;
     run(() => deleteGalleryCategory(selected.key));
   };
 
@@ -175,10 +179,12 @@ export function GalleryCategoryManager({ categories }: { categories: Cat[] }) {
               </button>
               <button
                 type="button"
-                disabled={pending || selected.count > 0}
+                disabled={pending}
                 onClick={remove}
                 title={
-                  selected.count > 0 ? `Ima ${selected.count} slika` : "Obriši"
+                  selected.count > 0
+                    ? `Obriši kategoriju i ${selected.count} slika`
+                    : "Obriši"
                 }
                 className="inline-flex items-center gap-1 border border-cream px-2.5 py-2 text-[11px] text-red-600 transition-colors hover:border-red-400 disabled:text-light disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
               >
