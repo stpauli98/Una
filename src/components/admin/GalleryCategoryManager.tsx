@@ -24,8 +24,18 @@ export function GalleryCategoryManager({ categories }: { categories: Cat[] }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [newLabel, setNewLabel] = useState("");
-  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [selectedKey, setSelectedKey] = useState<string>(
+    categories[0]?.key ?? "",
+  );
+  const [editing, setEditing] = useState(false);
   const [editLabel, setEditLabel] = useState("");
+
+  // Izabrana kategorija (fallback na prvu ako je obrisana ili je nema)
+  const selected =
+    categories.find((c) => c.key === selectedKey) ?? categories[0] ?? null;
+  const selectedIndex = selected
+    ? categories.findIndex((c) => c.key === selected.key)
+    : -1;
 
   const run = (fn: () => Promise<{ ok: boolean; error?: string }>) => {
     setError(null);
@@ -38,36 +48,46 @@ export function GalleryCategoryManager({ categories }: { categories: Cat[] }) {
   const add = () => {
     const label = newLabel.trim();
     if (!label) return;
-    run(async () => {
+    setError(null);
+    startTransition(async () => {
       const r = await createGalleryCategory(label);
-      if (r.ok) setNewLabel("");
-      return r;
+      if (r.ok) {
+        setNewLabel("");
+        if (r.data?.key) setSelectedKey(r.data.key);
+      } else {
+        setError(r.error);
+      }
     });
   };
 
-  const saveRename = (key: string) => {
+  const saveRename = () => {
+    if (!selected) return;
     const label = editLabel.trim();
     if (!label) return;
     run(async () => {
-      const r = await renameGalleryCategory(key, label);
-      if (r.ok) setEditingKey(null);
+      const r = await renameGalleryCategory(selected.key, label);
+      if (r.ok) setEditing(false);
       return r;
     });
   };
 
-  const move = (index: number, dir: -1 | 1) => {
+  const move = (dir: -1 | 1) => {
+    if (!selected) return;
+    const target = selectedIndex + dir;
+    if (target < 0 || target >= categories.length) return;
     const next = [...categories];
-    const target = index + dir;
-    if (target < 0 || target >= next.length) return;
-    [next[index], next[target]] = [next[target], next[index]];
+    [next[selectedIndex], next[target]] = [next[target], next[selectedIndex]];
     run(() => reorderGalleryCategories(next.map((c) => c.key)));
   };
 
-  const remove = (c: Cat) => {
-    if (c.count > 0) return;
-    if (!confirm(`Obrisati kategoriju "${c.label}"?`)) return;
-    run(() => deleteGalleryCategory(c.key));
+  const remove = () => {
+    if (!selected || selected.count > 0) return;
+    if (!confirm(`Obrisati kategoriju "${selected.label}"?`)) return;
+    run(() => deleteGalleryCategory(selected.key));
   };
+
+  const btn =
+    "inline-flex items-center gap-1 border border-cream px-2.5 py-2 text-[11px] text-body transition-colors hover:border-rose hover:text-rose disabled:opacity-30 disabled:hover:border-cream disabled:hover:text-body cursor-pointer disabled:cursor-not-allowed";
 
   return (
     <div className="mb-8 border border-cream bg-white p-5">
@@ -79,90 +99,106 @@ export function GalleryCategoryManager({ categories }: { categories: Cat[] }) {
         </div>
       )}
 
-      <ul className="mb-4 divide-y divide-cream">
-        {categories.map((c, i) => (
-          <li key={c.key} className="flex items-center gap-2 py-2.5">
-            <div className="flex flex-col">
+      {selected ? (
+        <div className="mb-4 space-y-3">
+          {/* Izbor kategorije — dropdown (radi na svim ekranima) */}
+          <select
+            value={selected.key}
+            onChange={(e) => {
+              setSelectedKey(e.target.value);
+              setEditing(false);
+            }}
+            disabled={pending}
+            className="w-full border border-cream bg-white px-3 py-2.5 text-[13px] text-dark focus:border-rose focus:outline-none"
+          >
+            {categories.map((c) => (
+              <option key={c.key} value={c.key}>
+                {c.label} ({c.count})
+              </option>
+            ))}
+          </select>
+
+          {/* Akcije za izabranu kategoriju */}
+          {editing ? (
+            <div className="flex flex-wrap gap-2">
+              <input
+                value={editLabel}
+                onChange={(e) => setEditLabel(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && saveRename()}
+                maxLength={40}
+                autoFocus
+                className="min-w-0 flex-1 border border-cream px-3 py-2 text-[13px] text-dark focus:border-rose focus:outline-none"
+              />
               <button
                 type="button"
-                disabled={pending || i === 0}
-                onClick={() => move(i, -1)}
-                className="text-light hover:text-rose disabled:opacity-30 cursor-pointer"
-                aria-label="Pomjeri gore"
+                disabled={pending}
+                onClick={saveRename}
+                className="inline-flex items-center gap-1 bg-rose px-3 py-2 text-[11px] uppercase tracking-wider text-white hover:bg-rose-hover disabled:opacity-40 cursor-pointer"
               >
-                <ArrowUp size={13} />
+                <Check size={13} /> Sačuvaj
               </button>
               <button
                 type="button"
-                disabled={pending || i === categories.length - 1}
-                onClick={() => move(i, 1)}
-                className="text-light hover:text-rose disabled:opacity-30 cursor-pointer"
-                aria-label="Pomjeri dole"
+                onClick={() => setEditing(false)}
+                className="border border-cream px-3 py-2 text-light hover:text-dark cursor-pointer"
+                aria-label="Otkaži"
               >
-                <ArrowDown size={13} />
+                <X size={14} />
               </button>
             </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                disabled={pending || selectedIndex <= 0}
+                onClick={() => move(-1)}
+                className={btn}
+              >
+                <ArrowUp size={13} /> Gore
+              </button>
+              <button
+                type="button"
+                disabled={pending || selectedIndex >= categories.length - 1}
+                onClick={() => move(1)}
+                className={btn}
+              >
+                <ArrowDown size={13} /> Dole
+              </button>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => {
+                  setEditing(true);
+                  setEditLabel(selected.label);
+                }}
+                className={btn}
+              >
+                <Pencil size={13} /> Preimenuj
+              </button>
+              <button
+                type="button"
+                disabled={pending || selected.count > 0}
+                onClick={remove}
+                title={
+                  selected.count > 0 ? `Ima ${selected.count} slika` : "Obriši"
+                }
+                className="inline-flex items-center gap-1 border border-cream px-2.5 py-2 text-[11px] text-red-600 transition-colors hover:border-red-400 disabled:text-light disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+              >
+                <Trash2 size={13} /> Obriši
+              </button>
+              <span className="ml-auto text-[11px] text-light">
+                {selected.count} slika
+              </span>
+            </div>
+          )}
+        </div>
+      ) : (
+        <p className="mb-4 text-[12px] text-light">
+          Nema kategorija. Dodajte prvu ispod.
+        </p>
+      )}
 
-            {editingKey === c.key ? (
-              <>
-                <input
-                  value={editLabel}
-                  onChange={(e) => setEditLabel(e.target.value)}
-                  maxLength={40}
-                  className="flex-1 border border-cream px-2 py-1 text-[13px] text-dark focus:border-rose focus:outline-none"
-                  autoFocus
-                />
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() => saveRename(c.key)}
-                  className="text-green-600 hover:text-green-700 cursor-pointer"
-                  aria-label="Sačuvaj"
-                >
-                  <Check size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditingKey(null)}
-                  className="text-light hover:text-dark cursor-pointer"
-                  aria-label="Otkaži"
-                >
-                  <X size={15} />
-                </button>
-              </>
-            ) : (
-              <>
-                <span className="flex-1 text-[13px] text-dark">
-                  {c.label}{" "}
-                  <span className="text-[11px] text-light">({c.count})</span>
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingKey(c.key);
-                    setEditLabel(c.label);
-                  }}
-                  className="text-light hover:text-rose cursor-pointer"
-                  aria-label="Preimenuj"
-                >
-                  <Pencil size={14} />
-                </button>
-                <button
-                  type="button"
-                  disabled={pending || c.count > 0}
-                  onClick={() => remove(c)}
-                  title={c.count > 0 ? `Ima ${c.count} slika` : "Obriši"}
-                  className="text-light hover:text-red-600 disabled:opacity-30 disabled:hover:text-light cursor-pointer"
-                  aria-label="Obriši"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
-
+      {/* Dodaj novu kategoriju */}
       <div className="flex gap-2">
         <input
           value={newLabel}
@@ -170,13 +206,13 @@ export function GalleryCategoryManager({ categories }: { categories: Cat[] }) {
           onKeyDown={(e) => e.key === "Enter" && add()}
           maxLength={40}
           placeholder="Nova kategorija…"
-          className="flex-1 border border-cream px-3 py-2 text-[13px] text-dark focus:border-rose focus:outline-none"
+          className="min-w-0 flex-1 border border-cream px-3 py-2 text-[13px] text-dark focus:border-rose focus:outline-none"
         />
         <button
           type="button"
           disabled={pending || !newLabel.trim()}
           onClick={add}
-          className="inline-flex items-center gap-1 bg-rose px-4 py-2 text-[11px] uppercase tracking-wider text-white hover:bg-rose-hover disabled:opacity-40 cursor-pointer"
+          className="inline-flex shrink-0 items-center gap-1 bg-rose px-4 py-2 text-[11px] uppercase tracking-wider text-white hover:bg-rose-hover disabled:opacity-40 cursor-pointer"
         >
           {pending ? (
             <Loader2 size={12} className="animate-spin" />
