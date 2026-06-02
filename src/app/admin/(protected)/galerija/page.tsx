@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { GalleryManager } from "@/components/admin/GalleryManager";
-import { GalleryCategoryManager } from "@/components/admin/GalleryCategoryManager";
 import {
   getCachedGalleryImages,
   getCachedGalleryCategories,
@@ -41,7 +40,6 @@ export default async function AdminGalerijaPage() {
     <div>
       <PageHeader title="Galerija" subtitle="Upload i organizacija slika" />
       <div className="p-5 md:p-8">
-        <GalleryCategoryManager categories={cats} />
         <GalleryManager items={mapped} categories={cats} />
       </div>
     </div>
