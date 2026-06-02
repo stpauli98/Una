@@ -311,7 +311,7 @@ export function GalleryManager({
     <div>
       {categories.length === 0 && (
         <div className="mb-5 border border-cream bg-warm p-4 text-center text-[12px] text-light">
-          Nema kategorija. Dodajte prvu u sekciji „Kategorije“ iznad.
+          Nema kategorija. Dodajte ih u Postavke → Kategorije galerije.
         </div>
       )}
       <div className="mb-5 flex gap-1.5 overflow-x-auto">
