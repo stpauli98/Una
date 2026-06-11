@@ -22,7 +22,7 @@ describe("sendNewAppointmentEmail", () => {
     // 180min duration → 19:00 UTC (vidi posebni test ispod).
     endTime: new Date("2026-05-15T17:00:00.000Z"),
     notes: null,
-    adminPanelUrl: "https://upbeauty.ba/admin/termini",
+    adminPanelUrl: "https://upmakeup.ba/admin/termini",
     appointmentId: 42,
   };
 
@@ -30,7 +30,7 @@ describe("sendNewAppointmentEmail", () => {
     mockSend.mockReset();
     _resetResendClientForTests();
     vi.stubEnv("RESEND_API_KEY", "re_test_key");
-    vi.stubEnv("RESEND_FROM_EMAIL", "rezervacije@upbeauty.ba");
+    vi.stubEnv("RESEND_FROM_EMAIL", "rezervacije@upmakeup.ba");
     vi.stubEnv("ADMIN_NOTIFICATION_EMAIL", "una@example.com");
   });
 
@@ -41,7 +41,7 @@ describe("sendNewAppointmentEmail", () => {
 
     expect(mockSend).toHaveBeenCalledOnce();
     const args = mockSend.mock.calls[0][0];
-    expect(args.from).toBe("rezervacije@upbeauty.ba");
+    expect(args.from).toBe("rezervacije@upmakeup.ba");
     expect(args.to).toEqual(["una@example.com"]);
     expect(args.subject).toContain("Test Klijent");
     expect(args.html).toContain("Test Klijent");
