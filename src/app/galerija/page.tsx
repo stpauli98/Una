@@ -24,12 +24,20 @@ export default async function GalerijaPage() {
     .select("id, storage_path, category, alt_text")
     .order("order_index");
 
+  const { data: categories } = await supabase
+    .from("gallery_categories")
+    .select("key, label, order_index")
+    .order("order_index");
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const mapped = (images ?? []).map((img) => ({
     id: img.id,
     url: `${supabaseUrl}/storage/v1/object/public/gallery/${img.storage_path}`,
     category: img.category,
-    alt: img.alt_text ?? `UP Makeup — ${img.category}`,
+    alt:
+      img.alt_text && img.alt_text !== "blob"
+        ? img.alt_text
+        : `UP Makeup — ${img.category}`,
   }));
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -49,9 +57,16 @@ export default async function GalerijaPage() {
           <SectionHeader
             eyebrow="Portfolio"
             title="Galerija radova"
+            as="h1"
             className="mb-10"
           />
-          <GalleryGrid images={mapped} />
+          <GalleryGrid
+            images={mapped}
+            categories={(categories ?? []).map((c) => ({
+              key: c.key,
+              label: c.label,
+            }))}
+          />
         </section>
       </main>
       <Footer />

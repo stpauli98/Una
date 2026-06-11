@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   ),
   manifest: "/manifest.webmanifest",
   title: {
-    default: `Šminkanje Gradiška — ${BUSINESS.name}`,
+    default: `Šminkanje Gradiška · ${BUSINESS.name}`,
     template: `%s · ${BUSINESS.name}`,
   },
   description:
@@ -47,6 +47,9 @@ export const metadata: Metadata = {
   },
   formatDetection: {
     telephone: false,
+  },
+  verification: {
+    google: "3zYUT37EJby4Ra75VsA5bY5sbXQjqE5KroP73c9wTPg",
   },
   openGraph: {
     type: "website",

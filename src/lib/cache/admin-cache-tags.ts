@@ -16,6 +16,7 @@ export const ADMIN_CACHE_TAGS = {
   blockedDates: "admin:blocked_dates",
   timeBlocks: "admin:time_blocks",
   gallery: "admin:gallery",
+  galleryCategories: "admin:gallery_categories",
 } as const;
 
 export type AdminCacheTag = (typeof ADMIN_CACHE_TAGS)[keyof typeof ADMIN_CACHE_TAGS];
