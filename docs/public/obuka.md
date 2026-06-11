@@ -30,7 +30,7 @@ Kartica sa centriranim layout-om:
 - "800 KM" (large, font-display)
 - "Uplata u dvije rate moguća po dogovoru"
 
-Tipografija: `text-4xl md:text-5xl` (responsive — mobile manje, desktop veće).
+Tipografija: `text-5xl md:text-6xl font-display` (responsive — mobile manje, desktop veće).
 
 ### CTA sekcija
 

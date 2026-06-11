@@ -12,7 +12,7 @@ CREATE TABLE time_blocks (
   start_time TIMESTAMPTZ NOT NULL,
   end_time TIMESTAMPTZ NOT NULL,
   reason TEXT,
-  recurrence_group_id UUID,  -- za recurrent (TBD UI)
+  recurrence_group_id UUID,  -- weekly recurrence serijal (NULL = jednokratni)
   created_at TIMESTAMPTZ DEFAULT NOW(),
   CHECK (end_time > start_time)
 );
@@ -122,9 +122,17 @@ const end = parseSarajevoDateTime(blockDate, endTimeSelect);
 
 `parseSarajevoDateTime` koristi Sarajevo TZ — `2026-06-15 13:00` postaje `13:00 CEST = 11:00 UTC`.
 
-### Recurrence (TBD)
+### Recurrence — sedmično ponavljanje (implementirano)
 
-`recurrence_group_id` kolona postoji ali UI za recurrent kreiranje **nije implementiran**. TBD: Una bi mogla unijeti "Svaki ponedjeljak 13:00-14:00 do kraja godine" i sistem bi generisao N redova sa istim `recurrence_group_id`.
+Una unese "Svaki ponedjeljak 13:00-14:00 do kraja godine" — checkbox **"Ponavlja se svake sedmice"** + "Do datuma" u `TimeBlocksManager`. Sistem generiše N pojedinačnih redova sa istim `recurrence_group_id` (UUID).
+
+**Expansion logika:** `expandWeeklyTimeBlocks()` u `src/lib/utils/recurring-blocks.ts`:
+
+- Svaka okurenca se računa kroz `parseSarajevoDateTime()` — DST-safe (blok "13:00" ostaje 13:00 i ljeti i zimi)
+- `MAX_WEEKLY_OCCURRENCES = 260` (≈ 5 godina) — hard cap
+- `maxUntilDateStr()` — "Do datuma" ograničen na danas + 366 dana
+
+Unit testovi: `tests/unit/recurring-blocks.test.ts`.
 
 ## Server actions
 
@@ -154,7 +162,7 @@ INSERT INTO time_blocks (...) VALUES (...)
 DELETE FROM time_blocks WHERE id = $1
 ```
 
-Ako ima `recurrence_group_id`, delete je sub-day — TBD: pitati "Obrisati cijeli serijal?" prije delete.
+Za blokove sa `recurrence_group_id` postoji i `deleteTimeBlockSeries(groupId)` server action — briše cijeli serijal odjednom. UI grupiše serijal i nudi obje opcije (jedan blok / cijeli serijal).
 
 ## Edge cases
 

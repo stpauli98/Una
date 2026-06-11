@@ -156,7 +156,7 @@ Klijent ne može skrolovati pozadinu dok je lightbox otvoren.
 
 | Element | Vrijednost |
 |---------|-----------|
-| Title | "Galerija radova · UP Makeup" |
+| Title | "Galerija · UP Makeup" (page postavlja "Galerija", layout template dodaje " · UP Makeup") |
 | Description | "Portfolio radova UP Makeup..." |
 | Alt text | Iz `gallery_images.alt_text` (default fallback: "UP Makeup — {category}") |
 | Canonical | `/galerija` |

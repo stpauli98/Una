@@ -19,19 +19,9 @@ export const TZ = BUSINESS.timezone;
 
 ## Tri helpera
 
-### 1. `nowSarajevo()` — sadašnje vrijeme u Sarajevo TZ
+> Napomena: "sada" se u kodu uzima direktno kroz `new Date()` — JS `Date` je apsolutni trenutak (instant), pa su poređenja tipa `slot > now` timezone-agnostična. TZ helperi trebaju samo tamo gdje se **parsira ili formatira** lokalni datum/vrijeme.
 
-```typescript
-import { toZonedTime } from "date-fns-tz";
-
-export function nowSarajevo(): Date {
-  return toZonedTime(new Date(), TZ);
-}
-```
-
-**Use case:** `min_hours_before` check. Bez ovoga, `new Date()` na Vercelu daje UTC.
-
-### 2. `parseDateSarajevo(dateStr)` — parsira YYYY-MM-DD kao Sarajevo midnight
+### 1. `parseDateSarajevo(dateStr)` — parsira YYYY-MM-DD kao Sarajevo midnight
 
 ```typescript
 import { fromZonedTime } from "date-fns-tz";
@@ -49,7 +39,7 @@ parseDateSarajevo("2026-06-15")
 → Date(2026-06-14T22:00:00.000Z)  // = 2026-06-15 00:00 CEST
 ```
 
-### 3. `atSarajevo(year, month, day, hour, min)`
+### 2. `atSarajevo(year, month, day, hour, min)`
 
 ```typescript
 export function atSarajevo(
@@ -69,7 +59,7 @@ atSarajevo(2026, 6, 15, 17, 0)
 → Date(2026-06-15T15:00:00.000Z)  // = 17:00 CEST
 ```
 
-### 4. `parseSarajevoDateTime(dateStr, timeStr)`
+### 3. `parseSarajevoDateTime(dateStr, timeStr)`
 
 ```typescript
 export function parseSarajevoDateTime(dateStr: string, timeStr: string): Date {
@@ -80,6 +70,24 @@ export function parseSarajevoDateTime(dateStr: string, timeStr: string): Date {
 **Use case:** Admin UI komponente koje imaju `<input type="date">` + time `<select>`. Snimanje u DB.
 
 Sirov `new Date("2026-06-15T18:00")` bi koristio **browser-local timezone**. Ako admin u UK timezone-u (UTC), to bi dalo pogrešan UTC.
+
+## Granice dana/sedmice/mjeseca — `day-bounds.ts`
+
+**Fajl:** `src/lib/utils/day-bounds.ts` (unit testovi: `tests/unit/day-bounds.test.ts`)
+
+Nadgradnja na tz.ts za upite tipa "svi termini danas/ove sedmice/ovog mjeseca":
+
+| Funkcija | Vraća |
+|----------|-------|
+| `getSarajevoDayBounds(dateStr)` | `{ start, end }` — Sarajevo midnight do midnight sljedećeg dana |
+| `getSarajevoWeekBounds(dateStr)` | Ponedjeljak 00:00 → sljedeći ponedjeljak (Sarajevo) |
+| `getSarajevoMonthBounds(dateStr)` | 1. u mjesecu 00:00 → 1. sljedećeg mjeseca |
+| `sarajevoDateStr(date)` / `sarajevoTodayDateStr()` | `YYYY-MM-DD` string u Sarajevo TZ |
+| `addDaysToDateStr(dateStr, n)` | DST-safe aritmetika na date stringovima |
+
+**DST trik:** interna aritmetika koristi **podne (12:00)** kao baznu tačku umjesto ponoći — dodavanje 24h preko DST prelaza nikad ne može "preskočiti" ili duplirati dan.
+
+Koriste ih: admin dashboard (dnevni pregled), termini filteri (dan/sedmica/mjesec), month availability API.
 
 ## Zašto je ovo bitno
 
@@ -104,9 +112,9 @@ Klijent vidi slot "19:00" iako Una otvara u 17:00. Pogrešno!
 
 ```typescript
 // DOBRO — sa helperima
-const now = nowSarajevo();
+const now = new Date();                          // instant — OK za poređenja
 const target = parseDateSarajevo("2026-06-15");  // 22:00Z prethodnog dana = midnight Sarajevo
-// ...computeAvailableSlots dobija date u Sarajevo TZ
+// ...computeAvailableSlots dobija ispravne granice dana u Sarajevo TZ
 ```
 
 ## DST transition

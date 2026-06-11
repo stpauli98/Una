@@ -73,11 +73,19 @@ export default {
   // Custom headers
   async headers() { ... },
   
-  // Image optimization
+  // Image optimization (Next 16: remotePatterns, NE deprecated `domains`)
   images: {
-    domains: ["ljxggwpzljtjeeljtqts.supabase.co"],
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 2592000,
+    qualities: [75, 90],              // q=90 otključan za portretne kadrove galerije
+    dangerouslyAllowLocalIP: isDev,   // samo dev — lokalni Supabase je na 127.0.0.1:54321
+    remotePatterns: [
+      {
+        protocol: "https",            // dev: http, izvedeno iz NEXT_PUBLIC_SUPABASE_URL
+        hostname: supabaseHostname,   // <ref>.supabase.co
+        pathname: "/storage/v1/object/public/**",
+      },
+    ],
   },
 };
 ```

@@ -2,20 +2,24 @@
 
 **Fajl:** `src/app/admin/(protected)/postavke/page.tsx`
 
-Glavna stranica za podešavanja. 6 collapsible sekcija.
+Glavna stranica za podešavanja. 8 collapsible sekcija.
 
 ## Sekcije (collapsible)
 
+Redoslijed na stranici (`page.tsx:147-222`):
+
 | Sekcija | Komponenta | Šta podešava |
 |---------|-----------|--------------|
-| 1. Radno vrijeme | `WorkingHoursEditor` | Po danu u sedmici |
-| 2. Blokirani dani | `BlockedDatesManager` | Cijeli dani van funkcije |
-| 3. Vremenske blokade | `TimeBlocksManager` | Pod-dan (pauza, privatno) |
-| 4. Booking pravila | `BookingRulesEditor` | min_hours_before, advance_days, break, cancellation |
-| 5. Push notifikacije | `PushNotificationToggle` | Subscribe/unsubscribe |
-| 6. Lozinka | `ChangePasswordForm` | Promjena lozinke |
+| 1. Pravila rezervisanja | `BookingRulesEditor` | min_hours_before, advance_days, cancellation, break |
+| 2. Radno vrijeme | `WorkingHoursEditor` | Po danu u sedmici |
+| 3. Blokirani datumi | `BlockedDatesManager` | Cijeli dani van funkcije |
+| 4. Blokirani intervali (sub-day) | `TimeBlocksManager` | Pod-dan (pauza, privatno) + sedmično ponavljanje |
+| 5. Obavještenja na uređaju | `PushNotificationToggle` | Push subscribe/unsubscribe |
+| 6. Email obavještenja | `EmailNotificationStatus` | Status Resend konfiguracije + test email |
+| 7. Export podataka | `CsvExportButton` | CSV export svih termina |
+| 8. Promjena lozinke | `ChangePasswordForm` | Promjena lozinke |
 
-Svaka sekcija ima toggle (expanded/collapsed) — state se cuva u `localStorage` (per-sekcija).
+Svaka sekcija ima toggle (expanded/collapsed) — state je in-memory (React state u `CollapsibleSection`), ne perzistira se.
 
 ## 1. Radno vrijeme — `WorkingHoursEditor`
 
@@ -118,9 +122,17 @@ VALUES (...)
 
 `start_time` i `end_time` se konstruišu iz `block_date` + `start_time_select` u **Sarajevo timezone** kroz `parseSarajevoDateTime()`.
 
-### Recurrence (opciono)
+### Sedmično ponavljanje (recurrence)
 
-`recurrence_group_id` UUID kolona omogućava grupisanje recurrent blokova. UI još uvijek nije implementiran za kreiranje recurrentnih (TBD).
+**Implementirano** (`TimeBlocksManager.tsx:144-175`):
+
+- Checkbox **"Ponavlja se svake sedmice"** u formi
+- Kad je uključen, pojavljuje se input **"Do datuma"**
+- Server kreira pojedinačne blokove za svaki isti dan u sedmici do izabranog datuma — svi dijele isti `recurrence_group_id` (UUID)
+- Expansion logika: `expandWeeklyTimeBlocks()` u `src/lib/utils/recurring-blocks.ts` (max 260 ponavljanja ≈ 5 godina; `untilDate` ograničen na danas + 366 dana kroz `maxUntilDateStr()`)
+- Lista grupiše blokove po `recurrence_group_id` i prikazuje broj ponavljanja; brisanje nudi uklanjanje cijelog serijala
+
+Use case: "Pauza za ručak ponedjeljkom 13:00–14:00, do kraja godine."
 
 ### Anon privacy
 
@@ -147,20 +159,18 @@ Slot u tom intervalu neće biti dostupan za rezervacije.
 
 **Fajl:** `src/components/admin/BookingRulesEditor.tsx`
 
-4 podešavanja sa dropdown-ima:
+4 podešavanja sa dropdown-ima (opcije iz `BookingRulesEditor.tsx` RULES konstante):
 
-| Setting | Default | Opcije |
-|---------|---------|--------|
-| `min_hours_before` | 24 | 0, 6, 12, 24, 48, 72 |
-| `advance_booking_days` | 90 | 7, 14, 30, 60, 90, 180, 365 |
-| `cancellation_hours` | 24 | 0, 6, 12, 24, 48 |
-| `break_between_min` | 0 | 0, 30 (samo grid-aligned!) |
+| Setting | Default | UI opcije |
+|---------|---------|-----------|
+| `min_hours_before` | 24 | 0, 1, 2, 3, 6, 12, 24 (sati) |
+| `advance_booking_days` | 90 | 7, 14, 30, 60, 90 (dana) |
+| `cancellation_hours` | 24 | 0, 1, 2, 3, 6, 12, 24 (sati) |
+| `break_between_min` | 0 | 0, 30, 60, 90, 120 (minuta) |
 
 ### Razlog za `break_between_min` opcije
 
-Originalno je bilo `[0, 5, 10, 15, 30]` — ali 5/10/15 nije grid-aligned (30-min grid). Trip — slot generation bi imao gaps.
-
-**Rješenje:** Samo `[0, 30]`. Ako Una hoće 10-min pauzu — to ne radi sa fiksnim 30-min grid-om.
+Sve opcije su **multiple od 30** (slot interval) — server validacija u `postavke/actions.ts:308` eksplicitno odbija sve van `[0, 30, 60, 90, 120]`. Vrijednost poput 10 ili 15 min nije moguća jer bi razbila fiksni 30-min grid (slot generation bi imao gaps).
 
 ### Inline save
 
@@ -178,7 +188,33 @@ Toggle "Push notifikacije" → poziva `subscribeToPush()` ili `unsubscribeFromPu
 
 Detalji: [pwa-push.md](./pwa-push.md)
 
-## 6. Promjena lozinke — `ChangePasswordForm`
+## 6. Email obavještenja — `EmailNotificationStatus`
+
+**Fajl:** `src/components/admin/EmailNotificationStatus.tsx` + `postavke/email-actions.ts`
+
+Prikazuje status Resend email konfiguracije:
+
+| Stanje | Prikaz |
+|--------|--------|
+| `RESEND_API_KEY` nije setovan | Amber upozorenje "Nije konfigurisano" |
+| Konfigurisano | Zeleni status + maskirana admin adresa (`pe***@gmail.com`) |
+
+Dugme **"Pošalji test email"** → `sendTestAdminEmail()` server action — šalje probni email na `ADMIN_NOTIFICATION_EMAIL` da Una/developer potvrdi da Resend radi. `getEmailNotificationConfig()` čita konfiguraciju server-side (API key se nikad ne šalje klijentu).
+
+Detalji o tome KOJI email-ovi se šalju i kada: [email-notifikacije.md](./email-notifikacije.md)
+
+## 7. Export podataka — `CsvExportButton`
+
+**Fajl:** `src/components/admin/CsvExportButton.tsx` + `postavke/export-actions.ts`
+
+CSV export svih termina za backup ili porezni izvještaj:
+
+- Dropdown za izbor godine ("Sve godine" + lista godina u kojima postoje termini — `availableYears` se računa server-side u `page.tsx` iz min/max `start_time`)
+- Dugme "Preuzmi CSV" → `exportAppointmentsCsv(year?)` server action → browser download
+- Format: **semicolon (`;`) separator + UTF-8 sa BOM** — otvara se ispravno u Excel-u (EU locale) i LibreOffice Calc-u
+- CSV builder: `src/lib/utils/csv.ts` (unit testiran u `tests/unit/csv.test.ts`)
+
+## 8. Promjena lozinke — `ChangePasswordForm`
 
 **Fajl:** `src/components/admin/ChangePasswordForm.tsx`
 
@@ -210,19 +246,18 @@ const { error } = await sb.auth.updateUser({ password: newPassword });
 
 Supabase enforce-uje policy iz config.toml (`password_requirements = "lower_upper_letters_digits"`).
 
-## Collapsible state (localStorage)
+## Admin preferences (localStorage)
 
-`AdminPrefsPersister` (`src/components/admin/AdminPrefsPersister.tsx`) sluša izmjene i sprema u localStorage:
+Collapse state sekcija na ovoj stranici se **ne perzistira** — čisti React state u `CollapsibleSection`.
 
-```typescript
-localStorage.setItem("admin-postavke-collapse", JSON.stringify({
-  workingHours: true,
-  blockedDates: false,
-  // ...
-}));
-```
+`AdminPrefsPersister` (`src/components/admin/AdminPrefsPersister.tsx`) perzistira nešto drugo — filtere drugih admin stranica:
 
-Restoration na mount-u.
+| Ključ | Sadržaj |
+|-------|---------|
+| `up-admin-termini-prefs` | JSON: izabrani datum/range, status filter, sort smjer za `/admin/termini` |
+| `up-admin-dashboard-date` | Izabrani dan na `/admin/dashboard` |
+
+Restoration na mount-u — admin se vraća na stranicu i zatiče iste filtere.
 
 ## Cache invalidation
 

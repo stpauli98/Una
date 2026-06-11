@@ -89,7 +89,7 @@ Postojeći termin 17:00-18:00 + 30 min break = effective end 18:30.
 
 Slot 18:00-19:00 blokiran. Slot 18:30-19:30 OK.
 
-**Važno:** `break_between_min` mora biti **multiple od 30** (slot interval). UI dozvoljava samo `0` ili `30`.
+**Važno:** `break_between_min` mora biti **multiple od 30** (slot interval). UI i server validacija dozvoljavaju `0, 30, 60, 90, 120`.
 
 Detalji: [grid.md](./grid.md), [../admin/postavke.md](../admin/postavke.md)
 
@@ -107,10 +107,10 @@ Klijent može otkazati termin min N sati prije. **Nije implementirano u kodu** �
 
 | Setting | Opcije |
 |---------|--------|
-| `min_hours_before` | 0, 6, 12, 24, 48, 72 |
-| `advance_booking_days` | 7, 14, 30, 60, 90, 180, 365 |
-| `cancellation_hours` | 0, 6, 12, 24, 48 |
-| `break_between_min` | 0, 30 |
+| `min_hours_before` | 0, 1, 2, 3, 6, 12, 24 |
+| `advance_booking_days` | 7, 14, 30, 60, 90 |
+| `cancellation_hours` | 0, 1, 2, 3, 6, 12, 24 |
+| `break_between_min` | 0, 30, 60, 90, 120 |
 
 Inline save per row.
 

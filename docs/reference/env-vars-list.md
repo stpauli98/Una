@@ -50,11 +50,12 @@ VAPID_SUBJECT=mailto:peranovicuna6@gmail.com
 # Dodatni admin email-ovi (comma-separated)
 ADMIN_EMAILS_EXTRA=test@admin.com,other@example.com
 
-# Resend (email — TBD Phase 8)
+# Resend (email notifikacije — implementirano, aktivira se setovanjem key-a;
+# bez key-a se email-ovi tiho preskaču, app radi normalno)
 RESEND_API_KEY=re_...
 RESEND_FROM_EMAIL=rezervacije@upmakeup.ba
 
-# Admin notification email
+# Na koju adresu stižu admin notifikacije o novim rezervacijama
 ADMIN_NOTIFICATION_EMAIL=peranovicuna6@gmail.com
 ```
 
@@ -86,6 +87,15 @@ E2E_ADMIN_EMAIL=test@admin.com
 E2E_ADMIN_PASSWORD=Test1234A
 ADMIN_EMAILS_EXTRA=test@admin.com
 ```
+
+Playwright dodatno čita (opciono, postavlja ih CI/skripte — ne idu u .env fajlove):
+
+| Var | Svrha |
+|-----|-------|
+| `PLAYWRIGHT_BASE_URL` | Override base URL (default `http://localhost:3000`) |
+| `PLAYWRIGHT_SKIP_WEB_SERVER` | Ne diži dev server (već radi — koristi `run-pwa-e2e.sh`) |
+| `DOTENV_CONFIG_PATH` | Koji env fajl Playwright config učitava |
+| `CI` | Aktivira CI mode (retries, workers) |
 
 ## NEXT_PUBLIC_* prefix
 

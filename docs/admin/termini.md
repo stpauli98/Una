@@ -86,6 +86,8 @@ WHERE id = $1
 
 Promjena statusa + revalidate (`/admin/termini`, `/admin/dashboard`).
 
+**Email side-effect:** ako termin ima `client_email`, u `after()` callback-u (poslije response-a, ne blokira UI) šalje se **email potvrde klijentu** (`sendClientConfirmationEmail` sa `.ics` attachmentom). Bez `RESEND_API_KEY` se tiho preskače.
+
 ### `cancelAppointment(id: number)`
 
 ```typescript
@@ -96,15 +98,18 @@ WHERE id = $1
 
 Slot se automatski oslobađa za sljedeće rezervacije (availability engine filtruje samo `ceka`/`potvrdjen`).
 
+**Email side-effect:** ako termin ima `client_email` I prethodni status je bio `ceka` ili `potvrdjen`, šalje se **email o otkazivanju** (`sendCancellationEmail`) u `after()` callback-u. Otkazivanje već otkazanog/završenog ne šalje ništa.
+
 ### `markCompleted(id: number)`
 
 ```typescript
 UPDATE appointments
-SET status = 'zavrsen'
+SET status = 'zavrsen',
+    price_snapshot = <trenutna cijena usluge>
 WHERE id = $1
 ```
 
-Za istorijska statistika.
+Uz status, snima se **snapshot trenutne cijene usluge** (`price_snapshot` kolona) — ako Una kasnije promijeni cjenovnik, istorijska statistika ostaje tačna.
 
 ### `createManualAppointment(formData)`
 
@@ -148,17 +153,36 @@ Kad klijent rezerviše (INSERT), Una vidi novi termin u listi unutar 1-2 sekunde
 
 Kad Una promijeni status iz drugog tab-a (UPDATE), oba tab-a se sinhronizuju.
 
-## Email tracking (Phase 8, TODO)
+## Email tracking
 
-Tri kolone postoje u `appointments` ali se ne koriste (Resend nije aktivan):
+Email pipeline je **implementiran** (gated iza `RESEND_API_KEY` env var — bez nje se slanje tiho preskače). Tri kolone u `appointments` bilježe kad je koji email uspješno poslan:
 
-| Kolona | Šta označava |
-|--------|--------------|
-| `email_received_sent_at` | Email "Primili smo rezervaciju" poslan |
-| `email_confirmed_sent_at` | Email "Una je potvrdila" poslan |
-| `email_cancelled_sent_at` | Email otkazivanja poslan |
+| Kolona | Kad se upisuje |
+|--------|----------------|
+| `email_received_sent_at` | "Primili smo rezervaciju" poslan klijentu (odmah pri booking-u) |
+| `email_confirmed_sent_at` | Email potvrde poslan (kad Una klikne "Potvrdi") |
+| `email_cancelled_sent_at` | Email otkazivanja poslan (kad Una otkaže) |
 
-UI prikazuje email status (zelena kvačica ako poslan, siva crtica ako ne) — sad uvijek siva.
+UI u redu termina prikazuje email status (zelena kvačica = poslan, siva crtica = nije/nema email adrese).
+
+Kompletan opis email feature-a: [email-notifikacije.md](./email-notifikacije.md)
+
+## Deep-link na termin — `FocusAppointment`
+
+**Fajl:** `src/components/admin/FocusAppointment.tsx`
+
+Admin email i push notifikacija sadrže link oblika:
+
+```
+/admin/termini?date=2026-06-15&focus=42
+```
+
+`FocusAppointment` na mount-u:
+1. Skroluje na `AppointmentRow` sa tim ID-em
+2. Highlight ring 3 sekunde (Tailwind ring)
+3. Fokusira "Potvrdi" dugme — Una može potvrditi sa Enter
+
+Una iz notifikacije stiže direktno na pravi termin, bez traženja po listi.
 
 ## Status counts u sidebar-u
 

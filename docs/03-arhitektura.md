@@ -62,6 +62,7 @@ Next.js 16 je preimenovao middleware u proxy. Fajl: `src/proxy.ts`.
 - Provjerava da li je user u `ADMIN_EMAILS` listi
 - Redirect-uje neautentifikovane na `/admin/login`
 - Redirect-uje već ulogovane sa `/admin/login` na dashboard
+- **Whitelist javnih admin asseta** (`PUBLIC_ADMIN_PATHS`): `/admin/login`, `/admin/manifest.webmanifest`, `/admin/icon`, `/admin/icon1`, `/admin/apple-icon` — PWA manifest i ikone moraju biti dostupni i bez sesije (browser ih fetch-uje pri "Add to Home Screen")
 
 Detalji: [security/auth.md](./security/auth.md)
 
@@ -215,6 +216,15 @@ Migracije se **ne** push-uju automatski. Treba manual: `supabase db push --linke
 | **Supabase realtime** | WebSocket push | Live |
 | **Slike** | Next.js Image optimization + `minimumCacheTTL=2592000` | 30 dana |
 | **Favicon, SVG** | `Cache-Control: public, max-age=2592000, immutable` (next.config.ts) | 30 dana |
+
+### Tag-based invalidacija — `src/lib/cache/`
+
+| Fajl | Šta radi |
+|------|----------|
+| `cached-queries.ts` | `unstable_cache` wrapperi za skupe query-je (servisi, settings, radno vrijeme) sa cache tagovima |
+| `admin-cache-tags.ts` | Centralna lista tagova (npr. `services`, `settings`) — admin mutacija poziva `revalidateTag()` i svi keširani query-ji sa tim tagom se invalidiraju |
+
+Pattern: javne stranice čitaju kroz keširane query-je; admin save → `revalidateTag` → sljedeći request dobija svježe podatke bez čekanja ISR intervala. Unit testovi: `tests/unit/cache-tags.test.ts`.
 
 ## Ključni patterns
 

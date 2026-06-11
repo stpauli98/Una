@@ -6,8 +6,10 @@ Kompletna test strategija — od unit-a do e2e.
 
 | Tip | Broj | Framework |
 |-----|------|-----------|
-| Unit testovi | 304 | Vitest |
-| E2E testovi | 14+ specova | Playwright |
+| Unit testovi | 390 (39 fajlova) | Vitest |
+| E2E testovi | 26 specova | Playwright |
+
+> Brojevi verifikovani `npm test` run-om 2026-06-10. Rastu sa svakim novim feature-om — `npm test` ispisuje aktuelni broj.
 
 ## Kategorije
 
@@ -34,10 +36,10 @@ Kompletna test strategija — od unit-a do e2e.
 npm run test:setup
 
 # 2. Unit testovi
-npm test                  # 304 testa, ~5s
+npm test                  # 390 testova, ~5s
 
 # 3. E2E testovi
-npm run test:e2e:local    # 14+ specova, ~3 min
+npm run test:e2e:local    # 26 specova, ~3 min
 ```
 
 ## Test infrastructure

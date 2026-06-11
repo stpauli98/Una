@@ -88,6 +88,20 @@ Ako se desi incident:
 4. **Recovery** — restore from backup ako treba (Supabase ima daily backup)
 5. **Lessons learned** — dokumentovati u `docs/superpowers/plans/`
 
+## Sigurnosni logging — PII sanitizacija
+
+**Fajl:** `src/lib/utils/log.ts` → `sanitizeError()` (unit testovi: `tests/unit/log.test.ts`, 9 testova)
+
+Postgres error-i mogu sadržati telefon/email klijenta u `details` polju (npr. unique constraint violation poruke). Vercel runtime logovi se čuvaju mjesecima i vidljivi su cijelom timu — PII ne smije curiti tamo.
+
+`sanitizeError()` prije svakog `console.error`:
+- Regex zamjena email adresa → `[email]`
+- Regex zamjena telefona → `[phone]`
+- Skida trailing quoted vrijednosti iz Postgres poruka
+- Zadržava `code` (npr. `23P01`) za debugging
+
+Koristi se u booking flow-u, admin akcijama i API rutama.
+
 ## Periodicno održavanje
 
 | Šta | Učestalost |

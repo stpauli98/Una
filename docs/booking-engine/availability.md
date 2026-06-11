@@ -157,6 +157,36 @@ const { data: appts } = await sb
 
 E2E test: `tests/e2e/booking-cross-service.spec.ts` (2 testa).
 
+## API rute
+
+### `GET /api/availability?date=YYYY-MM-DD&service_id=N`
+
+**Fajl:** `src/app/api/availability/route.ts`
+
+Vraća slotove za jedan dan. Rate limit 30/min/IP (in-memory fallback ako Upstash padne).
+
+**Admin flag:** `?admin=true` preskače `min_hours_before` pravilo (Una smije upisati termin "za sat vremena"). Flag NIJE moguće spoof-ovati — server prvo provjeri session i `isAdminEmail(user.email)` (`route.ts:39-46`), tek onda honoriše flag.
+
+### `GET /api/availability/month?month=YYYY-MM&service_id=N`
+
+**Fajl:** `src/app/api/availability/month/route.ts`
+
+Vraća `{ availability: { "YYYY-MM-DD": boolean } }` za cijeli mjesec — kalendar u koraku 2 booking-a po tome boji dane (dostupan/pun/zatvoren). Podržava isti `?admin=true` flag i isti rate limit.
+
+**Implementacija:** `getMonthAvailability()` u `src/lib/booking/month-availability.ts` — poziva `computeAvailableSlots()` za svaki dan u mjesecu (28–31 poziv, <50ms ukupno jer je sve pure logika nad jednim DB fetch-om). `fillClosedDays()` helper popunjava dane bez definisanog radnog vremena kao zatvorene.
+
+## Server-side validacija pri kreiranju — `validate-slot.ts`
+
+Availability API je samo prikaz — pri stvarnom kreiranju termina (`createAppointment`) server **ponovo validira** slot kroz `validateSlotServerSide()` (`src/lib/booking/validate-slot.ts`):
+
+1. Slot je unutar radnog vremena tog dana
+2. Datum nije blokiran (`blocked_dates`)
+3. Slot se ne preklapa sa `time_blocks`
+
+Tri paralelna DB query-ja. Ovo hvata stale-client scenarije (klijent drži otvorenu staru listu slotova dok je Una u međuvremenu blokirala dan). Preklapanje sa drugim TERMINIMA hvata race guard + DB exclusion constraint — vidi [race-conditions.md](./race-conditions.md).
+
+Unit testovi: `tests/unit/validate-slot.test.ts` (10 testova).
+
 ## Grid pattern (Cal.com)
 
 Slotovi se generišu na **fiksnih 30 minuta** (`SLOT_INTERVAL_MIN`), nezavisno od trajanja usluge.

@@ -20,7 +20,7 @@ Fiksiran na dnu ekrana (`fixed inset-x-3 bottom-3 z-[60]`):
 
 - "Politika privatnosti" je link na `/politika-privatnosti`
 - "Prihvatam" dugme (rose, full-width)
-- X dugme za zatvaranje bez prihvatanja
+- X dugme (vizuelna alternativa — ponašanje identično "Prihvatam")
 
 ## Logika
 
@@ -43,7 +43,7 @@ const accept = () => {
 
 Klikom na "Prihvatam" → set u localStorage → banner sakriven na svim sljedećim posjetama.
 
-X dugme → samo sakrije banner, NE update-uje localStorage (banner se vrati na sljedećoj posjeti).
+X dugme → poziva istu `accept()` funkciju kao "Prihvatam" (`CookieBanner.tsx:58-65`) — TAKOĐE setuje localStorage, banner se ne vraća. Nema "odbij" opcije jer sajt ne koristi tracking cookies — banner je čisto informativan.
 
 ## Šta sajt zapravo koristi
 
@@ -88,4 +88,4 @@ Render-uje se iz **root layout-a** (`src/app/layout.tsx`):
 </body>
 ```
 
-Tako je prisutan na svim stranicama (uključujući admin).
+Prisutan na svim **javnim** stranicama. Na `/admin/*` rutama se NE renderuje — komponenta provjerava pathname i vraća `null` za admin (`if (isAdmin) return;`).

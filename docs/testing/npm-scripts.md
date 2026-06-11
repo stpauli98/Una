@@ -13,7 +13,7 @@ Pokreće Docker Supabase, generiše `.env.test`, kreira admin user. **Pokreni je
 ## Unit testovi
 
 ```bash
-npm test                    # Single run (304 testa, ~5s)
+npm test                    # Single run (390 testova / 39 fajlova, ~5s)
 npm run test:watch          # Watch mode (re-run na file change)
 ```
 
@@ -27,9 +27,12 @@ npm test -- -t "ceka"        # Samo testovi sa "ceka" u nazivu
 ## E2E testovi
 
 ```bash
-npm run test:e2e            # Sve e2e (15+ specova, ~3 min)
-npm run test:e2e:local      # Sa .env.test (preporučeno za lokal)
+npm run test:e2e            # Sve e2e (26 specova, ~3 min) — koristi trenutni .env.local
+npm run test:e2e:local      # Privremeno swap-uje .env.local ↔ .env.test (preporučeno za lokal)
+npm run test:e2e:pwa        # Production build + PWA/SEO suite (scripts/run-pwa-e2e.sh)
 ```
+
+`test:e2e:local` radi `mv`/`cp` swap (.env.local → .env.local.prod, .env.test → .env.local) i **garantovano vraća** original nakon testova — detalji u [../reference/npm-scripts.md](../reference/npm-scripts.md).
 
 Filteri:
 
@@ -87,11 +90,7 @@ Korisno za testiranje production performansi lokalno.
 
 ## Generate types iz DB
 
-```bash
-npm run gen:types           # (TBD — možda treba dodati u package.json)
-```
-
-Equivalent:
+Nema npm skripte — koristi se Supabase CLI direktno:
 
 ```bash
 supabase gen types typescript --linked > src/types/database.ts

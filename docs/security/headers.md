@@ -16,6 +16,8 @@ async headers() {
         { key: "X-Content-Type-Options", value: "nosniff" },
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
         { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+        { key: "Content-Security-Policy", value: "..." }, // vidi CSP sekciju ispod
       ],
     },
     {
@@ -33,6 +35,8 @@ async headers() {
   ];
 }
 ```
+
+Plus `experimental.serverActions.bodySizeLimit: "6mb"` — server action payload limit (chunked gallery upload šalje jednu sliku po pozivu, pa 6 MB pokriva najveću pojedinačnu sliku).
 
 ## Šta svaki radi
 
@@ -68,6 +72,14 @@ Klijent ne može trazati pristup kameri, mikrofonu ili lokaciji. Sajt to ne treb
 
 **Sprjecava:** Embedded malicious script trazi kameru. Ako Una slučajno klikne "Allow" → kompromitovan privacy.
 
+### `Strict-Transport-Security: max-age=31536000; includeSubDomains`
+
+HSTS — naš header (postavljen u `next.config.ts`, ne oslanja se na Vercel). Browser pamti 1 godinu da se upmakeup.ba smije otvarati SAMO preko HTTPS-a; svaki `http://` pokušaj se auto-upgrade-uje prije slanja request-a.
+
+`preload` direktiva namjerno izostavljena — preload lista je praktično nepovratna, a domen je tek registrovan.
+
+**Sprjecava:** SSL-strip / downgrade napade na javnim WiFi mrežama.
+
 ## Cache headers
 
 | Path | Cache-Control |
@@ -84,29 +96,33 @@ Vercel dodaje na produkciji:
 
 | Header | Vrijednost |
 |--------|-----------|
-| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` (HSTS 2 god) |
 | `Cache-Control` | Per-resource (HTML, JSON, etc.) |
 | `Server` | `Vercel` |
 | `X-Vercel-Cache` | `HIT`/`MISS`/`STALE` (debug) |
 
-HSTS forsira HTTPS na 2 godine. Ako klijent ikad poseti `http://upmakeup.ba`, browser auto-redirect na HTTPS bez ulaska na unsecure.
+HSTS NE prepuštamo Vercelu — eksplicitno je naš header u `next.config.ts` (vidi gore), da vrijednost bude ista na svakom hostingu.
 
 ## CSP (Content Security Policy)
 
-**Trenutno nije implementiran.**
+**Implementiran** u `next.config.ts` (commit `0b5836e`). Direktive:
 
-CSP bi dodatno ograničio koje resource-e browser smije load-ovati:
+| Direktiva | Vrijednost | Zašto |
+|-----------|-----------|-------|
+| `default-src` | `'self'` | Sve default-no samo sa našeg origin-a |
+| `script-src` | `'self' 'unsafe-inline'` (prod) | Next.js inline runtime još zahtijeva `unsafe-inline` (do nonce setup-a); `'unsafe-eval'` SAMO u dev (Turbopack fast-refresh) |
+| `style-src` | `'self' 'unsafe-inline'` | Tailwind/inline styles |
+| `img-src` | `'self' data: blob: https://<ref>.supabase.co` | Galerija slike sa Supabase Storage |
+| `connect-src` | `'self' https://<ref>.supabase.co wss://<ref>.supabase.co` | Supabase API + Realtime WebSocket |
+| `font-src` | `'self' data:` | Lokalni fontovi |
+| `worker-src` | `'self' blob:` | Service worker (PWA) |
+| `manifest-src` | `'self'` | PWA manifest |
+| `frame-ancestors` | `'none'` | Dupli sloj uz X-Frame-Options |
+| `base-uri` | `'self'` | Sprjecava `<base>` hijack |
+| `form-action` | `'self'` | Forme se submituju samo na naš origin |
 
-```
-Content-Security-Policy: default-src 'self'; img-src 'self' https://*.supabase.co; script-src 'self'; ...
-```
+Supabase host se računa dinamički iz `NEXT_PUBLIC_SUPABASE_URL` — dev pokriva lokalni Docker (`http://127.0.0.1:54321` + `ws://`), prod pokriva `https://<ref>.supabase.co` + `wss://`.
 
-Razlozi za neimplementirati trenutno:
-- Komplikovano sa Next.js (inline scripts za hydration)
-- Strict mode breakuje Google Maps embed
-- Trade-off vs implementation overhead
-
-Mogući upgrade: implementirati CSP report-only mode da vidimo violations bez breaking site-a.
+**Poznati trade-off:** `'unsafe-inline'` u `script-src` slabi XSS zaštitu CSP-a. Sljedeća iteracija: nonce-based CSP kad Next.js setup to dozvoli bez breaking hydration.
 
 ## CORS
 

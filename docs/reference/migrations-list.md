@@ -153,7 +153,7 @@ Snimaj cijenu pri kreiranju termina. Sprjecava promjenu cijene retro.
 ALTER TABLE time_blocks ADD COLUMN recurrence_group_id UUID;
 ```
 
-Priprema za recurrent blokade (UI još nije). Postojeci rows ostaju `NULL` = jednokratni.
+Sedmično ponavljanje blokada — UI implementiran u `TimeBlocksManager` (checkbox "Ponavlja se svake sedmice" + "Do datuma"). Blokovi istog serijala dijele `recurrence_group_id`; rows sa `NULL` = jednokratni.
 
 ### 17. Email tracking (`20260526200000_email_tracking_columns.sql`)
 
@@ -164,7 +164,7 @@ ALTER TABLE appointments
   ADD COLUMN email_cancelled_sent_at TIMESTAMPTZ;
 ```
 
-Priprema za Phase 8 email integraciju. Trenutno se ne koriste.
+Timestamp kolone koje email pipeline upisuje nakon uspješnog slanja (zaprimljeno / potvrđeno / otkazano). Slanje je aktivno kad je `RESEND_API_KEY` setovan — vidi [../admin/email-notifikacije.md](../admin/email-notifikacije.md).
 
 ### 18. Security hardening (`20260527000000_security_hardening.sql`)
 
