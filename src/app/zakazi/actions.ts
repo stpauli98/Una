@@ -155,7 +155,7 @@ export async function createAppointment(
   // čak i kad redirect() prekine handler. `void` + redirect na Vercel
   // serverless može orphanovati promise prije nego Resend fetch završi.
   const siteUrl = (
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://upbeauty.ba"
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://upmakeup.ba"
   ).replace(/\/$/, "");
   after(() =>
     sendNewAppointmentEmail({

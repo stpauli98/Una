@@ -31,39 +31,63 @@ export function AppointmentsRealtime() {
     const sb = createClient();
     let channel: RealtimeChannel | null = null;
     let cancelled = false;
+    let subscribing = false;
 
     const ensureSubscribed = async () => {
-      if (cancelled || channel) return;
+      // `subscribing` mora biti sinhron guard: bez njega dva preklopljena
+      // poziva (mount + INITIAL_SESSION iz onAuthStateChange) oba prođu
+      // `!channel` provjeru dok je prvi još u await-u, a sb.channel()
+      // dedup-uje po topic-u pa drugi dobije već subscribe-ovan kanal i
+      // `.on()` baci "cannot add postgres_changes callbacks after subscribe()".
+      if (cancelled || channel || subscribing) return;
+      subscribing = true;
 
-      const { data: sessionData } = await sb.auth.getSession();
-      const token = sessionData.session?.access_token;
+      try {
+        const { data: sessionData } = await sb.auth.getSession();
+        const token = sessionData.session?.access_token;
 
-      if (!token) {
-        console.warn(
-          "[realtime] no session yet — waiting for onAuthStateChange",
-        );
-        return;
+        if (!token) {
+          console.warn(
+            "[realtime] no session yet — waiting for onAuthStateChange",
+          );
+          return;
+        }
+        if (cancelled) return;
+
+        await sb.realtime.setAuth(token);
+        if (cancelled) return;
+
+        // StrictMode remount: cleanup-ov removeChannel je fire-and-forget,
+        // pa stari kanal istog topic-a može još biti u listi — dedup bi ga
+        // vratio umjesto svježeg. Ukloni ga prije kreiranja.
+        const stale = sb
+          .getChannels()
+          .find((c) => c.topic === "realtime:admin-appointments");
+        if (stale) {
+          await sb.removeChannel(stale);
+          if (cancelled) return;
+        }
+
+        channel = sb
+          .channel("admin-appointments")
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "appointments",
+            },
+            (payload) => {
+              console.log("[realtime] appointments event:", payload.eventType);
+              router.refresh();
+            },
+          )
+          .subscribe((status, err) => {
+            console.log("[realtime] subscribe status:", status, err ?? "");
+          });
+      } finally {
+        subscribing = false;
       }
-
-      await sb.realtime.setAuth(token);
-
-      channel = sb
-        .channel("admin-appointments")
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "appointments",
-          },
-          (payload) => {
-            console.log("[realtime] appointments event:", payload.eventType);
-            router.refresh();
-          },
-        )
-        .subscribe((status, err) => {
-          console.log("[realtime] subscribe status:", status, err ?? "");
-        });
     };
 
     // Prvi pokušaj odmah — session bi obično trebao biti dostupan

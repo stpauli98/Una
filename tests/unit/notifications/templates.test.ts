@@ -17,7 +17,7 @@ describe("renderNewAppointmentEmail", () => {
     startTime: new Date("2026-05-15T16:00:00.000Z"), // 18:00 Sarajevo (CEST UTC+2)
     endTime: new Date("2026-05-15T17:00:00.000Z"), // 19:00 Sarajevo, 60min Šminkanje
     notes: "Alergija na lateks",
-    adminPanelUrl: "https://upbeauty.ba/admin/termini",
+    adminPanelUrl: "https://upmakeup.ba/admin/termini",
     appointmentId: 42,
   };
 
@@ -36,7 +36,7 @@ describe("renderNewAppointmentEmail", () => {
     expect(html).toContain("Šminkanje");
     expect(html).toContain("18:00"); // Sarajevo time
     expect(html).toContain("Alergija na lateks");
-    expect(html).toContain("https://upbeauty.ba/admin/termini");
+    expect(html).toContain("https://upmakeup.ba/admin/termini");
   });
 
   it("text body sadrži sva polja u plain text formatu", () => {
