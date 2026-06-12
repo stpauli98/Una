@@ -40,38 +40,51 @@ export async function runSignalChecks(env) {
   }));
 
   // 2.+6. Availability oblik za narednih 7 dana + slot konzistencija za sutra
-  results.push(...await guard("availability-7d", async () => {
-    const svc = await sqlQuery(env, "select id from services where bookable and active and duration_min is not null order by id limit 1");
-    if (!svc.length) return [{ id: "availability-7d", layer: L, status: "FAIL", detail: "nijedna bookable usluga u bazi" }];
-    const serviceId = svc[0].id;
-    const hoursRows = await sqlQuery(env, "select day_of_week, open_time, close_time, is_open from working_hours");
-    const hours = Object.fromEntries(hoursRows.map((r) => [r.day_of_week, { open: r.open_time.slice(0, 5), close: r.close_time.slice(0, 5), isOpen: r.is_open }]));
+  results.push(...await (async () => {
+    try {
+      const svc = await sqlQuery(env, "select id from services where bookable and active and duration_min is not null order by id limit 1");
+      if (!svc.length) return [{ id: "availability-7d", layer: L, status: "FAIL", detail: "nijedna bookable usluga u bazi" }];
+      const serviceId = svc[0].id;
+      const hoursRows = await sqlQuery(env, "select day_of_week, open_time, close_time, is_open from working_hours");
+      const hours = Object.fromEntries(hoursRows.map((r) => [r.day_of_week, { open: r.open_time.slice(0, 5), close: r.close_time.slice(0, 5), isOpen: r.is_open }]));
 
-    const out = [];
-    let total = 0;
-    let shapeProblem = null;
-    let tomorrowSlots = [];
-    for (let d = 1; d <= 7; d++) {
-      const dateStr = dateStrPlus(d);
-      const res = await fetch(`${site}/api/availability?date=${dateStr}&service_id=${serviceId}`);
-      const body = await res.json().catch(() => ({}));
-      const ev = evaluateSlotsShape(dateStr, res.status, body);
-      if (!ev.ok && !shapeProblem) shapeProblem = ev.detail;
-      total += ev.count;
-      if (d === 1 && ev.ok) tomorrowSlots = body.slots;
+      const out = [];
+      let total = 0;
+      let shapeProblem = null;
+      let tomorrowSlots = [];
+      let tomorrowOk = false;
+      for (let d = 1; d <= 7; d++) {
+        const dateStr = dateStrPlus(d);
+        const res = await fetch(`${site}/api/availability?date=${dateStr}&service_id=${serviceId}`);
+        const body = await res.json().catch(() => ({}));
+        const ev = evaluateSlotsShape(dateStr, res.status, body);
+        if (!ev.ok && !shapeProblem) shapeProblem = ev.detail;
+        total += ev.count;
+        if (d === 1 && ev.ok) { tomorrowSlots = body.slots; tomorrowOk = true; }
+      }
+      out.push(shapeProblem
+        ? { id: "availability-7d", layer: L, status: "FAIL", detail: shapeProblem }
+        : total === 0
+          ? { id: "availability-7d", layer: L, status: "WARN", detail: "0 slotova u narednih 7 dana (popunjeno ili bug?)" }
+          : { id: "availability-7d", layer: L, status: "PASS", detail: `${total} slotova u narednih 7 dana` });
+
+      if (!tomorrowOk) {
+        out.push({ id: "slot-consistency", layer: L, status: "FAIL", detail: "nije provjereno — availability za sutra nije vratio validne slotove" });
+      } else {
+        const bad = tomorrowSlots.filter((s) => !slotWithinHours(s.start, s.end, hours));
+        out.push(bad.length === 0
+          ? { id: "slot-consistency", layer: L, status: "PASS", detail: `svi sutrašnji slotovi (${tomorrowSlots.length}) unutar radnog vremena` }
+          : { id: "slot-consistency", layer: L, status: "FAIL", detail: "API nudi slotove van radnog vremena — generisanje i validacija se razilaze (lekcija 53a2f55)", actual: bad.map((s) => s.start).join(", ") });
+      }
+      return out;
+    } catch (e) {
+      const detail = `provjera nije mogla da se izvrši: ${e.message}`;
+      return [
+        { id: "availability-7d", layer: L, status: "FAIL", detail },
+        { id: "slot-consistency", layer: L, status: "FAIL", detail },
+      ];
     }
-    out.push(shapeProblem
-      ? { id: "availability-7d", layer: L, status: "FAIL", detail: shapeProblem }
-      : total === 0
-        ? { id: "availability-7d", layer: L, status: "WARN", detail: "0 slotova u narednih 7 dana (popunjeno ili bug?)" }
-        : { id: "availability-7d", layer: L, status: "PASS", detail: `${total} slotova u narednih 7 dana` });
-
-    const bad = tomorrowSlots.filter((s) => !slotWithinHours(s.start, s.end, hours));
-    out.push(bad.length === 0
-      ? { id: "slot-consistency", layer: L, status: "PASS", detail: `svi sutrašnji slotovi (${tomorrowSlots.length}) unutar radnog vremena` }
-      : { id: "slot-consistency", layer: L, status: "FAIL", detail: "API nudi slotove van radnog vremena — generisanje i validacija se razilaze (lekcija 53a2f55)", actual: bad.map((s) => s.start).join(", ") });
-    return out;
-  }).then((r) => (Array.isArray(r) ? r : [r])));
+  })());
 
   // 3. ISR sadržaj
   results.push(await guard("isr-content", async () => {
