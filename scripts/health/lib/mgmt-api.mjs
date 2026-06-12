@@ -11,7 +11,14 @@ function headers(token) {
 
 /** READ-ONLY SQL prema produkciji. Guard odbija sve što nije SELECT/WITH. */
 export async function sqlQuery(env, query) {
-  const q = query.trim().toLowerCase();
+  let q = query.trim();
+  // Strip repeated leading SQL comments before the guard check
+  let prev;
+  do {
+    prev = q;
+    q = q.replace(/^(--[^\n]*\n|\/\*[\s\S]*?\*\/)\s*/g, "");
+  } while (q !== prev);
+  q = q.trimStart().toLowerCase();
   if (!q.startsWith("select") && !q.startsWith("with")) {
     throw new Error(`sqlQuery dozvoljava samo SELECT/WITH upite, dobio: ${query.slice(0, 40)}`);
   }
@@ -29,7 +36,7 @@ export async function getAnonKey(env) {
   const res = await fetch(`${BASE}/projects/${env.SUPABASE_PROJECT_REF}/api-keys?reveal=true`, {
     headers: headers(env.SUPABASE_ACCESS_TOKEN),
   });
-  if (!res.ok) throw new Error(`api-keys ${res.status}`);
+  if (!res.ok) throw new Error(`api-keys ${res.status}: ${(await res.text()).slice(0, 200)}`);
   const keys = await res.json();
   const anon = keys.find((k) => k.name === "anon");
   if (!anon?.api_key) throw new Error("anon ključ nije nađen u api-keys odgovoru");
