@@ -4,11 +4,11 @@ import { diffByKey, compareMigrations } from "../../../scripts/health/lib/compar
 describe("diffByKey", () => {
   const exp = [{ k: "a", v: 1 }, { k: "b", v: 2 }];
   it("prazno kad je identično", () => {
-    expect(diffByKey(exp, [{ k: "a", v: 1 }, { k: "b", v: 2 }], (x) => x.k)).toEqual([]);
+    expect(diffByKey(exp, [{ k: "a", v: 1 }, { k: "b", v: 2 }], (x: { k: string; v: number }) => x.k)).toEqual([]);
   });
   it("prijavljuje missing, unexpected i changed", () => {
     const actual = [{ k: "a", v: 99 }, { k: "c", v: 3 }];
-    const diffs = diffByKey(exp, actual, (x) => x.k);
+    const diffs = diffByKey(exp, actual, (x: { k: string; v: number }) => x.k);
     expect(diffs).toContainEqual({ kind: "changed", key: "a", expected: JSON.stringify({ k: "a", v: 1 }), actual: JSON.stringify({ k: "a", v: 99 }) });
     expect(diffs).toContainEqual({ kind: "missing", key: "b", expected: JSON.stringify({ k: "b", v: 2 }), actual: undefined });
     expect(diffs).toContainEqual({ kind: "unexpected", key: "c", expected: undefined, actual: JSON.stringify({ k: "c", v: 3 }) });
