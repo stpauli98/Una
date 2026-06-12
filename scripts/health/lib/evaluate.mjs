@@ -29,7 +29,11 @@ export function evaluateSlotsShape(dateStr, httpStatus, body) {
   return { ok: true, count: body.slots.length, detail: `${dateStr}: ${body.slots.length} slotova` };
 }
 
-/** hours: { [0..6]: {open:"HH:mm", close:"HH:mm", isOpen} } — ista konvencija kao DB (0=ned). */
+/**
+ * hours: { [0..6]: {open:"HH:mm", close:"HH:mm", isOpen} } — ista konvencija kao DB (0=ned).
+ * Pretpostavlja dnevno radno vrijeme (open < close istog dana) — ne podržava
+ * intervale preko ponoći.
+ */
 export function slotWithinHours(startIso, endIso, hours) {
   const start = new Date(startIso);
   const weekday = toZonedTime(start, TZ).getDay();
@@ -41,7 +45,7 @@ export function slotWithinHours(startIso, endIso, hours) {
 }
 
 export function evaluateBookingAge(daysSince, thresholdDays) {
-  if (daysSince === null)
+  if (daysSince == null)
     return { status: "WARN", detail: "nijedna javna rezervacija u bazi (confirmation_token is null svuda)" };
   if (daysSince > thresholdDays)
     return { status: "WARN", detail: `zadnja javna rezervacija prije ${Math.round(daysSince)} dana (prag ${thresholdDays})` };

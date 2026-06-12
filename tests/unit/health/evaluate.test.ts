@@ -53,4 +53,7 @@ describe("evaluateBookingAge", () => {
   it("null (nijedna javna rezervacija) = WARN", () => {
     expect(evaluateBookingAge(null, 14).status).toBe("WARN");
   });
+  it("undefined (npr. pogrešan SQL odgovor) = WARN, ne tihi PASS", () => {
+    expect(evaluateBookingAge(undefined as unknown as null, 14).status).toBe("WARN");
+  });
 });
