@@ -126,28 +126,42 @@ export async function createAppointment(
 
   const anonSb = createPublicClient();
 
-  const { data: inserted, error: insErr } = await anonSb
-    .from("appointments")
-    .insert({
-      service_id: parsed.data.service_id,
-      client_name: parsed.data.client_name,
-      client_phone: normalizedPhone,
-      client_email: clientEmail,
-      start_time: start.toISOString(),
-      end_time: end.toISOString(),
-      notes,
-      status: "ceka",
-      confirmation_token: confirmationToken,
-    })
-    .select("id")
-    .single();
+  // INSERT bez `.select()` — anon nema SELECT RLS policy na `appointments`,
+  // a Postgres provjerava SELECT policy nad redovima koje vraća RETURNING.
+  // `.insert(...).select("id")` zato pada sa 42501 ("new row violates RLS")
+  // iako sam INSERT prolazi WITH CHECK. Id čitamo odmah ispod service-role
+  // klijentom preko upravo generisanog UUID tokena (partial unique index).
+  const { error: insErr } = await anonSb.from("appointments").insert({
+    service_id: parsed.data.service_id,
+    client_name: parsed.data.client_name,
+    client_phone: normalizedPhone,
+    client_email: clientEmail,
+    start_time: start.toISOString(),
+    end_time: end.toISOString(),
+    notes,
+    status: "ceka",
+    confirmation_token: confirmationToken,
+  });
 
-  if (insErr || !inserted) {
+  if (insErr) {
     console.error("appointment insert failed:", sanitizeError(insErr));
     return {
       ok: false,
       error: "Došlo je do greške pri spremanju. Molimo pokušajte ponovo.",
     };
+  }
+
+  const { data: inserted, error: readErr } = await sb
+    .from("appointments")
+    .select("id")
+    .eq("confirmation_token", confirmationToken)
+    .single();
+
+  if (readErr || !inserted) {
+    // Termin JE upisan — ne vraćaj grešku (retry bi dobio "termin zauzet").
+    // Bez id-a preskačemo notifikacije; admin realtime i dalje vidi termin.
+    console.error("post-insert id read failed:", sanitizeError(readErr));
+    redirect(`/zakazi/uspjesno?token=${confirmationToken}`);
   }
 
   // Fire-and-log email obavještenje Uni — NE blokira redirect.
