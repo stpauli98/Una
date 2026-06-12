@@ -10,6 +10,11 @@ import { sendAlert } from "./lib/email.mjs";
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const layer = process.argv[2]; // undefined = svi
 
+if (layer && !["code", "prod", "signals"].includes(layer)) {
+  console.error(`Nepoznat sloj "${layer}" — dozvoljeno: code | prod | signals (bez arga = svi)`);
+  process.exit(1);
+}
+
 const results = [];
 try {
   const env = loadHealthEnv(rootDir);
