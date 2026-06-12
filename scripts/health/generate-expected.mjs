@@ -2,15 +2,19 @@
 // Jednokratni dump prod RLS/constraint stanja u expected/*.json.
 // Pokreće se ručno NAKON što se uvjerimo da je prod stanje ispravno.
 import { writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 import { loadHealthEnv } from "./lib/env.mjs";
 import { sqlQuery } from "./lib/mgmt-api.mjs";
+
+const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
 const TABLES = [
   "appointments", "services", "time_blocks", "working_hours", "settings",
   "gallery_images", "push_subscriptions", "blocked_dates", "training_inquiries",
 ];
 
-const env = loadHealthEnv(process.cwd());
+const env = loadHealthEnv(rootDir);
 
 const policies = await sqlQuery(env, `
   select c.relname as table_name, p.polname as name,
@@ -36,6 +40,11 @@ const rls = await sqlQuery(env, `
   from pg_class where relname in (${TABLES.map((t) => `'${t}'`).join(",")})
   and relkind = 'r' order by relname`);
 
-writeFileSync("scripts/health/expected/policies.json", JSON.stringify({ policies, rls }, null, 2) + "\n");
-writeFileSync("scripts/health/expected/constraints.json", JSON.stringify({ constraints, triggers }, null, 2) + "\n");
+if (policies.length === 0 || constraints.length === 0 || rls.length === 0) {
+  console.error("GREŠKA: prazan rezultat iz Management API — snapshot NIJE prepisan");
+  process.exit(1);
+}
+
+writeFileSync(`${rootDir}/scripts/health/expected/policies.json`, JSON.stringify({ policies, rls }, null, 2) + "\n");
+writeFileSync(`${rootDir}/scripts/health/expected/constraints.json`, JSON.stringify({ constraints, triggers }, null, 2) + "\n");
 console.log(`OK: ${policies.length} policy-ja, ${constraints.length} constrainta, ${triggers.length} trigera, ${rls.length} RLS flagova`);
