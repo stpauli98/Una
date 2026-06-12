@@ -1,18 +1,20 @@
 // scripts/health/lib/rules.mjs
 
 /**
- * Dvije vrste pravila:
- *  - kind "line":  pattern se traži liniju po liniju; linija koja matchuje
- *    `lineExempt` se preskače. `appliesTo(content)` može ograničiti na fajlove
- *    sa određenim sadržajem. Za multi-line šablone postoji `filePattern`.
- *  - kind "file":  ako fajl matchuje `ifPattern`, mora matchovati i `requirePattern`.
+ * Tri vrste pravila:
+ *  - kind "line":         pattern se traži liniju po liniju; linija koja matchuje
+ *                         `lineExempt` se preskače. `appliesTo(content)` može ograničiti
+ *                         na fajlove sa određenim sadržajem.
+ *  - kind "file-pattern": `filePattern` se testira na cijelom fajlu (nakon što se
+ *                         single-line komentari uklone). Matchovanje = narušenje.
+ *  - kind "file":         ako fajl matchuje `ifPattern`, mora matchovati i `requirePattern`.
  * `paths` je lista regexa putanja na koje se pravilo odnosi.
  */
 export const RULES = [
   {
     id: "R1-anon-insert-select",
     severity: "FAIL",
-    kind: "line",
+    kind: "file-pattern",
     paths: [/^src\//],
     appliesTo: (content) => content.includes("createPublicClient"),
     filePattern: /\.insert\((?:[^()]|\([^()]*\))*\)\s*[\r\n\s]*\.select\(/,
@@ -69,7 +71,7 @@ export function checkFileAgainstRule(rule, path, content) {
     }
     return violations;
   }
-  if (rule.filePattern) {
+  if (rule.kind === "file-pattern") {
     // Strip single-line comments before testing so comment-only occurrences don't fire.
     const codeOnly = content
       .split("\n")

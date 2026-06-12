@@ -21,6 +21,11 @@ await anonSb.from("appointments").insert({
 }).select("id");`;
     expect(checkFileAgainstRule(rule("R1-anon-insert-select"), "src/x.ts", content).length).toBe(1);
   });
+  it("ne hvata .insert().select() unutar // komentara", () => {
+    const content = `import { createPublicClient } from "@/lib/supabase/public";
+// \`.insert(...).select("id")\` pada sa 42501 zbog RLS — ne koristiti`;
+    expect(checkFileAgainstRule(rule("R1-anon-insert-select"), "src/app/zakazi/actions.ts", content)).toEqual([]);
+  });
 });
 
 describe("R2 date-fns token e", () => {
