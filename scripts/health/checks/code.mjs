@@ -1,22 +1,31 @@
 // scripts/health/checks/code.mjs
-import { execSync, execFileSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { RULES, checkFileAgainstRule } from "../lib/rules.mjs";
 
-function runCmd(id, cmd, rootDir) {
+// process.execPath is the absolute path to the running node binary.
+// launchd agents run with a minimal PATH (no /opt/homebrew/bin) so we
+// must never rely on `node` or `env node` being resolvable via shell.
+const NODE = process.execPath;
+
+function runNode(id, nodeArgs, rootDir) {
   try {
-    execSync(cmd, { cwd: rootDir, stdio: "pipe", timeout: 300_000 });
-    return { id, layer: "code", status: "PASS", detail: cmd };
+    execFileSync(NODE, nodeArgs, { cwd: rootDir, stdio: "pipe", timeout: 300_000 });
+    return { id, layer: "code", status: "PASS", detail: `${NODE} ${nodeArgs.join(" ")}` };
   } catch (e) {
     const out = `${e.stdout ?? ""}${e.stderr ?? ""}`.slice(-400);
-    return { id, layer: "code", status: "FAIL", detail: `${cmd} pao`, actual: out };
+    return { id, layer: "code", status: "FAIL", detail: `${nodeArgs[0]} pao`, actual: out };
   }
 }
 
 export async function runCodeChecks(rootDir) {
   const results = [];
-  results.push(runCmd("typecheck", "node_modules/.bin/tsc --noEmit", rootDir));
-  results.push(runCmd("unit-tests", "node_modules/.bin/vitest run --reporter=dot", rootDir));
+
+  // tsc: invoke via node directly (node_modules/.bin/tsc shebang uses /usr/bin/env node)
+  results.push(runNode("typecheck", ["node_modules/typescript/bin/tsc", "--noEmit"], rootDir));
+
+  // vitest: same — bypass the shebang wrapper
+  results.push(runNode("unit-tests", ["node_modules/vitest/dist/cli.js", "run", "--reporter=dot"], rootDir));
 
   const files = execFileSync("git", ["ls-files", "src"], { cwd: rootDir, encoding: "utf8" })
     .split("\n")
