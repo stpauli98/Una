@@ -1,0 +1,186 @@
+{
+  "policies": [
+    {
+      "table_name": "appointments",
+      "name": "appointments: admin full",
+      "cmd": "*",
+      "roles": "{authenticated}",
+      "using_expr": "is_admin()",
+      "check_expr": "is_admin()"
+    },
+    {
+      "table_name": "appointments",
+      "name": "appointments: anon insert",
+      "cmd": "a",
+      "roles": "{anon}",
+      "using_expr": null,
+      "check_expr": "((status = 'ceka'::text) AND (confirmation_sent_at IS NULL))"
+    },
+    {
+      "table_name": "blocked_dates",
+      "name": "blocked_dates: admin full",
+      "cmd": "*",
+      "roles": "{authenticated}",
+      "using_expr": "is_admin()",
+      "check_expr": "is_admin()"
+    },
+    {
+      "table_name": "blocked_dates",
+      "name": "blocked_dates: public read",
+      "cmd": "r",
+      "roles": "{anon,authenticated}",
+      "using_expr": "true",
+      "check_expr": null
+    },
+    {
+      "table_name": "gallery_images",
+      "name": "gallery_images: admin delete",
+      "cmd": "d",
+      "roles": "{authenticated}",
+      "using_expr": "is_admin()",
+      "check_expr": null
+    },
+    {
+      "table_name": "gallery_images",
+      "name": "gallery_images: admin update",
+      "cmd": "w",
+      "roles": "{authenticated}",
+      "using_expr": "is_admin()",
+      "check_expr": "is_admin()"
+    },
+    {
+      "table_name": "gallery_images",
+      "name": "gallery_images: admin write",
+      "cmd": "a",
+      "roles": "{authenticated}",
+      "using_expr": null,
+      "check_expr": "is_admin()"
+    },
+    {
+      "table_name": "gallery_images",
+      "name": "gallery_images: public read",
+      "cmd": "r",
+      "roles": "{anon,authenticated}",
+      "using_expr": "true",
+      "check_expr": null
+    },
+    {
+      "table_name": "push_subscriptions",
+      "name": "push_subscriptions: admin full",
+      "cmd": "*",
+      "roles": "{authenticated}",
+      "using_expr": "is_admin()",
+      "check_expr": "is_admin()"
+    },
+    {
+      "table_name": "services",
+      "name": "services: admin full",
+      "cmd": "*",
+      "roles": "{authenticated}",
+      "using_expr": "is_admin()",
+      "check_expr": "is_admin()"
+    },
+    {
+      "table_name": "services",
+      "name": "services: anon read active",
+      "cmd": "r",
+      "roles": "{anon}",
+      "using_expr": "(active = true)",
+      "check_expr": null
+    },
+    {
+      "table_name": "settings",
+      "name": "settings: admin full",
+      "cmd": "*",
+      "roles": "{authenticated}",
+      "using_expr": "is_admin()",
+      "check_expr": "is_admin()"
+    },
+    {
+      "table_name": "settings",
+      "name": "settings: public read",
+      "cmd": "r",
+      "roles": "{anon,authenticated}",
+      "using_expr": "true",
+      "check_expr": null
+    },
+    {
+      "table_name": "time_blocks",
+      "name": "time_blocks: admin full",
+      "cmd": "*",
+      "roles": "{authenticated}",
+      "using_expr": "is_admin()",
+      "check_expr": "is_admin()"
+    },
+    {
+      "table_name": "training_inquiries",
+      "name": "training_inquiries: admin full",
+      "cmd": "*",
+      "roles": "{authenticated}",
+      "using_expr": "is_admin()",
+      "check_expr": "is_admin()"
+    },
+    {
+      "table_name": "training_inquiries",
+      "name": "training_inquiries: anon insert",
+      "cmd": "a",
+      "roles": "{anon}",
+      "using_expr": null,
+      "check_expr": "(status = 'novi'::text)"
+    },
+    {
+      "table_name": "working_hours",
+      "name": "working_hours: admin full",
+      "cmd": "*",
+      "roles": "{authenticated}",
+      "using_expr": "is_admin()",
+      "check_expr": "is_admin()"
+    },
+    {
+      "table_name": "working_hours",
+      "name": "working_hours: public read",
+      "cmd": "r",
+      "roles": "{anon,authenticated}",
+      "using_expr": "true",
+      "check_expr": null
+    }
+  ],
+  "rls": [
+    {
+      "table_name": "appointments",
+      "enabled": true
+    },
+    {
+      "table_name": "blocked_dates",
+      "enabled": true
+    },
+    {
+      "table_name": "gallery_images",
+      "enabled": true
+    },
+    {
+      "table_name": "push_subscriptions",
+      "enabled": true
+    },
+    {
+      "table_name": "services",
+      "enabled": true
+    },
+    {
+      "table_name": "settings",
+      "enabled": true
+    },
+    {
+      "table_name": "time_blocks",
+      "enabled": true
+    },
+    {
+      "table_name": "training_inquiries",
+      "enabled": true
+    },
+    {
+      "table_name": "working_hours",
+      "enabled": true
+    }
+  ]
+}
