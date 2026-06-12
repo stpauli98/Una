@@ -16,7 +16,11 @@
     "test:all": "npm test && npm run test:e2e:local",
     "test:setup": "bash scripts/setup-test-env.sh",
     "supabase:start": "supabase start",
-    "supabase:stop": "supabase stop"
+    "supabase:stop": "supabase stop",
+    "health": "node scripts/health/run.mjs",
+    "health:code": "node scripts/health/run.mjs code",
+    "health:prod": "node scripts/health/run.mjs prod",
+    "health:signals": "node scripts/health/run.mjs signals"
   },
   "dependencies": {
     "@serwist/next": "^9.5.11",
