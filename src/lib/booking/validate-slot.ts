@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { formatInTimeZone } from "date-fns-tz";
+import { formatInTimeZone, toZonedTime } from "date-fns-tz";
 import { addDays } from "date-fns";
 import { TZ } from "@/lib/utils/tz";
 
@@ -8,13 +8,24 @@ export interface SlotValidationResult {
   reason?: string;
 }
 
+/**
+ * Dan u sedmici za Sarajevo wall-clock (0=nedjelja..6=subota) — ista
+ * konvencija kao `working_hours.day_of_week` i availability engine.
+ */
+export function sarajevoDayOfWeek(date: Date): number {
+  return toZonedTime(date, TZ).getDay();
+}
+
+/** Postgres `time` round-trip-uje sa sekundama ("05:00:00") → "05:00". */
+const toHHmm = (time: string) => time.slice(0, 5);
+
 export function isSlotWithinWorkingHours(
   openTime: string,
   closeTime: string,
   slotStart: string,
   slotEnd: string,
 ): boolean {
-  return slotStart >= openTime && slotEnd <= closeTime;
+  return slotStart >= toHHmm(openTime) && slotEnd <= toHHmm(closeTime);
 }
 
 export function isDateBlocked(
@@ -37,7 +48,7 @@ export async function validateSlotServerSide(
   start: Date,
   end: Date,
 ): Promise<SlotValidationResult> {
-  const dayOfWeek = Number(formatInTimeZone(start, TZ, "e")) % 7;
+  const dayOfWeek = sarajevoDayOfWeek(start);
   const dateStr = formatInTimeZone(start, TZ, "yyyy-MM-dd");
   const slotStartTime = formatInTimeZone(start, TZ, "HH:mm");
   const slotEndTime = formatInTimeZone(end, TZ, "HH:mm");
